@@ -1,4 +1,4 @@
-# swaas
+# sdaas
 
 (**s**)eismic (**d**)ata (and metadata) (**a**)mplitude (**a**)nomaly (**s**)core
 
