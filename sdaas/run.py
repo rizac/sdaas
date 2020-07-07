@@ -15,33 +15,71 @@ import numpy as np
 from obspy.core.stream import read
 from obspy.core.inventory.inventory import read_inventory
 from sdaas.anomalyscore import from_traces
+from argparse import RawTextHelpFormatter
 
 
-extensions = {
-    '.mseed', '.miniseed', '.hdf', '.h5', '.hdf5', '.he5'
+# extensions = {
+#     '.mseed', '.miniseed', '.hdf', '.h5', '.hdf5', '.he5',
+#     '.hdf5', '.hf', 'npz'
+# }
 
-    '.hdf5', '.hf', 'npz'
-}
-
-fdsn_re = '[a-zA-Z_]+://.*?/fdsnws/(?:station|dataselect)/\\d/query?.*'
+fdsn_re = '[a-zA-Z_]+://.+?/fdsnws/(?:station|dataselect)/\\d/query?.*'
 
 
-def process(data, metadata, verbose=0,
-               metadata_wlen_sec=120,
-               metadata_wmaxdownloads=5,
-               metadata_wtimeout_sec=120, **open_kwargs):
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[32m'  # '\033[92m'
+    WARNING = '\033[33m'  # '\033[93m'
+    FAIL = '\033[31m'  # '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+def process(data, metadata, verbose=1, metadata_wlen_sec=120,
+            metadata_wmaxdownloads=5, metadata_wtimeout_sec=120,
+            print_colors=False,
+            **open_kwargs):
+    '''
+    The following options are valid:
+
+    data: directory (will read all .mseed files inside that directory)
+    metadata: missing, url, file (if missing, it must be a .xml file inside
+        the 'data' directory)
+
+    data: file (.mseed), FDSN_dataselect_url
+    metadata: missing, FDSN_station_url, file (if missing, data must be
+        a FDSN url so that the FDSN_station_url can be inferred from there)
+
+    data: FDSN_station_url
+    metadata: ignored (if provided, a conflict error will be raised)
+
+    URLs must be FDSN compliant, and need at least the query parameters "net",
+    "sta" and "start".
+    If data is a FDSN station URL it should have the "level=response" parameter
+    (or no "level" parameter at all, it will be set automatically). Then, the
+    program will test the station metadata by randomly downloading
+    'max_segments' station recorded segments and showing their amplitude
+    anomaly score: Scores systematically close to 1 might denote errors
+    in the station metadata.
+    '''
     echo = print
-#     if not verbose:
-#         def echo(*args, **kwargs):
-#             pass
-    is_station = False
-    if isdir(data):
+    if not verbose:
+        def echo(*args, **kwargs):
+            pass
+    is_dir = isdir(data)
+    # is_station_file = not is_dir and splitext(data)[1].lower() == '.xml'
+    is_file = not is_dir and isfile(data)  # splitext(data)[1].lower() == '.mseed'
+    is_fdsn = not is_dir and not is_file and re.match(fdsn_re, data)
+    is_station_fdsn = is_fdsn and '/station/' in data
+    is_dataselect_fdsn = is_fdsn and '/dataselect' in data
+    if is_dir:
         files = [abspath(join(data, _)) for _ in listdir(data)
                  if splitext(_)[1].lower() == '.mseed']
         if not files:
             raise FileNotFoundError('No miniseed found (extension: .mseed)')
-        echo(f'Reading from directory, {len(files)} miniseed found')
-        iter_stream = (read(_) for _ in files)
+        iter_stream = (read_data(_) for _ in files)
         if not metadata:
             metadata = [abspath(join(data, _)) for _ in listdir(data)
                         if splitext(_)[1].lower() == '.xml']
@@ -49,55 +87,72 @@ def process(data, metadata, verbose=0,
                 raise ValueError(f'Expected 1 metadata file (Station XML) in '
                                  f'"{basename(data)}", found {len(metadata)}')
             metadata = metadata[0]
-            echo(f'Using metadata file "{basename(metadata)}"')
-    elif not isfile(data):
-        if not re.match(fdsn_re, data):
-            raise ValueError(f'Invalid file/directory/URL: {data}')
-        if '/station/' in data:
-            echo(f'Reading metadata from station xml URL, the metadata will '
-                 'be tested computing scores of randomly downloaded waveforms')
-            is_station = True
-            if metadata:
-                raise ValueError('Conflict: you cannot input a station URL '
-                                 'with the "metadata" argument')
-            metadata = data
-            iter_stream = download_streams(data, metadata_wlen_sec,
-                                           metadata_wmaxdownloads,
-                                           metadata_wtimeout_sec)
-        else:
-            echo(f'Reading data from dataselect URL, the waveform(s) metadata '
-                 'will be downloaded accordingly')
-            files = [data]
-            args = get_querydict(data)
-            metadata = get_station_metadata_url(args)
+    elif is_file or is_dataselect_fdsn:
+        iter_stream = (read_data(_) for _ in [data])
+        if not metadata:
+            if is_dataselect_fdsn:
+                metadata = get_station_metadata_url(get_querydict(data))
+            else:
+                raise ValueError('"metadata" argument required')
+    elif is_station_fdsn:
+        if metadata:
+            raise ValueError('Conflict: if you input "data" as station '
+                             'you can not also provide the "metadata"'
+                             'argument')
+        metadata = data
+        data = get_dataselect_url(get_querydict(metadata))
+        iter_stream = download_streams(data, metadata_wlen_sec,
+                                       metadata_wmaxdownloads,
+                                       metadata_wtimeout_sec)
     else:
-        echo(f'Reading from miniseed file')
-        files = [data]
-        iter_stream = (read(_) for _ in files)
+        raise ValueError(f'Invalid file/directory/URL path: {data}')
+    echo(f'Data (MiniSEED file(s)): "{data}"')
+    echo(f'Metadata (Station XML): "{metadata}"')
 
     inv = read_metadata(metadata)
+
+    echo('Anomaly scores:')
+    stdout_is_atty = sys.stdout.isatty()
+    print_colors = stdout_is_atty and print_colors
+    endcolor = bcolors.ENDC if print_colors else ''
+    color = ''
+    if print_colors:
+        echo(f'{bcolors.BOLD}NOTE: colors provide just a visual hint: they '
+             f'represent thresholds derived from theoretical grounds which '
+             f'might need to be tuned and re-adjusted depending on the set '
+             f'inspected{endcolor}')
 
     echo(f'{"trace":<15} {"start":<19} {"end":<19} {"score":<5}')
     echo(f'{"-" * 15}+{"-" * 19}+{"-" * 19}+{"-" * 5}')
     for stream in iter_stream:
         scores = from_traces(stream, inv)
         for trace, score in zip(stream, scores):
-            if not np.isnan(score) or not is_station:
-                start = trace.stats.starttime.datetime
-                end = trace.stats.endtime.datetime
-                print(f'{trace.get_id() : <15} '
-                      f'{start.replace(microsecond=0).isoformat() : <19} '
-                      f'{end.replace(microsecond=0).isoformat() : <19} '
-                      f'{score : 5.2f}')
-                # yield (get_id(trace), score)
+            # if not np.isnan(score) or not is_station:
+            start = trace.stats.starttime.datetime
+            end = trace.stats.endtime.datetime
+            if print_colors:
+                color = bcolors.OKGREEN if score <= 0.5 else \
+                    bcolors.WARNING if score < 0.75 else bcolors.FAIL
+            print(f'{trace.get_id() : <15} '
+                  f'{start.replace(microsecond=0).isoformat() : <19} '
+                  f'{end.replace(microsecond=0).isoformat() : <19} '
+                  f'{color}{score : 5.2f}{endcolor}')
 
 
 def read_metadata(path_or_url):
     try:
         return read_inventory(path_or_url, format="STATIONXML")
     except Exception as exc:
-        raise Exception(f'Error reading metadata: {str(exc)}\n'
+        raise Exception(f'Invalid station (xml) file: {str(exc)}\n'
                         f' (path/url: {path_or_url})')
+
+
+def read_data(path_or_url):
+    try:
+        return read(path_or_url, format='MSEED')
+    except Exception as exc:
+            raise Exception(f'Invalid waveform (mseed) file: {str(exc)}\n'
+                            f' (path/url: {path_or_url})')
 
 
 def get_id(trace):
@@ -276,18 +331,17 @@ def get_url_arg(query_dict, url, *keys):
     raise KeyError(f'Missing parameter "{"/".join(keys)}" in {url}')
 
 
-# data = dir. metadata: file or missing. If missing, it must be an xml inside data
-# data = file. Then metadata must be present and be a valid xml file
-# data = url. Then the metadata might be missing (will be downloaded for any miniseed)
-
-parser = argparse.ArgumentParser(description=('Computes amplitude anomaly '
-                                              'scores on waveform data and '
-                                              'metadata'))
-parser.add_argument('data', metavar='data', type=str,
+parser = argparse.ArgumentParser(
+    description=("Computes amplitude anomaly scores on waveform data and "
+                 "metadata."),
+    epilog=process.__doc__.replace("\\n    ", ""),
+    formatter_class=RawTextHelpFormatter
+)
+parser.add_argument('data', metavar='DATA', type=str,
                     help=('the waveform data. It can be the file path of an '
                           'existing miniSEED, a directory of miniSEEDs, or '
                           'a FDSN-compliant URL of a data web service'))
-parser.add_argument('--metadata', '-m', type=str,
+parser.add_argument('-m', '--metadata', type=str,
                     help='the metadata (station inventory, xml format)')
 
 args = parser.parse_args()
