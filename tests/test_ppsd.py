@@ -7,7 +7,7 @@ import unittest
 from os.path import join, dirname
 from obspy.core.stream import read
 from obspy.core.inventory.inventory import read_inventory
-from sdaas.anomalyscore import get_psd_features
+from sdaas.anomalyscore import tracefeat
 
 
 class Test(unittest.TestCase):
@@ -47,7 +47,7 @@ class Test(unittest.TestCase):
             # trace, inv = 'GE.FLT1..HH?.mseed', 'GE.FLT1.xml'
             stream = read(file)
             metadata = read_inventory(inv)
-            feats = get_psd_features(stream, metadata)
+            feats = tracefeat(stream, metadata)
             pasd = 9
 
 

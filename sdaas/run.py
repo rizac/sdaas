@@ -14,7 +14,7 @@ import numpy as np
 
 from obspy.core.stream import read
 from obspy.core.inventory.inventory import read_inventory
-from sdaas.anomalyscore import from_traces
+from sdaas.anomalyscore import tracescore
 from argparse import RawTextHelpFormatter
 
 
@@ -38,31 +38,32 @@ class bcolors:
 
 
 def process(data, metadata, verbose=1, metadata_wlen_sec=120,
-            metadata_wmaxdownloads=5, metadata_wtimeout_sec=120,
-            print_colors=False,
+            metadata_wmaxdownloads=5, metadata_wtimeout_sec=60,
+            print_colors=True,
             **open_kwargs):
     '''
-    The following options are valid:
+    The following combinations of options are valid (note that urls must be
+    FDSN compliant with least the query parameters "net", "sta" and "start"):
 
-    data: directory (will read all .mseed files inside that directory)
-    metadata: missing, url, file (if missing, it must be a .xml file inside
-        the 'data' directory)
+    data:     file (.mseed)
+              url (e.g. http://service.iris.edu/fdsnws/dataselect/1/)
+    metadata: file (.xml)
+              url (e.g. http://service.iris.edu/fdsnws/station/1/)
+              missing/not provided. In this case, 'data' must be an url
 
-    data: file (.mseed), FDSN_dataselect_url
-    metadata: missing, FDSN_station_url, file (if missing, data must be
-        a FDSN url so that the FDSN_station_url can be inferred from there)
+    data:     directory. This will test all .mseed files in the directory
+    metadata: file (.xml)
+              url (e.g. http://service.iris.edu/fdsnws/station/1/)
+              missing/not provided. In this there must be a .xml file inside
+              'data', that the program will read as metadata
 
-    data: FDSN_station_url
-    metadata: ignored (if provided, a conflict error will be raised)
-
-    URLs must be FDSN compliant, and need at least the query parameters "net",
-    "sta" and "start".
-    If data is a FDSN station URL it should have the "level=response" parameter
-    (or no "level" parameter at all, it will be set automatically). Then, the
-    program will test the station metadata by randomly downloading
-    'max_segments' station recorded segments and showing their amplitude
-    anomaly score: Scores systematically close to 1 might denote errors
-    in the station metadata.
+    data:     url (e.g. http://service.iris.edu/fdsnws/station/1/). This tests
+              a station metadata. The url should have either no "level" query
+              parameter specified, or "level=response". The program randomly
+              downloads 'max_segments' segments recorded by the station and
+              computes their anomaly score. Scores persistently low (<=0.5) or
+              high (>>0.5) denote "good" or "bad" metadata, respectively
+    metadata: ignored (if provided, a conflict error is raised)
     '''
     echo = print
     if not verbose:
@@ -111,28 +112,28 @@ def process(data, metadata, verbose=1, metadata_wlen_sec=120,
 
     inv = read_metadata(metadata)
 
-    echo('Anomaly scores:')
+    echo('Anomaly scores in [0, 1]:')
     stdout_is_atty = sys.stdout.isatty()
     print_colors = stdout_is_atty and print_colors
     endcolor = bcolors.ENDC if print_colors else ''
     color = ''
     if print_colors:
-        echo(f'{bcolors.BOLD}NOTE: colors provide just a visual hint: they '
-             f'represent thresholds derived from theoretical grounds which '
-             f'might need to be tuned and re-adjusted depending on the set '
-             f'inspected{endcolor}')
+        echo(f'{bcolors.BOLD}NOTE: colored scores (green: ok and yellow: '
+             'warning, potential anomaly)\n'
+             f'are just a visual hint, the threshold used (0.5) is '
+             f'theoretical and might need to be tuned or re-adjusted{endcolor}')
 
     echo(f'{"trace":<15} {"start":<19} {"end":<19} {"score":<5}')
     echo(f'{"-" * 15}+{"-" * 19}+{"-" * 19}+{"-" * 5}')
     for stream in iter_stream:
-        scores = from_traces(stream, inv)
+        scores = tracescore(stream, inv)
         for trace, score in zip(stream, scores):
             # if not np.isnan(score) or not is_station:
             start = trace.stats.starttime.datetime
             end = trace.stats.endtime.datetime
             if print_colors:
                 color = bcolors.OKGREEN if score <= 0.5 else \
-                    bcolors.WARNING if score < 0.75 else bcolors.FAIL
+                    bcolors.WARNING  # if score < 0.75 else bcolors.FAIL
             print(f'{trace.get_id() : <15} '
                   f'{start.replace(microsecond=0).isoformat() : <19} '
                   f'{end.replace(microsecond=0).isoformat() : <19} '
@@ -226,7 +227,7 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
             break
 
     if not yielded:
-        raise ValueError(('No waveform data found in the specified period, ',
+        raise ValueError(('No waveform data found in the specified period, '
                           'check URL parameters. ') +
                          (f'Timeout ({wtimeout_sec} s) exceeded'
                           if timeout_expired else ''))

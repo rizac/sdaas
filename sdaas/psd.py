@@ -2,7 +2,7 @@
 Implements an optimized version of the power spectral density (PSD) function
 of the PPSD module of ObsPy. The function is the feature extractor for our
 machine learning model (Ifsolation Forest) for anomaly detection in segments
-amplitudes 
+amplitudes
 '''
 import math
 import time
@@ -15,47 +15,11 @@ from obspy.core.inventory import Inventory
 from obspy.core.inventory.inventory import read_inventory
 
 
-class old:
-    '''container for the old functions used in the paper
-    whereby we created the model used in thius package
-    '''
-
-    @staticmethod
-    def psd_values(periods, raw_trace, inventory):
-        periods = np.asarray(periods)
-        try:
-            ppsd_ = old.psd(raw_trace, inventory)
-        except Exception as esc:
-            raise ValueError('%s error when computing PSD: %s' %
-                             (esc.__class__.__name__, str(esc)))
-        # check first if we can interpolate ESPECIALLY TO SUPPRESS A WEIRD
-        # PRINTOUT (numpy?): something like '5064 5062' which happens
-        # on IndexError (len(ppsd_.psd_values)=0)
-        if not len(ppsd_.psd_values):
-            raise ValueError('Expected 1 psd array, no psd computed')
-        val = np.interp(
-            np.log10(periods),
-            np.log10(ppsd_.period_bin_centers),
-            ppsd_.psd_values[0]
-        )
-        val[periods < ppsd_.period_bin_centers[0]] = np.nan
-        val[periods > ppsd_.period_bin_centers[-1]] = np.nan
-        return val
-
-    @staticmethod
-    def psd(raw_trace, inventory):
-        # tr = segment.stream(True)[0]
-        dt = raw_trace.stats.endtime - raw_trace.stats.starttime  # total_seconds
-        ppsd = PPSD(raw_trace.stats, metadata=inventory, ppsd_length=int(dt))
-        ppsd.add(raw_trace)
-        return ppsd
-
-
 def psd_values(psd_periods, tr, metadata, special_handling=None,
                period_smoothing_width_octaves=1.0,
                period_step_octaves=0.125, smooth_on_all_periods=False):
     """
-    Calculates the power spectral density (psd) of the given
+    Calculates the power spectral density (PSD) of the given
     trace `tr`, and returns the values in dB at the given `psd_periods`.
 
     Note: If used to compute features for the Isolation Forest algorithm,
@@ -226,7 +190,8 @@ def psd_values(psd_periods, tr, metadata, special_handling=None,
                                       period_smoothing_width_octaves):
             _spec_slice = spec[(period_bin_left <= _psd_periods) &
                                (_psd_periods <= period_bin_right)]
-            smoothed_psd.append(_spec_slice.mean())
+            smoothed_psd.append(_spec_slice.mean() if len(_spec_slice)
+                                else np.nan)
 
         val = np.array(smoothed_psd)
 
@@ -262,6 +227,31 @@ def _get_response_from_inventory(tr, metadata, nfft):
     resp, _ = response.get_evalresp_response(t_samp=delta, nfft=nfft,
                                              output="VEL")
     return resp
+
+
+def _get_response_from_inventory_new(tr, metadata, nfft):
+    # this methods replaces _get_response_from_inventory_old (see below)
+    # because we want to hide sensitivity mismatch warnings
+    inventory = metadata
+    delta = 1.0 / tr.stats.sampling_rate
+    id_ = "%(network)s.%(station)s.%(location)s.%(channel)s" % tr.stats
+    response = inventory.get_response(id_, tr.stats.starttime)
+#     resp, _ = response.get_evalresp_response(t_samp=delta, nfft=nfft,
+#                                              output="VEL")
+    t_samp = delta
+    nfft = nfft
+    output = "VEL"
+    # copied from response.get_evalresp_response
+    fy = 1 / (t_samp * 2.0)
+    # start at zero to get zero for offset/ DC of fft
+    freqs = np.linspace(0, fy, nfft // 2 + 1).astype(np.float64)
+
+    # copied from response.get_evalresp_response_for_frequencies
+    resp, chan = response._call_eval_resp_for_frequencies(
+        freqs, output=output, start_stage=None,
+        end_stage=None, hide_sensitivity_mismatch_warning=True)
+    return resp
+
 
 
 def _yield_period_binning(psd_periods, period_smoothing_width_octaves):
@@ -339,6 +329,42 @@ def _setup_yield_period_binning(psd_periods, period_smoothing_width_octaves,
         previous_periods = per_left, per_center, per_right
 
 
+class _old:
+    '''container for the old functions used in the paper
+    whereby we created the model used in thius package
+    '''
+
+    @staticmethod
+    def psd_values(periods, raw_trace, inventory):
+        periods = np.asarray(periods)
+        try:
+            ppsd_ = _old.psd(raw_trace, inventory)
+        except Exception as esc:
+            raise ValueError('%s error when computing PSD: %s' %
+                             (esc.__class__.__name__, str(esc)))
+        # check first if we can interpolate ESPECIALLY TO SUPPRESS A WEIRD
+        # PRINTOUT (numpy?): something like '5064 5062' which happens
+        # on IndexError (len(ppsd_.psd_values)=0)
+        if not len(ppsd_.psd_values):
+            raise ValueError('Expected 1 psd array, no psd computed')
+        val = np.interp(
+            np.log10(periods),
+            np.log10(ppsd_.period_bin_centers),
+            ppsd_.psd_values[0]
+        )
+        val[periods < ppsd_.period_bin_centers[0]] = np.nan
+        val[periods > ppsd_.period_bin_centers[-1]] = np.nan
+        return val
+
+    @staticmethod
+    def psd(raw_trace, inventory):
+        # tr = segment.stream(True)[0]
+        dt = raw_trace.stats.endtime - raw_trace.stats.starttime  # total_seconds
+        ppsd = PPSD(raw_trace.stats, metadata=inventory, ppsd_length=int(dt))
+        ppsd.add(raw_trace)
+        return ppsd
+
+
 if __name__ == "__main__":
 
     from os.path import dirname, join, sys
@@ -373,7 +399,7 @@ if __name__ == "__main__":
     periods = [.2, 5]  # [0.05, 0.2, 2, 5, 9, 20]
     print(f'Periods to calculate on test miniseed: {periods}')
     t = time.time()
-    _ = old.psd_values(periods, stream[0], inv)
+    _ = _old.psd_values(periods, stream[0], inv)
     t = time.time()-t
     print(f'Old method, values: {str(_)}, time: {t} s')
     t = time.time()

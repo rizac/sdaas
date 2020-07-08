@@ -1,2 +1,1 @@
-from sdaas.anomalyscore import (from_features, from_traces,
-                                get_features)
+from sdaas.anomalyscore import (tracescore, featscore, tracefeat)
