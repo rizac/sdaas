@@ -41,23 +41,25 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-def process(data, metadata='', threshold=-1.0, colors=True,
-            verbose=1, waveform_length=120,
-            download_count=5, download_timeout=30,
+def process(data, metadata='', threshold=-1.0, colors=False,
+            verbose=1, waveform_length=120,  # in seconds
+            download_count=5, download_timeout=30,  # in seconds
             **open_kwargs):
     '''
     Computes and prints the amplitude anomaly scores of each waveform segment
-    in 'data', i.e. a score in [0, 1] representing how much a recorded signal
-    amplitude is likely to be an anomaly or outlier (scores close to 1) vs.
-    regular signal or inlier (scores close to 0).
+    in 'data', i.e. a score in [0, 1] analyzing the waveform amplitude and
+    describing how much the recorded signal is likely to be an outlier/anomaly
+    (i.e., scores close to 1. Conversely, scores close to 0 denote
+    inliers/regular data).
 
-    Anomalies might be due to artifacts in the data (e.g. spikes,
-    or zero-amplitude signals) or in the metadata (e.g. stage gain errors).
+    Anomalies are typically due to artifacts in the data (e.g. spikes,
+    zero-amplitude signals) or in the metadata (e.g. stage gain errors).
 
-    0.5 represents the theoretical decision threshold T. Evaluation results
-    revealed that it is generally true to assume data with scores
-    <=0.5 as inliers, but for fine-grained binary classification problems the
-    onset of T should be adjusted empirically (see parameter 'threshold').
+    Being the score in [0, 1], 0.5 represents the theoretical decision
+    threshold T. Evaluation results show that it is generally safe to assume
+    as inlier data with scores <= 0.5, but if the score has to be used for
+    binary classification, the onset of T should be adjusted empirically
+    (see also parameter 'threshold').
 
     :param data: the data to be tested. In conjunction with 'metadata', the
         following combinations of options are valid (note that urls must be
@@ -71,9 +73,9 @@ def process(data, metadata='', threshold=-1.0, colors=True,
                   url (e.g. http://service.iris.edu/fdsnws/dataselect/1/...)
         metadata: file (.xml)
                   url (e.g. http://service.iris.edu/fdsnws/station/1/...)
-                  missing/not provided. In this case, 'data' must be an url, or
-                  a directory containing also a Station XML file (.xml). In
-                  any other case an error is raised
+                  missing/not provided (in this case, 'data' must be an url, or
+                  a directory containing also a StationXML file with extension
+                  .xml. In any other case an error is raised)
 
         To test anomalies in metadata:
         ------------------------------
@@ -86,10 +88,10 @@ def process(data, metadata='', threshold=-1.0, colors=True,
                   See also parameters 'waveform_count' and 'download_timeout'
         metadata: ignored (if provided, a conflict error is raised)
 
-    :param metadata: the metadata. as path to a file (Station XML),
+    :param metadata: the metadata, as path to a file (Station XML),
         or url. See 'data' argument
 
-    :param threshold: float. decision threshold T. When in [0, 1], scores > T
+    :param threshold: decision threshold T. When in [0, 1], scores > T
         will be classified as anomaly (and thus scores<=T as regular data), and
         an additional column 'anomaly' with values 0 (False) or 1 (True) will
         be shown. The algorithm default theoretical T=0.5 is generally ok
@@ -105,12 +107,12 @@ def process(data, metadata='', threshold=-1.0, colors=True,
         and test. Used only when testing anomalies in metadata (see 'data'),
         ignored otherwise. Default: 120
 
-    :param download_count: Maximum number of downloads to attempt while
+    :param download_count: maximum number of downloads to attempt while
         fetching waveforms to test. In conjunction with 'download_timeout',
         controls the download execution time. Used only when testing anomalies
         in metadata (see 'data'), ignored otherwise. Default: 5
 
-    :param download_timeout: Maximum time (in seconds) to spend when
+    :param download_timeout: maximum time (in seconds) to spend when
         downloading waveforms to test. In conjunction with 'waveform_count',
         controls the download execution time. Used only when testing anomalies
         in metadata (see 'data'), ignored otherwise. Default: 30
@@ -147,13 +149,12 @@ def process(data, metadata='', threshold=-1.0, colors=True,
                 raise ValueError('"metadata" argument required')
     elif is_station_fdsn:
         if metadata:
-            raise ValueError('Conflict: if you input "data" as station '
+            raise ValueError('Conflict: if you input "data" as station url '
                              'you can not also provide the "metadata"'
                              'argument')
         metadata = data
         data = get_dataselect_url(get_querydict(metadata))
-        iter_stream = download_streams(data, waveform_length,
-                                       download_count,
+        iter_stream = download_streams(data, waveform_length, download_count,
                                        download_timeout)
     else:
         raise ValueError(f'Invalid file/directory/URL path: {data}')
@@ -168,6 +169,7 @@ def process(data, metadata='', threshold=-1.0, colors=True,
     print_colors = stdout_is_atty and colors and th_set
     endcolor = bcolors.ENDC if print_colors else ''
     color = ''
+    outlier = False
 
     echo(f'{"trace":<15} {"start":<19} {"end":<19} {"score":<5}' +
          (f' {"anomaly":<7}' if th_set else ''))
@@ -176,14 +178,16 @@ def process(data, metadata='', threshold=-1.0, colors=True,
     for stream in iter_stream:
         scores = tracescore(stream, inv)
         for trace, score in zip(stream, scores):
-            if print_colors:
-                color = bcolors.OKGREEN if score <= threshold else \
-                    bcolors.WARNING  # if score < 0.75 else bcolors.FAIL
-            id_, stime_, etime_ = get_id(trace)
-            print(f'{id_ : <15} {stime_ : <19} {etime_ : <19} '
-                  f'{color}{score : 5.2f}{endcolor}' +
-                  (f' {color}{score > threshold: >7d}{endcolor}'
-                   if th_set else ''))
+            if th_set:
+                outlier = score > threshold
+                if print_colors:
+                    color = bcolors.WARNING if outlier else bcolors.OKGREEN
+                # bcolors.FAIL
+            id_, st_, et_ = get_id(trace)
+            print(f'{id_:<15} {st_:<19} {et_:<19} '
+                  f'{color}' +
+                  f'{score : 5.2f}' + (f' {outlier:>7d}' if th_set else '') +
+                  f'{endcolor}')
 
 
 def read_metadata(path_or_url):
@@ -198,8 +202,8 @@ def read_data(path_or_url):
     try:
         return read(path_or_url, format='MSEED')
     except Exception as exc:
-            raise Exception(f'Invalid waveform (mseed) file: {str(exc)}\n'
-                            f' (path/url: {path_or_url})')
+        raise Exception(f'Invalid waveform (mseed) file: {str(exc)}\n'
+                        f' (path/url: {path_or_url})')
 
 
 def get_id(trace):
@@ -258,17 +262,13 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
             # str(herr2) which is of the form:
             # 400 HTTP Error:  for url: <URL>
             # so le't try to infer the code:
-            doraise = False
             for _ in str(herr2).split(' '):
                 try:
                     code = int(_)
                     if code >= 400 and code < 500:
-                        doraise = True
-                        break
-                except:
+                        raise herr2 from None
+                except ValueError:
                     pass
-            if doraise:
-                raise
         except Exception as exc:
             pass
         total_time += (time.time() - t)
@@ -357,16 +357,6 @@ def get_url(querydict, start=None, end=None, **additional_args):
     for key, val in args.items():
         url += f'&{str(key)}={str(val)}'
     return url
-#     net, sta, loc, cha = args['net'], args['sta'], args['loc'], args['cha']
-#     url = (f"args['URL']?net={net}&sta={sta}&loc={loc}&cha={cha}")
-#     if start is None:
-#         start = args['start']
-#     if end is None:
-#         end = args['end']
-#     url += f'&start={start.isoformat()}&end={end.isoformat()}'
-#     for key, val in additional_args.items():
-#         url += f'&{str(key)}={str(val)}'
-#     return url
 
 
 def get_url_datetime_arg(query_dict, url, *keys):
@@ -400,7 +390,7 @@ def getdoc(param=None):
     stripstart = "\n    " if not param else "\n        "
     try:
         return re.search(pattern, process.__doc__, flags).\
-            group(1).strip().replace(stripstart, "\n")
+            group(1).strip().replace(stripstart, "\n") + '\n'
     except AttributeError:
         return 'No doc available'
 
@@ -426,7 +416,7 @@ parser = argparse.ArgumentParser(
 # https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument
 parser.add_argument('data',  # <- positional argument
                     type=str,
-                    # dest='data',  # invalid for positional argument 
+                    # dest='data',  # invalid for positional argument
                     metavar='data',
                     help=getdoc('data'))
 parser.add_argument('-m',  # <- optional argument
@@ -442,7 +432,7 @@ parser.add_argument('-th',
                     metavar='threshold',
                     help=getdoc('threshold'))
 parser.add_argument('-c',
-                    action='store_true' if getdef('colors') else 'store_false',
+                    action='store_false' if getdef('colors') else 'store_true',
                     dest='colors',
                     # metavar='colors',  # invalid for store_true action
                     help=getdoc('colors'))
@@ -466,8 +456,9 @@ parser.add_argument('-dt',  # <- optional argument
                     help=getdoc('download_timeout'))
 args = parser.parse_args()
 try:
-    sys.exit(process(**vars(args)))
+    process(**vars(args))
+    sys.exit(0)
 except Exception as exc:
-    raise
+    # raise
     print(f'ERROR: {str(exc)}', file=sys.stderr)
     sys.exit(1)
