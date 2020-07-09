@@ -1,8 +1,12 @@
+'''Main module implementing the cli (command line interface for computing
+seismic waveforms anomaly scores'''
+
 import argparse
 from urllib import parse
 import sys
 import re
 import time
+import inspect
 from random import randrange, shuffle
 from datetime import datetime, timedelta
 from os.path import isdir, splitext, isfile, join, abspath, basename
@@ -37,52 +41,75 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-def process(data, metadata, threshold=0.6, colors=True,
-            verbose=1, metadata_wlen_sec=120,
-            metadata_wmaxdownloads=5, metadata_wtimeout_sec=60,
+def process(data, metadata='', threshold=-1.0, colors=True,
+            verbose=1, waveform_length=120,
+            download_count=5, download_timeout=30,
             **open_kwargs):
     '''
-    Computes and prints the anomaly scores of data
+    Computes and prints the amplitude anomaly scores of data, i.e. a score
+    in [0, 1] representing how much the recorded amplitude of the
+    signal is likely to be an anomaly, or outlier. For binary classification
+    problems where the score needs to be converted to the classes "inlier/regular"
+    vs. "outlier/anomaly", although it is generally safe to treat
+    scores <=0.5 as inliers, experiments revealed that the optimal threshold
+    should be evaluated empirically as it is most likely application dependent
+    (see also 'threshold').
 
     :param data: the data to be tested. In conjunction with 'metadata', the
         following combinations of options are valid (note that urls must be
-        FDSN compliant with least the query parameters "net", "sta" and
-        "start" provided):
+        FDSN compliant with at least the query parameters "net", "sta" and
+        "start" provided. For info see https://www.fdsn.org/webservices/):
 
+        To test anomalies in waveform data:
+        -----------------------------------
         data:     file (.mseed)
+                  directory (this will test all .mseed files in the directory)
                   url (e.g. http://service.iris.edu/fdsnws/dataselect/1/...)
         metadata: file (.xml)
                   url (e.g. http://service.iris.edu/fdsnws/station/1/...)
-                  missing/not provided. In this case, 'data' must be an url
+                  missing/not provided. In this case, 'data' must be an url or
+                   a directory containing also a Station XML file (.xml). In
+                   any other case (e.g., data is a file), an error is raised
 
-        data:     directory. This will test all .mseed files in the directory
-        metadata: file (.xml)
-                  url (e.g. http://service.iris.edu/fdsnws/station/1/...)
-                  missing/not provided. In this case the directory must contain
-                  a Station XML file (.xml) that the program will read
-
-        data:     url (e.g. http://service.iris.edu/fdsnws/station/1/...). This
-                  tests a station metadata. The url should have either no
-                  "level" query parameter specified, or "level=response". The
-                  routine randomly downloads 'max_segments' segments recorded
-                  by the station and computes their anomaly score. Scores
-                  persistently low (<=0.5) or high (>>0.5) denote "good" or
-                  "bad" metadata, respectively
+        To test anomalies in metadata:
+        ------------------------------
+        data:     url (e.g. http://service.iris.edu/fdsnws/station/1/...). The
+                   url should have either no "level" query parameter specified,
+                   or "level=response". The routine randomly downloads
+                   'waveform_count' segments recorded by the station and computes
+                   their anomaly score. Scores persistently low (<=0.5) or
+                   high (>>0.5) denote "good" or "bad" metadata, respectively.
+                   See also parameters 'waveform_count' and 'download_timeout'
         metadata: ignored (if provided, a conflict error is raised)
 
-    :param metadata: the (optional) metadata, file path to a Station XML file,
-        url. See 'data' argument
+    :param metadata: the (optional) metadata. as path to a file (Station XML),
+        or url. See 'data' argument
 
-    :param threshold: float in [0, 1], sets the decision threshold (DT) for
-        classifying recordings with scores <= DT as "I" (inliers / normal
-        recording) vs. "O" (outliers or anomalies, with scores > DT).
-        This argument is by default -1 (no  DT). Otherwise, the default
-        theoretically DT of 0.5 is generally a good choice, although an optimal
-        DT should be tuned and set empirically (in two practical scenarios
-        we observed the optimal DT to be between 0.5 and 0.6)
+    :param threshold: float. When in [0, 1], it sets the decision threshold (DT)
+        for classifying data based on their score. A column 'anomaly' will be
+        printed with values 0 (False) or 1 (True) for scores <= DT and > DT,
+        respectively. The algorithm default theoretical DT is 0.5, which is
+        generally ok for a fast estimation, although for a more fine grained
+        classification it is best practice to tune and set the optimal DT
+        empirically (e.g., in two practical scenarios we observed the optimal
+        DT to be between 0.5 and 0.6). Default is -1 (do not set any threshold)
 
-    :param colors: print regular recordings in green, and anomalies in yellow.
+    :param colors: print anomalies in yellow, and regular data in green.
         Ignored if 'threshold' is not set or -1 (the default)
+
+    :param waveform_length: length (in seconds) of the waveforms to download
+        and test. Used only when testing anomalies in metadata (see 'data'),
+        ignored otherwise. Default: 120
+
+    :param download_count: Maximum number of downloads to attempt while
+        fetching waveforms to test. In conjunction with 'download_timeout',
+        controls the download execution time. Used only when testing anomalies
+        in metadata (see 'data'), ignored otherwise. Default: 5
+
+    :param download_timeout: Maximum time (in seconds) to spend when
+        downloading waveforms to test. In conjunction with 'waveform_count',
+        controls the download execution time. Used only when testing anomalies
+        in metadata (see 'data'), ignored otherwise. Default: 30
     '''
     echo = print
     if not verbose:
@@ -121,9 +148,9 @@ def process(data, metadata, threshold=0.6, colors=True,
                              'argument')
         metadata = data
         data = get_dataselect_url(get_querydict(metadata))
-        iter_stream = download_streams(data, metadata_wlen_sec,
-                                       metadata_wmaxdownloads,
-                                       metadata_wtimeout_sec)
+        iter_stream = download_streams(data, waveform_length,
+                                       download_count,
+                                       download_timeout)
     else:
         raise ValueError(f'Invalid file/directory/URL path: {data}')
     echo(f'Data    : "{data}"')
@@ -145,15 +172,11 @@ def process(data, metadata, threshold=0.6, colors=True,
     for stream in iter_stream:
         scores = tracescore(stream, inv)
         for trace, score in zip(stream, scores):
-            # if not np.isnan(score) or not is_station:
-            start = trace.stats.starttime.datetime
-            end = trace.stats.endtime.datetime
             if print_colors:
                 color = bcolors.OKGREEN if score <= threshold else \
                     bcolors.WARNING  # if score < 0.75 else bcolors.FAIL
-            print(f'{trace.get_id() : <15} '
-                  f'{start.replace(microsecond=0).isoformat() : <19} '
-                  f'{end.replace(microsecond=0).isoformat() : <19} '
+            id_, stime_, etime_ = get_id(trace)
+            print(f'{id_ : <15} {stime_ : <19} {etime_ : <19} '
                   f'{color}{score : 5.2f}{endcolor}' +
                   (f' {color}{score > threshold: >7d}{endcolor}'
                    if th_set else ''))
@@ -176,10 +199,21 @@ def read_data(path_or_url):
 
 
 def get_id(trace):
-    start, end = trace.stats.starttime, trace.stats.endtime
-    return (f'{trace.get_id()} '
-            f'{start.datetime.replace(microsecond=0).isoformat()} '
-            f'{end.datetime.replace(microsecond=0).isoformat()}')
+    '''Returns the ID of the given trace as tuple (id, starttime, endtime)
+
+    :return: the tuple of strings (id, starttime, endtime), where id is in the
+    form 'net.sta.loc.cha' and  starttime and endtime are ISO formatted
+    date-time strings
+    '''
+    start, end = trace.stats.starttime.datetime, trace.stats.endtime.datetime
+    # round start and end: first add 1 second and then use .replace (see below)
+    if start.microsecond >= 500000:
+        start = start + timedelta(seconds=1)
+    if end.microsecond >= 500000:
+        end = end + timedelta(seconds=1)
+    return (trace.get_id(),
+            start.replace(microsecond=0).isoformat(),
+            end.replace(microsecond=0).isoformat())
 
 
 def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
@@ -351,19 +385,81 @@ def get_url_arg(query_dict, url, *keys):
     raise KeyError(f'Missing parameter "{"/".join(keys)}" in {url}')
 
 
+def getdoc(param=None):
+    '''Parses the doc of the process function and returns the doc for the
+    given param. If the latter is None, returns the doc for the whole
+    function (portion of text from start until first occurrence of ":param "
+    '''
+    flags = re.DOTALL  # @UndefinedVariable
+    pattern = "^(.*?)\\n\\s*\\:param " if not param else \
+        f"\\:param {param}: (.*?)(?:$|\\:param)"
+    stripstart = "\n    " if not param else "\n        "
+    try:
+        return re.search(pattern, process.__doc__, flags).\
+            group(1).strip().replace(stripstart, "\n")
+    except AttributeError:
+        return 'No doc available'
+
+
+def getdef(param):
+    func = process
+    signature = inspect.signature(func)
+    val = signature.parameters[param]
+    if val.default is not inspect.Parameter.empty:
+        return val.default
+    raise ValueError(f'"{param}" has no default')
+
+
+#####################
+# ArgumentParser code
+#####################
+
 parser = argparse.ArgumentParser(
-    description=("Computes amplitude anomaly scores on waveform data and "
-                 "metadata."),
-    epilog=process.__doc__.replace("\\n    ", ""),
+    description=getdoc(),
     formatter_class=RawTextHelpFormatter
 )
-parser.add_argument('data', metavar='DATA', type=str,
-                    help=('the waveform data. It can be the file path of an '
-                          'existing miniSEED, a directory of miniSEEDs, or '
-                          'a FDSN-compliant URL of a data web service'))
-parser.add_argument('-m', '--metadata', type=str,
-                    help='the metadata (station inventory, xml format)')
-
+# https://docs.python.org/dev/library/argparse.html#action
+# https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument
+parser.add_argument('data',  # <- positional argument
+                    type=str,
+                    # dest='data',  # invalid for positional argument 
+                    metavar='data',
+                    help=getdoc('data'))
+parser.add_argument('-m',  # <- optional argument
+                    type=type(getdef('metadata')),
+                    default=getdef('metadata'),
+                    dest='metadata',
+                    metavar='metadata',
+                    help=getdoc('metadata'))
+parser.add_argument('-th',
+                    type=type(getdef('threshold')),
+                    default=getdef('threshold'),
+                    dest='threshold',
+                    metavar='threshold',
+                    help=getdoc('threshold'))
+parser.add_argument('-c',
+                    action='store_true' if getdef('colors') else 'store_false',
+                    dest='colors',
+                    # metavar='colors',  # invalid for store_true action
+                    help=getdoc('colors'))
+parser.add_argument('-wl',  # <- optional argument
+                    type=type(getdef('waveform_length')),
+                    default=getdef('waveform_length'),
+                    dest='waveform_length',
+                    metavar='waveform_length',
+                    help=getdoc('waveform_length'))
+parser.add_argument('-dc',  # <- optional argument
+                    type=type(getdef('download_count')),
+                    default=getdef('download_count'),
+                    dest='download_count',
+                    metavar='download_count',
+                    help=getdoc('download_count'))
+parser.add_argument('-dt',  # <- optional argument
+                    type=type(getdef('download_timeout')),
+                    default=getdef('download_timeout'),
+                    dest='download_timeout',
+                    metavar='download_timeout',
+                    help=getdoc('download_timeout'))
 args = parser.parse_args()
 try:
     sys.exit(process(**vars(args)))
