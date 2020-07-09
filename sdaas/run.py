@@ -46,14 +46,18 @@ def process(data, metadata='', threshold=-1.0, colors=True,
             download_count=5, download_timeout=30,
             **open_kwargs):
     '''
-    Computes and prints the amplitude anomaly scores of data, i.e. a score
-    in [0, 1] representing how much the recorded amplitude of the
-    signal is likely to be an anomaly, or outlier. For binary classification
-    problems where the score needs to be converted to the classes "inlier/regular"
-    vs. "outlier/anomaly", although it is generally safe to treat
-    scores <=0.5 as inliers, experiments revealed that the optimal threshold
-    should be evaluated empirically as it is most likely application dependent
-    (see also 'threshold').
+    Computes and prints the amplitude anomaly scores of each waveform segment
+    in 'data', i.e. a score in [0, 1] representing how much a recorded signal
+    amplitude is likely to be an anomaly or outlier (scores close to 1) vs.
+    regular signal or inlier (scores close to 0).
+
+    Anomalies might be due to artifacts in the data (e.g. spikes,
+    or zero-amplitude signals) or in the metadata (e.g. stage gain errors).
+
+    0.5 represents the theoretical decision threshold T. Evaluation results
+    revealed that it is generally true to assume data with scores
+    <=0.5 as inliers, but for fine-grained binary classification problems the
+    onset of T should be adjusted empirically (see parameter 'threshold').
 
     :param data: the data to be tested. In conjunction with 'metadata', the
         following combinations of options are valid (note that urls must be
@@ -67,19 +71,19 @@ def process(data, metadata='', threshold=-1.0, colors=True,
                   url (e.g. http://service.iris.edu/fdsnws/dataselect/1/...)
         metadata: file (.xml)
                   url (e.g. http://service.iris.edu/fdsnws/station/1/...)
-                  missing/not provided. In this case, 'data' must be an url or
-                   a directory containing also a Station XML file (.xml). In
-                   any other case (e.g., data is a file), an error is raised
+                  missing/not provided. In this case, 'data' must be an url, or
+                  a directory containing also a Station XML file (.xml). In
+                  any other case an error is raised
 
         To test anomalies in metadata:
         ------------------------------
         data:     url (e.g. http://service.iris.edu/fdsnws/station/1/...). The
-                   url should have either no "level" query parameter specified,
-                   or "level=response". The routine randomly downloads
-                   'waveform_count' segments recorded by the station and computes
-                   their anomaly score. Scores persistently low (<=0.5) or
-                   high (>>0.5) denote "good" or "bad" metadata, respectively.
-                   See also parameters 'waveform_count' and 'download_timeout'
+                  url should have either no "level" query parameter specified,
+                  or "level=response". The routine randomly downloads
+                  'waveform_count' segments recorded by the station and computes
+                  their anomaly score. Scores persistently low (<=0.5) or
+                  high (>>0.5) denote "good" or "bad" metadata, respectively.
+                  See also parameters 'waveform_count' and 'download_timeout'
         metadata: ignored (if provided, a conflict error is raised)
 
     :param metadata: the metadata. as path to a file (Station XML),
