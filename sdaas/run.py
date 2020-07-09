@@ -37,33 +37,52 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-def process(data, metadata, verbose=1, metadata_wlen_sec=120,
+def process(data, metadata, threshold=0.6, colors=True,
+            verbose=1, metadata_wlen_sec=120,
             metadata_wmaxdownloads=5, metadata_wtimeout_sec=60,
-            print_colors=True,
             **open_kwargs):
     '''
-    The following combinations of options are valid (note that urls must be
-    FDSN compliant with least the query parameters "net", "sta" and "start"):
+    Computes and prints the anomaly scores of data
 
-    data:     file (.mseed)
-              url (e.g. http://service.iris.edu/fdsnws/dataselect/1/)
-    metadata: file (.xml)
-              url (e.g. http://service.iris.edu/fdsnws/station/1/)
-              missing/not provided. In this case, 'data' must be an url
+    :param data: the data to be tested. In conjunction with 'metadata', the
+        following combinations of options are valid (note that urls must be
+        FDSN compliant with least the query parameters "net", "sta" and
+        "start" provided):
 
-    data:     directory. This will test all .mseed files in the directory
-    metadata: file (.xml)
-              url (e.g. http://service.iris.edu/fdsnws/station/1/)
-              missing/not provided. In this there must be a .xml file inside
-              'data', that the program will read as metadata
+        data:     file (.mseed)
+                  url (e.g. http://service.iris.edu/fdsnws/dataselect/1/...)
+        metadata: file (.xml)
+                  url (e.g. http://service.iris.edu/fdsnws/station/1/...)
+                  missing/not provided. In this case, 'data' must be an url
 
-    data:     url (e.g. http://service.iris.edu/fdsnws/station/1/). This tests
-              a station metadata. The url should have either no "level" query
-              parameter specified, or "level=response". The program randomly
-              downloads 'max_segments' segments recorded by the station and
-              computes their anomaly score. Scores persistently low (<=0.5) or
-              high (>>0.5) denote "good" or "bad" metadata, respectively
-    metadata: ignored (if provided, a conflict error is raised)
+        data:     directory. This will test all .mseed files in the directory
+        metadata: file (.xml)
+                  url (e.g. http://service.iris.edu/fdsnws/station/1/...)
+                  missing/not provided. In this case the directory must contain
+                  a Station XML file (.xml) that the program will read
+
+        data:     url (e.g. http://service.iris.edu/fdsnws/station/1/...). This
+                  tests a station metadata. The url should have either no
+                  "level" query parameter specified, or "level=response". The
+                  routine randomly downloads 'max_segments' segments recorded
+                  by the station and computes their anomaly score. Scores
+                  persistently low (<=0.5) or high (>>0.5) denote "good" or
+                  "bad" metadata, respectively
+        metadata: ignored (if provided, a conflict error is raised)
+
+    :param metadata: the (optional) metadata, file path to a Station XML file,
+        url. See 'data' argument
+
+    :param threshold: float in [0, 1], sets the decision threshold (DT) for
+        classifying recordings with scores <= DT as "I" (inliers / normal
+        recording) vs. "O" (outliers or anomalies, with scores > DT).
+        This argument is by default -1 (no  DT). Otherwise, the default
+        theoretically DT of 0.5 is generally a good choice, although an optimal
+        DT should be tuned and set empirically (in two practical scenarios
+        we observed the optimal DT to be between 0.5 and 0.6)
+
+    :param colors: print regular recordings in green, and anomalies in yellow.
+        Ignored if 'threshold' is not set or -1 (the default)
     '''
     echo = print
     if not verbose:
@@ -107,24 +126,22 @@ def process(data, metadata, verbose=1, metadata_wlen_sec=120,
                                        metadata_wtimeout_sec)
     else:
         raise ValueError(f'Invalid file/directory/URL path: {data}')
-    echo(f'Data (MiniSEED file(s)): "{data}"')
-    echo(f'Metadata (Station XML): "{metadata}"')
+    echo(f'Data    : "{data}"')
+    echo(f'Metadata: "{metadata}"')
 
     inv = read_metadata(metadata)
 
-    echo('Anomaly scores in [0, 1]:')
+    echo('Computing anomaly score(s) in [0, 1]:')
     stdout_is_atty = sys.stdout.isatty()
-    print_colors = stdout_is_atty and print_colors
+    th_set = 0 <= threshold <= 1
+    print_colors = stdout_is_atty and colors and th_set
     endcolor = bcolors.ENDC if print_colors else ''
     color = ''
-    if print_colors:
-        echo(f'{bcolors.BOLD}NOTE: colored scores (green: ok and yellow: '
-             'warning, potential anomaly)\n'
-             f'are just a visual hint, the threshold used (0.5) is '
-             f'theoretical and might need to be tuned or re-adjusted{endcolor}')
 
-    echo(f'{"trace":<15} {"start":<19} {"end":<19} {"score":<5}')
-    echo(f'{"-" * 15}+{"-" * 19}+{"-" * 19}+{"-" * 5}')
+    echo(f'{"trace":<15} {"start":<19} {"end":<19} {"score":<5}' +
+         (f' {"anomaly":<7}' if th_set else ''))
+    echo(f'{"-" * 15}+{"-" * 19}+{"-" * 19}+{"-" * 5}' +
+         (f'+{"-" * 7}' if th_set else ''))
     for stream in iter_stream:
         scores = tracescore(stream, inv)
         for trace, score in zip(stream, scores):
@@ -132,12 +149,14 @@ def process(data, metadata, verbose=1, metadata_wlen_sec=120,
             start = trace.stats.starttime.datetime
             end = trace.stats.endtime.datetime
             if print_colors:
-                color = bcolors.OKGREEN if score <= 0.5 else \
+                color = bcolors.OKGREEN if score <= threshold else \
                     bcolors.WARNING  # if score < 0.75 else bcolors.FAIL
             print(f'{trace.get_id() : <15} '
                   f'{start.replace(microsecond=0).isoformat() : <19} '
                   f'{end.replace(microsecond=0).isoformat() : <19} '
-                  f'{color}{score : 5.2f}{endcolor}')
+                  f'{color}{score : 5.2f}{endcolor}' +
+                  (f' {color}{score > threshold: >7d}{endcolor}'
+                   if th_set else ''))
 
 
 def read_metadata(path_or_url):
