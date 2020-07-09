@@ -82,17 +82,17 @@ def process(data, metadata='', threshold=-1.0, colors=True,
                    See also parameters 'waveform_count' and 'download_timeout'
         metadata: ignored (if provided, a conflict error is raised)
 
-    :param metadata: the (optional) metadata. as path to a file (Station XML),
+    :param metadata: the metadata. as path to a file (Station XML),
         or url. See 'data' argument
 
-    :param threshold: float. When in [0, 1], it sets the decision threshold (DT)
-        for classifying data based on their score. A column 'anomaly' will be
-        printed with values 0 (False) or 1 (True) for scores <= DT and > DT,
-        respectively. The algorithm default theoretical DT is 0.5, which is
-        generally ok for a fast estimation, although for a more fine grained
-        classification it is best practice to tune and set the optimal DT
-        empirically (e.g., in two practical scenarios we observed the optimal
-        DT to be between 0.5 and 0.6). Default is -1 (do not set any threshold)
+    :param threshold: float. decision threshold T. When in [0, 1], scores > T
+        will be classified as anomaly (and thus scores<=T as regular data), and
+        an additional column 'anomaly' with values 0 (False) or 1 (True) will
+        be shown. The algorithm default theoretical T=0.5 is generally ok
+        for a fast estimation, although for a more fine grained classification
+        we suggest to tune and set the optimal T empirically (e.g., in two
+        practical use cases we observed the optimal T to be between 0.5 and 0.6).
+        Default is -1 (do not set the decision threshold)
 
     :param colors: print anomalies in yellow, and regular data in green.
         Ignored if 'threshold' is not set or -1 (the default)
