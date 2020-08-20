@@ -34,7 +34,7 @@ source .env/bin/activate
 #### 1. with requirements.txt
 
 ```bash
-pip install --upgrade pip && pip install -r ./requirements.txt
+pip install --upgrade pip && pip install "numpy==1.15.4" && pip install -r ./requirements.txt
 ```
 
 Pros:
@@ -54,8 +54,9 @@ pip install --upgrade pip && pip install "numpy>=1.15.4" && python setup.py inst
 Pros:
   - The program from the terminal can be invoked via `sdaas` (simpler)
   - If the virtual environment is new (usual case), skip this point. Otherwise, if it already has stuff installed,
-    there are less chances of version conflicts (although note that scikit-learn is installed with a specific version
-    (required to open the saved Isolation Forest model) and thus it might override already installed libraries)
+    there are less chances of version conflicts (although scikit-learn is installed with a specific
+    version - required to open the saved Isolation Forest model - and thus it might override anyway already
+    installed libraries)
 
 Cons: 
   - Higher chance of using libraries with newer versions and thus untested/unexpected behaviour (we do our best
