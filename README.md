@@ -35,9 +35,10 @@ source .env/bin/activate
 pip install --upgrade pip && pip install -r ./requirements.txt
 ```
 
-PROS: simplest and always working solution (this is why is recommended)
+Pros:
+  - safest and always working solution (this is why is recommended)
 
-CONS: 
+Cons: 
   - The program from the terminal must be invoked via `python sdaas/run.py` (quite verbose)
   - If the virtual environment has already stuff installed, then you might override specific versions
     with this program's versions
@@ -48,11 +49,11 @@ CONS:
 pip install --upgrade pip && pip install "numpy>=1.15.4" && python setup.py install
 ```
 
-PROS:
+Pros:
   - The program from the terminal can be invoked via `sdaas` (simpler)
   - Less chance to interfere with already installed libraries and their versions
 
-CONS: 
+Cons: 
   - High chance of using libraries with newer versions and thus untested/unexpected behaviour (we do our best
     but we cannot keep up rapidly with all the updates of every library, all potential new errors in our code,
     their deprecation warnings, and so on)
