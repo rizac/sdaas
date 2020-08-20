@@ -6,7 +6,7 @@ waveforms (data and metadata)
 """
 
 setup(
-    name='swaas',
+    name='sdaas',
     version='1.1.0',
     description=_README,
     url='https://github.com/rizac/swaas',
@@ -16,7 +16,7 @@ setup(
     install_requires=[
         'numpy>=1.15.4',
         'obspy>=1.1.1',
-        'scikit-learn>=0.21.3'
+        'scikit-learn==0.21.3'
     ],
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -36,7 +36,7 @@ setup(
         'Development Status :: 1 - Beta',
         'Intended Audience :: Education',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: GNU Affero General Public License v3',
+        'License :: OSI Approved :: GNU General Public License v3',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering',
@@ -54,4 +54,12 @@ setup(
     #    "README.md", "LICENSE"]},
     # include_package_data=True,
     zip_safe=False,
+    # To provide executable scripts, use entry points in preference to the
+    # "scripts" keyword. Entry points provide cross-platform support and allow
+    # pip to create the appropriate form of executable for the target platform.
+    entry_points={
+        'console_scripts': [
+            'sdaas=sdaas.run',
+        ],
+    },
 )

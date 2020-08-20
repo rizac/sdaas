@@ -84,16 +84,16 @@ def process(data, metadata='', threshold=-1.0, colors=False,
                   high (>>0.5) denote "good" or "bad" metadata, respectively
         metadata: ignored (if provided, a conflict error is raised)
 
-    :param metadata: the metadata, as path to a file (Station XML),
-        or url. See 'data' argument
+    :param metadata: the metadata, as path to a file (Station XML), or url. See
+        the 'data' argument
 
     :param threshold: decision threshold T. When in [0, 1], scores > T
         will be classified as anomaly (and thus scores<=T as regular data), and
         an additional column 'anomaly' with values 0 (False) or 1 (True) will
-        be shown. The algorithm default theoretical T=0.5 is generally ok
-        for a fast estimation, although for a more fine grained classification
-        we suggest to tune and set the optimal T empirically (e.g., in two
-        practical use cases we observed the optimal T to be between 0.5 and 0.6).
+        be shown. The algorithm default theoretical T=0.5 is generally ok for
+        a fast estimation, although for a more fine grained classification we
+        suggest to tune and set the optimal T empirically (e.g., in two use
+        benchmark cases we observed the optimal T to be between 0.5 and 0.6).
         Default is -1 (do not set the decision threshold)
 
     :param colors: print anomalies in yellow, and regular data in green.
