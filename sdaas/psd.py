@@ -5,14 +5,12 @@ machine learning model (Ifsolation Forest) for anomaly detection in segments
 amplitudes
 '''
 import math
-import time
+
 import numpy as np
 from matplotlib import mlab
 from obspy.signal.util import prev_pow_2
-from obspy.signal.spectral_estimation import PPSD, dtiny, fft_taper
-from obspy.core.stream import read
+from obspy.signal.spectral_estimation import dtiny, fft_taper
 from obspy.core.inventory import Inventory
-from obspy.core.inventory.inventory import read_inventory
 
 
 def psd_values(psd_periods, tr, metadata, special_handling=None,
@@ -253,7 +251,6 @@ def _get_response_from_inventory_new(tr, metadata, nfft):
     return resp
 
 
-
 def _yield_period_binning(psd_periods, period_smoothing_width_octaves):
     # we step through the period range at step width controlled by
     # period_step_octaves (default 1/8 octave)
@@ -327,87 +324,4 @@ def _setup_yield_period_binning(psd_periods, period_smoothing_width_octaves,
             idx += 1
 
         previous_periods = per_left, per_center, per_right
-
-
-class _old:
-    '''container for the old functions used in the paper
-    whereby we created the model used in thius package
-    '''
-
-    @staticmethod
-    def psd_values(periods, raw_trace, inventory):
-        periods = np.asarray(periods)
-        try:
-            ppsd_ = _old.psd(raw_trace, inventory)
-        except Exception as esc:
-            raise ValueError('%s error when computing PSD: %s' %
-                             (esc.__class__.__name__, str(esc)))
-        # check first if we can interpolate ESPECIALLY TO SUPPRESS A WEIRD
-        # PRINTOUT (numpy?): something like '5064 5062' which happens
-        # on IndexError (len(ppsd_.psd_values)=0)
-        if not len(ppsd_.psd_values):
-            raise ValueError('Expected 1 psd array, no psd computed')
-        val = np.interp(
-            np.log10(periods),
-            np.log10(ppsd_.period_bin_centers),
-            ppsd_.psd_values[0]
-        )
-        val[periods < ppsd_.period_bin_centers[0]] = np.nan
-        val[periods > ppsd_.period_bin_centers[-1]] = np.nan
-        return val
-
-    @staticmethod
-    def psd(raw_trace, inventory):
-        # tr = segment.stream(True)[0]
-        dt = raw_trace.stats.endtime - raw_trace.stats.starttime  # total_seconds
-        ppsd = PPSD(raw_trace.stats, metadata=inventory, ppsd_length=int(dt))
-        ppsd.add(raw_trace)
-        return ppsd
-
-
-if __name__ == "__main__":
-
-    from os.path import dirname, join, sys
-
-#     for N in [100, 1000, 10000, 100000]:
-#         a = np.arange(0, N, dtype=float)
-#         i1, i2 = int(1.0*len(a)/4.0), int(3.0*len(a)/4.0)
-#         v1, v2 = a[i1], a[i2]
-#         tmean = []
-#         tsearch = []
-#         for tries in range(10):
-#             t = time.time()
-#             a[(a>v1) & (a<=v2)].mean()
-#             tmean.append(time.time() -t)
-#             t = time.time()
-#             i1 = np.searchsorted(a, v1, side='left')
-#             i2 = np.searchsorted(a, v1, side='right')
-#             a[i1:i2].mean()
-#             tsearch.append(time.time() -t)
-#         tmean, tsearch = np.array(tmean), np.array(tsearch)
-#         print(f'array with {len(a)} elements (sorted ascending)')
-#         print(f'Computational costs (in seconds)')
-#         print(f'Using expr (min median max):       {tmean.min():.5f}, {np.median(tmean):.5f}, {tmean.max():.5f} ')
-#         print(f'Using bin search (min median max): {tsearch.min():.5f}, {np.median(tsearch):.5f}, {tsearch.max():.5f} ')
-# 
-#     sys.exit(0)
-    
-    trace, inv = 'trace_GE.APE.mseed', 'inventory_GE.APE.xml'
-    # trace, inv = 'GE.FLT1..HH?.mseed', 'GE.FLT1.xml'
-    stream = read(join(dirname(__file__), 'miniseed', trace))
-    inv = read_inventory(join(dirname(__file__), 'miniseed', inv))
-    periods = [.2, 5]  # [0.05, 0.2, 2, 5, 9, 20]
-    print(f'Periods to calculate on test miniseed: {periods}')
-    t = time.time()
-    _ = _old.psd_values(periods, stream[0], inv)
-    t = time.time()-t
-    print(f'Old method, values: {str(_)}, time: {t} s')
-    t = time.time()
-    _ = psd_values(periods, stream[0], inv, method='new')
-    t = time.time()-t
-    print(f'New method (new func), values: {str(_)}, time: {t} s')
-    t = time.time()
-    _ = psd_values(periods, stream[0], inv)
-    t = time.time()-t
-    print(f'New method (old func), values: {str(_)}, time: {t} s')
-    
+  

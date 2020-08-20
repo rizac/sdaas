@@ -2,12 +2,13 @@
 seismic waveforms anomaly scores'''
 
 import argparse
+from argparse import RawTextHelpFormatter
 from urllib import parse
 import sys
 import re
 import time
 import inspect
-from random import randrange, shuffle
+from random import randrange
 from datetime import datetime, timedelta
 from os.path import isdir, splitext, isfile, join, abspath, basename
 from os import listdir
@@ -15,11 +16,10 @@ from urllib.error import HTTPError
 from requests.exceptions import HTTPError as RequestsHTTPError
 
 import numpy as np
-
 from obspy.core.stream import read
 from obspy.core.inventory.inventory import read_inventory
-from sdaas.anomalyscore import tracescore
-from argparse import RawTextHelpFormatter
+
+from sdaas.model import get_scores_from_traces
 
 
 # extensions = {
@@ -172,7 +172,7 @@ def process(data, metadata='', threshold=-1.0, colors=False,
     echo(f'{"-" * 15}+{"-" * 19}+{"-" * 19}+{"-" * 5}' +
          (f'+{"-" * 7}' if th_set else ''))
     for stream in iter_stream:
-        scores = tracescore(stream, inv)
+        scores = get_scores_from_traces(stream, inv)
         for trace, score in zip(stream, scores):
             if th_set:
                 outlier = score > threshold

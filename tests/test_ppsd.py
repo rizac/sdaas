@@ -4,13 +4,15 @@ Created on 22 Jun 2020
 @author: riccardo
 '''
 import unittest
-import numpy as np
 from os.path import join, dirname
+
+import numpy as np
 from obspy.core.stream import read, Stream
 from obspy.core.inventory.inventory import read_inventory
-from sdaas.anomalyscore import tracefeat
 from obspy.signal.spectral_estimation import PPSD
-from sdaas import anomalyscore
+
+from sdaas.model import get_scores
+from sdaas.features import get_features_from_traces
 
 
 class Test(unittest.TestCase):
@@ -29,6 +31,7 @@ class Test(unittest.TestCase):
         and the original evaluation algorithm (see _old class) produce the same
         results with scores that do not differ by more than 0.01 (roughly)
         '''
+        rtol = 1e-2
         dataroot = join(dirname(__file__), 'data')
         for file, inv in (
             [
@@ -39,15 +42,14 @@ class Test(unittest.TestCase):
                 join(dataroot, 'GE.FLT1..HH?.mseed'),
                 join(dataroot, 'GE.FLT1.xml')
             ],
-#             [
-#                 ('http://service.iris.edu/fdsnws/dataselect/1/query?'
-#                  '&net=TA&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
-#                  '&end=2019-01-04T23:24:00'),
-#                 ('http://service.iris.edu/fdsnws/station/1/query?&net=TA'
-#                  '&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
-#                  '&end=2019-01-04T23:24:00&level=response'),
-#                 None
-#             ]
+            [
+                ('http://service.iris.edu/fdsnws/dataselect/1/query?'
+                 '&net=TA&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
+                 '&end=2019-01-04T23:24:00'),
+                ('http://service.iris.edu/fdsnws/station/1/query?&net=TA'
+                 '&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
+                 '&end=2019-01-04T23:24:00&level=response')
+            ],
         ):
             # trace, inv = 'GE.FLT1..HH?.mseed', 'GE.FLT1.xml'
             orig_stream = read(file)
@@ -58,14 +60,18 @@ class Test(unittest.TestCase):
                     t = t.copy()
                     t.data *= multip_fact
                     stream.append(t)
-                feats = tracefeat(stream, metadata)
+                # calculate features but do not capture stderr cause it causes
+                # problems with temporarily set output captures:
+                feats = get_features_from_traces(stream, metadata,
+                                                 capture_stderr=False)
                 feats_old = np.asarray([_old.psd_values([5], _, metadata)
                                         for _ in stream])
-                self.assertTrue(np.allclose(feats, feats_old, rtol=5e-3, atol=0))
-                scores = anomalyscore.featscore(feats)
-                scores_old = anomalyscore.featscore(feats_old)
-                self.assertTrue(np.allclose(scores, scores_old, rtol=1e-2, atol=0))
-
+                self.assertTrue(np.allclose(feats, feats_old, rtol=rtol,
+                                            atol=0, equal_nan=True))
+                scores = get_scores(feats)
+                scores_old = get_scores(feats_old)
+                self.assertTrue(np.allclose(scores, scores_old, rtol=rtol,
+                                            atol=0, equal_nan=True))
 
 
 class _old:
