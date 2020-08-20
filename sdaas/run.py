@@ -64,11 +64,11 @@ def process(data, metadata='', threshold=-1.0, colors=False,
 
         To test anomalies in waveform data:
         -----------------------------------
-        data:     file (.mseed)
-                  directory (this will test all .mseed files in the directory)
+        data:     file (.mseed), or
+                  directory (scan and test all .mseed files therein), or
                   url (e.g. http://service.iris.edu/fdsnws/dataselect/1/...)
-        metadata: file (.xml)
-                  url (e.g. http://service.iris.edu/fdsnws/station/1/...)
+        metadata: file (.xml), or
+                  url (e.g. http://service.iris.edu/fdsnws/station/1/...), or
                   missing/not provided (in this case, 'data' must be an url, or
                   a directory containing also a StationXML file with extension
                   .xml. In any other case an error is raised)
