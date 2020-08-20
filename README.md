@@ -25,7 +25,7 @@ in the directory where you cloned this repository,
 python -m venv .env
 ```
 
-2. activate it (every time you use this program, including also before installing it, see below):
+2. activate it (to be done also every time you use this program):
 ```bash
 source .env/bin/activate
 ```
@@ -66,7 +66,8 @@ Cons:
 
 ## Usage
 
-As command line, type `sdaas --help` or `python sdaas/run.py --help` (depending
+Activate your virtual environment (see above), and then to use the program
+as command line application, type `sdaas --help` or `python sdaas/run.py --help` (depending
 on the installation above).
 
 Example(s):
