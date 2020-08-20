@@ -15,15 +15,17 @@ by checking the anomaly score on a set of station recordings.
 
 ## Installation
 
-Always work within a virtual environment:
+Always work within a virtual environment.
+Assuming you are on a terminal,
+in the directory where you cloned this repository,
 
-To create a virtual environment (once):
+1. create a virtual environment (once):
 
 ```bash
 python -m venv .env
 ```
 
-To activate it (every time you use this program, including also before installing it, see below):
+2. activate it (every time you use this program, including also before installing it, see below):
 ```bash
 source .env/bin/activate
 ```
