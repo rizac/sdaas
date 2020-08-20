@@ -40,8 +40,8 @@ Pros:
 
 Cons: 
   - The program from the terminal must be invoked via `python sdaas/run.py` (quite verbose)
-  - If the virtual environment has already stuff installed, then you might override specific versions
-    with this program's versions
+  - If the virtual environment is new (usual case), skip this point. Otherwise, if it already has stuff installed,
+    then you might override specific versions with this program's versions
 
 #### 2. with setup.py
 
@@ -51,11 +51,13 @@ pip install --upgrade pip && pip install "numpy>=1.15.4" && python setup.py inst
 
 Pros:
   - The program from the terminal can be invoked via `sdaas` (simpler)
-  - Less chance to interfere with already installed libraries and their versions
+  - If the virtual environment is new (usual case), skip this point. Otherwise, if it already has stuff installed,
+    there are less chances of version conflicts (although note that scikit-learn is installed with a sepecific version
+    (required to open the saved Isolation Forest model) and thus it might override already installed libraries)
 
 Cons: 
-  - High chance of using libraries with newer versions and thus untested/unexpected behaviour (we do our best
-    but we cannot keep up rapidly with all the updates of every library, all potential new errors in our code,
+  - Higher chance of using libraries with newer versions and thus untested/unexpected behaviour (we do our best
+    but we cannot keep up rapidly with all libraries updates, fix the new errors in our code,
     their deprecation warnings, and so on)
 
 
