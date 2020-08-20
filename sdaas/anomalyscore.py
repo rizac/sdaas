@@ -32,7 +32,12 @@ DEFAULT_TRAINED_MODEL = load(join(dirname(__file__),
 def tracescore(traces, metadata):
     '''Computes the amplitude anomaly score in [0, 1] from the given ObsPy
     Traces element wise. The closer a scores is to 1, the more likely it
-    represents an anomaly. This function can be tested also to test the
+    represents an anomaly. Note however that in the practice scores are returned
+    in the range [0.4, 0.8]: scores <=0.5 can be safely considered inliers
+    (with no particular numerical meaning), and - for binary classification -
+    scores >0.5 need to inspected to determine the onset of the decision
+    threshold.
+    This function can be used also to test the
     correctness of a channel/station metadata on a set of traces
     representing recordings from that channel/station
 

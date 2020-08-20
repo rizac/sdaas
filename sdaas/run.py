@@ -47,23 +47,19 @@ def process(data, metadata='', threshold=-1.0, colors=False,
             **open_kwargs):
     '''
     Computes and prints the amplitude anomaly scores of each waveform segment
-    in 'data', i.e. a score in [0, 1] analyzing the waveform amplitude and
-    describing how much the recorded signal is likely to be an outlier/anomaly
-    (i.e., scores close to 1. Conversely, scores close to 0 denote
-    inliers/regular data).
+    in 'data'. Anomalies are typically due to artifacts in the data (e.g.
+    spikes, zero-amplitude signals) or in the metadata (e.g. stage gain errors).
 
-    Anomalies are typically due to artifacts in the data (e.g. spikes,
-    zero-amplitude signals) or in the metadata (e.g. stage gain errors).
-
-    Being the score in [0, 1], 0.5 represents the theoretical decision
-    threshold T. Evaluation results show that it is generally safe to assume
-    as inlier data with scores <= 0.5, but if the score has to be used for
-    binary classification, the onset of T should be adjusted empirically
-    (see also parameter 'threshold').
+    The anomaly score is a number in [0, 1] (0: regular waveform or inlier,
+    1: anomaly, or outlier) where 0.5 represents the theoretical decision
+    threshold T. Note however that in the practice scores are returned roughly
+    in the range [0.4, 0.8]: scores <=0.5 can be safely considered as inliers,
+    and - for binary classification - scores >0.5 need to inspected to
+    determine the optimal T (see also parameter 'threshold').
 
     :param data: the data to be tested. In conjunction with 'metadata', the
-        following combinations of options are valid (note that urls must be
-        FDSN compliant with at least the query parameters "net", "sta" and
+        following combinations of options are valid (note that urls below must
+        be FDSN compliant with at least the query parameters "net", "sta" and
         "start" provided. For info see https://www.fdsn.org/webservices/):
 
         To test anomalies in waveform data:
@@ -82,10 +78,10 @@ def process(data, metadata='', threshold=-1.0, colors=False,
         data:     url (e.g. http://service.iris.edu/fdsnws/station/1/...). The
                   url should have either no "level" query parameter specified,
                   or "level=response". The routine randomly downloads
-                  'waveform_count' segments recorded by the station and computes
-                  their anomaly score. Scores persistently low (<=0.5) or
-                  high (>>0.5) denote "good" or "bad" metadata, respectively.
-                  See also parameters 'waveform_count' and 'download_timeout'
+                  segments recorded by the station and computes their anomaly
+                  score (see parameters 'download_count', 'waveform_length' and
+                  'download_timeout'). Scores persistently low (<=0.5) or
+                  high (>>0.5) denote "good" or "bad" metadata, respectively
         metadata: ignored (if provided, a conflict error is raised)
 
     :param metadata: the metadata, as path to a file (Station XML),
