@@ -32,7 +32,7 @@ source .env/bin/activate
 #### 1. with requirements.txt
 
 ```bash
-pip install -r ./requirements.txt
+pip install --upgrade pip && pip install -r ./requirements.txt
 ```
 
 PROS: simplest and always working solution (this is why is recommended)
