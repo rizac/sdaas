@@ -194,7 +194,7 @@ def read_metadata(path_or_url):
         return read_inventory(path_or_url, format="STATIONXML")
     except Exception as exc:
         raise Exception(f'Invalid station (xml) file: {str(exc)}\n'
-                        f' (path/url: {path_or_url})')
+                        f'(path/url: {path_or_url})')
 
 
 def read_data(path_or_url):
@@ -202,7 +202,7 @@ def read_data(path_or_url):
         return read(path_or_url, format='MSEED')
     except Exception as exc:
         raise Exception(f'Invalid waveform (mseed) file: {str(exc)}\n'
-                        f' (path/url: {path_or_url})')
+                        f'(path/url: {path_or_url})')
 
 
 def get_id(trace):
@@ -231,10 +231,14 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
     total_period = end - start
     wcount = int(total_period.total_seconds() / float(wlen_sec))
     if wcount < 1:
-        raise ValueError(f'Can not download waveform: '
-                         f'window shorter than {wlen_sec}s')
+        raise ValueError(f'Download period '
+                         f'({int(total_period.total_seconds())}s) '
+                         f'shorter than download window ({wlen_sec}s)')
     wlen = timedelta(seconds=wlen_sec)
-    indices = np.random.choice(wcount, wcount, replace=False)
+    chunksize = int(wcount / float(wmaxcount))
+    indices = np.random.choice(chunksize, wmaxcount, replace=False)
+    for i in range(1, len(indices)):
+        indices[i] += chunksize * i
     timeout_expired = False
 
     # finds 0, timeout -> raise Timeout
@@ -276,8 +280,8 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
                 all(len(_.data) for _ in stream):
             yielded += 1
             yield stream
-        if yielded >= wmaxcount:
-            break
+#         if yielded >= wmaxcount:
+#             break
         if total_time > wtimeout_sec:
             timeout_expired = True
             break
