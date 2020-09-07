@@ -23,9 +23,9 @@ setup(
     # for example:
     # $ pip install -e .[jupyter,test]
     extras_require={
-        'jupyter': [
-            'jupyter>=1.1.0'
-        ],
+        # 'jupyter': [
+        #     'jupyter>=1.1.0'
+        # ],
         'test': []
     },
     author='riccardo zaccarelli',
@@ -52,7 +52,10 @@ setup(
     platforms=["any"],  # FIXME: shouldn't be unix/macos? (shallow google search didn't help)
     # package_data={"smtk": [
     #    "README.md", "LICENSE"]},
-    # include_package_data=True,
+
+    # make the installation process copy also the iforest models (see MANIFEST.in)
+    # for info see https://python-packaging.readthedocs.io/en/latest/non-code-files.html
+    include_package_data=True,
     zip_safe=False,
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow

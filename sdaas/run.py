@@ -42,7 +42,7 @@ class bcolors:
 
 
 def process(data, metadata='', threshold=-1.0, colors=False,
-            verbose=1, waveform_length=120,  # in seconds
+            verbose=0, waveform_length=120,  # in seconds
             download_count=5, download_timeout=30,  # in seconds
             **open_kwargs):
     '''
@@ -96,8 +96,8 @@ def process(data, metadata='', threshold=-1.0, colors=False,
         benchmark cases we observed the optimal T to be between 0.5 and 0.6).
         Default is -1 (do not set the decision threshold)
 
-    :param colors: print anomalies in yellow, and regular data in green.
-        Ignored if 'threshold' is not set or -1 (the default)
+    :param colors: (boolean flag) print anomalies in yellow, and regular data
+        in green. Ignored if 'threshold' is not set or -1 (the default)
 
     :param waveform_length: length (in seconds) of the waveforms to download
         and test. Used only when testing anomalies in metadata (see 'data'),
@@ -112,6 +112,8 @@ def process(data, metadata='', threshold=-1.0, colors=False,
         downloading waveforms to test. In conjunction with 'waveform_count',
         controls the download execution time. Used only when testing anomalies
         in metadata (see 'data'), ignored otherwise. Default: 30
+
+    :param verbose: (boolean flag) increase verbosity
     '''
     echo = print
     if not verbose:
@@ -148,7 +150,8 @@ def process(data, metadata='', threshold=-1.0, colors=False,
             raise ValueError('Conflict: if you input "data" as station url '
                              'you can not also provide the "metadata"'
                              'argument')
-        metadata = data
+        # normalize metadata URL (e.g., add level=response, endtime=now etcetera):
+        metadata = get_station_metadata_url(get_querydict(data))
         data = get_dataselect_url(get_querydict(metadata))
         iter_stream = download_streams(data, waveform_length, download_count,
                                        download_timeout)
@@ -404,57 +407,63 @@ def getdef(param):
 # ArgumentParser code
 #####################
 
-parser = argparse.ArgumentParser(
-    description=getdoc(),
-    formatter_class=RawTextHelpFormatter
-)
-# https://docs.python.org/dev/library/argparse.html#action
-# https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument
-parser.add_argument('data',  # <- positional argument
-                    type=str,
-                    # dest='data',  # invalid for positional argument
-                    metavar='data',
-                    help=getdoc('data'))
-parser.add_argument('-m',  # <- optional argument
-                    type=type(getdef('metadata')),
-                    default=getdef('metadata'),
-                    dest='metadata',
-                    metavar='metadata',
-                    help=getdoc('metadata'))
-parser.add_argument('-th',
-                    type=type(getdef('threshold')),
-                    default=getdef('threshold'),
-                    dest='threshold',
-                    metavar='threshold',
-                    help=getdoc('threshold'))
-parser.add_argument('-c',
-                    action='store_false' if getdef('colors') else 'store_true',
-                    dest='colors',
-                    # metavar='colors',  # invalid for store_true action
-                    help=getdoc('colors'))
-parser.add_argument('-wl',  # <- optional argument
-                    type=type(getdef('waveform_length')),
-                    default=getdef('waveform_length'),
-                    dest='waveform_length',
-                    metavar='waveform_length',
-                    help=getdoc('waveform_length'))
-parser.add_argument('-dc',  # <- optional argument
-                    type=type(getdef('download_count')),
-                    default=getdef('download_count'),
-                    dest='download_count',
-                    metavar='download_count',
-                    help=getdoc('download_count'))
-parser.add_argument('-dt',  # <- optional argument
-                    type=type(getdef('download_timeout')),
-                    default=getdef('download_timeout'),
-                    dest='download_timeout',
-                    metavar='download_timeout',
-                    help=getdoc('download_timeout'))
-args = parser.parse_args()
-try:
-    process(**vars(args))
-    sys.exit(0)
-except Exception as exc:
-    # raise
-    print(f'ERROR: {str(exc)}', file=sys.stderr)
-    sys.exit(1)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description=getdoc(),
+        formatter_class=RawTextHelpFormatter
+    )
+    # https://docs.python.org/dev/library/argparse.html#action
+    # https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument
+    parser.add_argument('data',  # <- positional argument
+                        type=str,
+                        # dest='data',  # invalid for positional argument
+                        metavar='data',
+                        help=getdoc('data'))
+    parser.add_argument('-m',  # <- optional argument
+                        type=type(getdef('metadata')),
+                        default=getdef('metadata'),
+                        dest='metadata',
+                        metavar='metadata',
+                        help=getdoc('metadata'))
+    parser.add_argument('-th',
+                        type=type(getdef('threshold')),
+                        default=getdef('threshold'),
+                        dest='threshold',
+                        metavar='threshold',
+                        help=getdoc('threshold'))
+    parser.add_argument('-c',
+                        action='store_false' if getdef('colors') else 'store_true',
+                        dest='colors',
+                        # metavar='colors',  # invalid for store_true action
+                        help=getdoc('colors'))
+    parser.add_argument('-wl',  # <- optional argument
+                        type=type(getdef('waveform_length')),
+                        default=getdef('waveform_length'),
+                        dest='waveform_length',
+                        metavar='waveform_length',
+                        help=getdoc('waveform_length'))
+    parser.add_argument('-dc',  # <- optional argument
+                        type=type(getdef('download_count')),
+                        default=getdef('download_count'),
+                        dest='download_count',
+                        metavar='download_count',
+                        help=getdoc('download_count'))
+    parser.add_argument('-dt',  # <- optional argument
+                        type=type(getdef('download_timeout')),
+                        default=getdef('download_timeout'),
+                        dest='download_timeout',
+                        metavar='download_timeout',
+                        help=getdoc('download_timeout'))
+    parser.add_argument('-v',
+                        action='store_false' if getdef('verbose') else 'store_true',
+                        dest='verbose',
+                        # metavar='colors',  # invalid for store_true action
+                        help=getdoc('verbose'))
+    args = parser.parse_args()
+    try:
+        process(**vars(args))
+        sys.exit(0)
+    except Exception as exc:
+        # raise
+        print(f'ERROR: {str(exc)}', file=sys.stderr)
+        sys.exit(1)

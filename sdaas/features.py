@@ -16,7 +16,7 @@ PSD_PERIODS_SEC = (5.,)  # use floats for safety (numpy cast errors?)
 FEATURES = tuple(PSD_PERIODS_SEC)
 
 
-def get_features_from_traces(traces, metadata, capture_stderr=True):
+def get_features_from_traces(traces, metadata, capture_stderr=False):
     '''Computes the (1-dimensional) feature space for any given ObsPy Traces,
     element-wise. The feature is the PSD in decibels at 5 seconds. The returned
     value can be used as input in `featscore` to compute the traces anomaly
@@ -28,7 +28,7 @@ def get_features_from_traces(traces, metadata, capture_stderr=True):
     :param metadata: the traces metadata (Obspy Inventory object), usually
         obtained by calling `read_inventory` on a given StationXML file
         (https://www.fdsn.org/xml/station/)
-    :capture_stderr: boolean (default True) captures all standard error
+    :capture_stderr: boolean (default False) captures all standard error
         messages issued by this package AND external libraries. Useful
         if executing from terminal to avoid useless huge amounts of potential
         printouts. The function that most likely causes these kind of issues

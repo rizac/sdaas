@@ -3,16 +3,17 @@ Created on 18 Jun 2020
 
 @author: riccardo
 '''
+import sys
 from os.path import join, dirname
 
 import numpy as np
 from joblib import load
 from sklearn.ensemble.iforest import IsolationForest
 
-from sdaas.features import FEATURES, get_features_from_traces
+from sdaas.features import FEATURES, get_features_from_traces, redirect
 
 
-DEFAULT_TRAINED_MODEL = load(join(dirname(__file__),
+DEFAULT_TRAINED_MODEL = load(join(dirname(__file__), 'models',
                                   'clf=IsolationForest&'
                                   'tr_set=uniform_train.hdf&'
                                   'feats=psd@5sec&'
@@ -24,7 +25,7 @@ DEFAULT_TRAINED_MODEL = load(join(dirname(__file__),
                                   '.sklmodel'))
 
 
-def get_scores_from_traces(traces, metadata):
+def get_scores_from_traces(traces, metadata, capture_stderr=False):
     '''Computes the amplitude anomaly score in [0, 1] from the given ObsPy
     Traces element wise. The closer a scores is to 1, the more likely it
     represents an anomaly. Note however that in the practice scores are returned
@@ -42,13 +43,21 @@ def get_scores_from_traces(traces, metadata):
     :param metadata: the trace metadata (Obspy Inventory object), usually
         obtained by calling `read_inventory` on a given StationXML file
         (https://www.fdsn.org/xml/station/)
+    :capture_stderr: boolean (default False) captures all standard error
+        messages issued by this package AND external libraries. Useful
+        if executing from terminal to avoid useless huge amounts of potential
+        printouts. The function that most likely causes these kind of issues
+        is obspy inventory `read` function. From obspy > 1.1.1, the function
+        will have a flag (boolean argument) to achieve that (when, it depends
+        on when the version with our merged PR will be released)
 
     :return: the amplitude anomaly score in [0, 1] (1=anomaly). NaN values
         denotes undecided outcome, i.e. when the score could not be computed
         (errors or NaN during PSD computation)
     '''
-    psd_values = get_features_from_traces(traces, metadata)
-    return get_scores(psd_values, check_nan=True)
+    with redirect(sys.stderr if capture_stderr else None):
+        psd_values = get_features_from_traces(traces, metadata, False)
+        return get_scores(psd_values, check_nan=True)
 
 
 def get_scores(features, model=None, check_nan=True):
