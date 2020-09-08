@@ -20,20 +20,18 @@ from sdaas.run import process
 
 class Test(unittest.TestCase):
 
-
     def setUp(self):
         pass
 
-
     def tearDown(self):
         pass
-
 
     def test_ppsd(self):
         '''tests a particular case of station download from geofon.
         Needs internet connection
         '''
-        data = "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2020-02-01"
+        data = ("http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE"
+                "&sta=EIL&cha=BH?&start=2020-02-01")
         with patch('sys.stdout', new=StringIO()) as fakeOutput:
             process(data)
             # self.assertEqual(fakeOutput.getvalue().strip(), 'hello world')

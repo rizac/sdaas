@@ -115,6 +115,7 @@ def process(data, metadata='', threshold=-1.0, colors=False,
 
     :param verbose: (boolean flag) increase verbosity
     '''
+    sort_by_time = True
     echo = print
     if not verbose:
         def echo(*args, **kwargs):
@@ -164,29 +165,64 @@ def process(data, metadata='', threshold=-1.0, colors=False,
 
     echo('Computing anomaly score(s) in [0, 1]:')
     stdout_is_atty = sys.stdout.isatty()
-    th_set = 0 <= threshold <= 1
+    th_set = _is_threshold_set(threshold)
     print_colors = stdout_is_atty and colors and th_set
-    endcolor = bcolors.ENDC if print_colors else ''
-    color = ''
-    outlier = False
 
     echo(f'{"trace":<15} {"start":<19} {"end":<19} {"score":<5}' +
          (f' {"anomaly":<7}' if th_set else ''))
     echo(f'{"-" * 15}+{"-" * 19}+{"-" * 19}+{"-" * 5}' +
          (f'+{"-" * 7}' if th_set else ''))
+    results2sortandprint = []
     for stream in iter_stream:
         scores = get_scores_from_traces(stream, inv)
         for trace, score in zip(stream, scores):
-            if th_set:
-                outlier = score > threshold
-                if print_colors:
-                    color = bcolors.WARNING if outlier else bcolors.OKGREEN
-                # bcolors.FAIL
-            id_, st_, et_ = get_id(trace)
-            print(f'{id_:<15} {st_:<19} {et_:<19} '
-                  f'{color}' +
-                  f'{score : 5.2f}' + (f' {outlier:>7d}' if th_set else '') +
-                  f'{endcolor}')
+            id_, st_, et_ = get_id(trace)  # @UnusedVariable
+            if is_station_fdsn or not sort_by_time:
+                print_result('{id_:<15} {st_:<19} {et_:<19}',
+                             score, threshold, print_colors)
+            else:
+                results2sortandprint.append((id_, st_, et_, score))
+
+    for id_, st_, et_, score in \
+            sorted(results2sortandprint, key=lambda _: _[1]):
+        print_result('{id_:<15} {st_:<19} {et_:<19}', score, threshold,
+                     print_colors)
+
+
+def print_result(trace_id, score, threshold, print_colors):
+    th_set = _is_threshold_set(threshold)
+    color = ''
+    outlier = False
+    if th_set:
+        outlier = score > threshold
+        if print_colors:
+            color = bcolors.WARNING if outlier else bcolors.OKGREEN
+        # bcolors.FAIL
+    print(f'{trace_id} '
+          f'{color}' +
+          f'{score : 5.2f}' + (f' {outlier:>7d}' if th_set else '') +
+          f'{bcolors.ENDC if print_colors else ""}')
+
+
+def _is_threshold_set(threshold):
+    return 0 < threshold < 1
+
+
+def _get_column_format_from_files(files, separator=None):
+    longest_seed_id = max(_.get_id() for f in files
+                          for _ in read(f, headonly=True),
+                          key=len)
+    longest_filename = max(basename(_) for _ in files, key=len)
+    if separator is None
+    return 
+    
+
+
+class Reader:
+
+    def __init__(self, data, metadata):
+        
+
 
 
 def read_metadata(path_or_url):
@@ -204,6 +240,8 @@ def read_data(path_or_url):
         raise Exception(f'Invalid waveform (mseed) file: {str(exc)}\n'
                         f'(path/url: {path_or_url})')
 
+
+def read_streams(file_or_dir):
 
 def get_id(trace):
     '''Returns the ID of the given trace as tuple (id, starttime, endtime)

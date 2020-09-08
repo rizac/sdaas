@@ -22,6 +22,9 @@ def get_features_from_traces(traces, metadata, capture_stderr=False):
     value can be used as input in `featscore` to compute the traces anomaly
     scores, also element-wise.
 
+    :see: `featappend` to concatenate two feature arrays returned from this
+        method
+
     :param traces: an iterable of ObsPy Traces (e.g., list of trace, or ObsPy
         Stream object). Tocompute the PSD features of a single trace, pass
         the 1-element list `[trace]`.
@@ -56,6 +59,29 @@ def get_features_from_traces(traces, metadata, capture_stderr=False):
     return values
 
 
+def featappend(features1, features2):
+    '''Calls numpy.append(features1, features2) and works also if one
+    inputs Nones or empty arrays
+
+    :param features1: a Nx1 array of features, e.g. the output of
+        `get_features_from_traces`. None or the empty arrays (including empty
+        lists / tuples) are also valid
+    :param features2: a Nx1 array of features, e.g. the output of
+        `get_features_from_traces`. None or the empty arrays (including empty
+        lists / tuples) are also valid
+
+    :return features1 + features2 in a single M x 1 array
+    '''
+    flen = len(FEATURES)
+
+    if features1 is None or not len(features1):
+        features1 = np.full(shape=(0, flen), fill_value=np.nan)
+    if features2 is None or not len(features2):
+        features2 = np.full(shape=(0, flen), fill_value=np.nan)
+
+    return np.append(features1, features2, axis=0)
+
+
 @contextmanager
 def redirect(src=None, dst=os.devnull):
     '''
@@ -79,9 +105,13 @@ def redirect(src=None, dst=os.devnull):
     # some tools (e.g., pytest) change sys.stderr. In that case, we do want
     # this function to yield and return without changing anything
     # Moreover, passing None as first argument means no redirection
-    try:
-        file_desc = src.fileno()
-    except (AttributeError, OSError) as _:
+    if src is not None:
+        try:
+            file_desc = src.fileno()
+        except (AttributeError, OSError) as _:
+            src = None
+
+    if src is None:
         yield
         return
 
