@@ -19,7 +19,9 @@ import numpy as np
 from obspy.core.stream import read
 from obspy.core.inventory.inventory import read_inventory
 
-from sdaas.model import get_scores_from_traces
+from sdaas.model import get_scores_from_traces, get_scores
+from itertools import cycle
+from sdaas.features import get_features_from_traces, featappend, redirect
 
 
 # extensions = {
@@ -44,6 +46,7 @@ class bcolors:
 def process(data, metadata='', threshold=-1.0, colors=False,
             verbose=0, waveform_length=120,  # in seconds
             download_count=5, download_timeout=30,  # in seconds
+            capture_stderr=True,
             **open_kwargs):
     '''
     Computes and prints the amplitude anomaly scores of each waveform segment
@@ -115,23 +118,32 @@ def process(data, metadata='', threshold=-1.0, colors=False,
 
     :param verbose: (boolean flag) increase verbosity
     '''
+    separator = None
     sort_by_time = True
     echo = print
     if not verbose:
         def echo(*args, **kwargs):
             pass
+#     id2file = None
     is_dir = isdir(data)
     # is_station_file = not is_dir and splitext(data)[1].lower() == '.xml'
     is_file = not is_dir and isfile(data)  # splitext(data)[1].lower() == '.mseed'
     is_fdsn = not is_dir and not is_file and re.match(fdsn_re, data)
     is_station_fdsn = is_fdsn and '/station/' in data
     is_dataselect_fdsn = is_fdsn and '/dataselect' in data
+    filenames = None
     if is_dir:
-        files = [abspath(join(data, _)) for _ in listdir(data)
-                 if splitext(_)[1].lower() == '.mseed']
-        if not files:
+        filenames = [_ for _ in listdir(data)
+                     if splitext(_)[1].lower() == '.mseed']
+#         files = [abspath(join(data, _)) for _ in listdir(data)
+#                  if splitext(_)[1].lower() == '.mseed']
+        if not filenames:
             raise FileNotFoundError('No miniseed found (extension: .mseed)')
-        iter_stream = (read_data(_) for _ in files)
+#         if sort_by_time:
+#             files = sorted(files,
+#                            key=lambda _: read_data(_, headonly=True)[0].stats.starttime)
+        iter_stream = (read_data(abspath(join(data, _))) for _ in filenames)
+#         id2file = get_id2file(files, sort_by_time)
         if not metadata:
             metadata = [abspath(join(data, _)) for _ in listdir(data)
                         if splitext(_)[1].lower() == '.xml']
@@ -141,6 +153,8 @@ def process(data, metadata='', threshold=-1.0, colors=False,
             metadata = metadata[0]
     elif is_file or is_dataselect_fdsn:
         iter_stream = (read_data(_) for _ in [data])
+        if is_file:
+            filenames = [basename(data)]
         if not metadata:
             if is_dataselect_fdsn:
                 metadata = get_station_metadata_url(get_querydict(data))
@@ -163,66 +177,115 @@ def process(data, metadata='', threshold=-1.0, colors=False,
 
     inv = read_metadata(metadata)
 
-    echo('Computing anomaly score(s) in [0, 1]:')
+    # echo('Computing anomaly score(s) in [0, 1]:')
+    echo('Results (each row denotes: trace_id, start_time, end_time, anomaly_score):')
+#     stdout_is_atty = sys.stdout.isatty()
+#     th_set = _is_threshold_set(threshold)
+#     print_colors = stdout_is_atty and colors and th_set and separator is None
+
+#     echo(f'{"trace":<15} {"start":<19} {"end":<19} {"score":<5}' +
+#          (f' {"anomaly":<7}' if th_set else ''))
+#     echo(f'{"-" * 15}+{"-" * 19}+{"-" * 19}+{"-" * 5}' +
+#          (f'+{"-" * 7}' if th_set else ''))
+#    echo('')
+#     results2sortandprint = []
+#     for stream in iter_stream:
+#         scores = get_scores_from_traces(stream, inv)
+#         for trace, score in zip(stream, scores):
+#             id_, st_, et_ = get_id(trace)  # @UnusedVariable
+#             if is_station_fdsn or not sort_by_time:
+#                 print_result('{id_:<15} {st_:<19} {et_:<19}',
+#                              score, threshold, print_colors)
+#             else:
+#                 results2sortandprint.append((id_, st_, et_, score))
+# 
+#     for id_, st_, et_, score in \
+#             sorted(results2sortandprint, key=lambda _: _[1]):
+#         print_result('{id_:<15} {st_:<19} {et_:<19}', score, threshold,
+#                      print_colors)
+
+    max_traceid_len = 3 + 5 + 2 + 3  # default trace id length
+#     is_th_set = 0 < threshold < 1
+#     class_label = None
+    with redirect(None if not capture_stderr else sys.stderr):
+        if filenames is None:
+            for stream in iter_stream:
+                scores = get_scores_from_traces(stream, inv)
+                for trace, score in zip(stream, scores):
+                    id_, st_, et_ = get_id(trace)  # @UnusedVariable
+#                     print_result('{id_:<15} {st_:<19} {et_:<19}',
+#                                  score, threshold, print_colors)
+                    if not separator:  # align left
+                        id_ += ' ' * max(0, max_traceid_len - len(id_))
+                    print_result(id_, st_, et_, score, threshold, colors, separator)
+        else:
+            feats = []
+            ids = []
+            max_traceid_len += len(max(filenames, key=len)) + 1
+            for fname, stream in zip(filenames, iter_stream):
+                for trace in stream:
+                    feats.append(get_features_from_traces([trace], inv,
+                                                          capture_stderr=False)[0])
+                    id_, st_, et_ = get_id(trace)  # @UnusedVariable
+                    id_ = f'{fname}/{id_}'
+                    if not separator:  # align left
+                        id_ += ' ' * max(0, max_traceid_len - len(id_))
+                    ids.append((id_, st_, et_))
+            # print("> " + str(feats))
+            scores = get_scores(np.asarray(feats))
+            # print("> " + str(feats))
+            iter_ = zip(ids, scores)
+            if sort_by_time:
+                iter_ = sorted(iter_, key=lambda _: _[0][1])
+            for id_, score in iter_:
+                print_result(*id_, score, threshold, colors, separator)
+
+
+def print_result(trace_id, trace_start, trace_end, score, threshold=None,
+                 print_colors=False, separator=None):
     stdout_is_atty = sys.stdout.isatty()
-    th_set = _is_threshold_set(threshold)
-    print_colors = stdout_is_atty and colors and th_set
-
-    echo(f'{"trace":<15} {"start":<19} {"end":<19} {"score":<5}' +
-         (f' {"anomaly":<7}' if th_set else ''))
-    echo(f'{"-" * 15}+{"-" * 19}+{"-" * 19}+{"-" * 5}' +
-         (f'+{"-" * 7}' if th_set else ''))
-    results2sortandprint = []
-    for stream in iter_stream:
-        scores = get_scores_from_traces(stream, inv)
-        for trace, score in zip(stream, scores):
-            id_, st_, et_ = get_id(trace)  # @UnusedVariable
-            if is_station_fdsn or not sort_by_time:
-                print_result('{id_:<15} {st_:<19} {et_:<19}',
-                             score, threshold, print_colors)
-            else:
-                results2sortandprint.append((id_, st_, et_, score))
-
-    for id_, st_, et_, score in \
-            sorted(results2sortandprint, key=lambda _: _[1]):
-        print_result('{id_:<15} {st_:<19} {et_:<19}', score, threshold,
-                     print_colors)
-
-
-def print_result(trace_id, score, threshold, print_colors):
-    th_set = _is_threshold_set(threshold)
-    color = ''
-    outlier = False
+    th_set = 0 < threshold < 1
+    print_colors = stdout_is_atty and print_colors and th_set and separator
+#     th_set = _is_threshold_set(threshold)
+    colorstart, colorend = '', ''
+    outlier = None
     if th_set:
         outlier = score > threshold
         if print_colors:
-            color = bcolors.WARNING if outlier else bcolors.OKGREEN
+            colorstart = bcolors.WARNING if outlier else bcolors.OKGREEN
+            colorend = bcolors.ENDC
         # bcolors.FAIL
-    print(f'{trace_id} '
-          f'{color}' +
-          f'{score : 5.2f}' + (f' {outlier:>7d}' if th_set else '') +
-          f'{bcolors.ENDC if print_colors else ""}')
+    sep = separator or '  '
+    print(
+        f'{trace_id}{sep}{trace_start}{sep}{trace_end}{sep}{colorstart}{score}'
+        + ('' if outlier is None else f'{separator}{outlier:d}') +
+        f'{colorend}'
+    )
+#     _print_result_line(trace_id,
+#                        trace_start, trace_end,
+#                        f'{color}{score : 5.2f}',
+#                        outlier, separator) + (f' {outlier:>7d}' if th_set else '') +
+#           f'{bcolors.ENDC if print_colors else ""}')
+# 
+# 
+# def _print_result_line(trace_id, trace_start, trace_end, score, anomaly=None,
+#                        separator=None):
+#     if separator is None:
+#         separator = '  '
+#     print(f'{trace_id}{separator}{trace_start:<19}{separator}{trace_end:<19}'
+#           f'{separator}{score}' +
+#           ('' if anomaly is None else f'{separator}{anomaly}'))
 
 
-def _is_threshold_set(threshold):
-    return 0 < threshold < 1
+# def _is_threshold_set(threshold):
+#     return 0 < threshold < 1
 
 
-def _get_column_format_from_files(files, separator=None):
-    longest_seed_id = max(_.get_id() for f in files
-                          for _ in read(f, headonly=True),
-                          key=len)
-    longest_filename = max(basename(_) for _ in files, key=len)
-    if separator is None
-    return 
-    
-
-
-class Reader:
-
-    def __init__(self, data, metadata):
-        
-
+# def get_id2file(*files, sort_by_time=False):
+#     ret = ((get_id(t), f) for f in files for t in read_data(f, headonly=True))
+#     if sort_by_time:
+#         ret = sorted(ret, key=lambda _: _[0][1])  # sort by starttime
+#     return dict(ret)
 
 
 def read_metadata(path_or_url):
@@ -233,15 +296,13 @@ def read_metadata(path_or_url):
                         f'(path/url: {path_or_url})')
 
 
-def read_data(path_or_url):
+def read_data(path_or_url, format='MSEED', headonly=False, **kwargs):  # @ReservedAssignment
     try:
-        return read(path_or_url, format='MSEED')
+        return read(path_or_url, format=format, headonly=headonly, **kwargs)
     except Exception as exc:
         raise Exception(f'Invalid waveform (mseed) file: {str(exc)}\n'
                         f'(path/url: {path_or_url})')
 
-
-def read_streams(file_or_dir):
 
 def get_id(trace):
     '''Returns the ID of the given trace as tuple (id, starttime, endtime)
@@ -310,7 +371,7 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
                         raise herr2 from None
                 except ValueError:
                     pass
-        except Exception as exc:
+        except Exception as exc:  # @UnusedVariable
             pass
         total_time += (time.time() - t)
 

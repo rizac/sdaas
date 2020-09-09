@@ -42,14 +42,14 @@ class Test(unittest.TestCase):
                 join(dataroot, 'GE.FLT1..HH?.mseed'),
                 join(dataroot, 'GE.FLT1.xml')
             ],
-            [
-                ('http://service.iris.edu/fdsnws/dataselect/1/query?'
-                 '&net=TA&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
-                 '&end=2019-01-04T23:24:00'),
-                ('http://service.iris.edu/fdsnws/station/1/query?&net=TA'
-                 '&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
-                 '&end=2019-01-04T23:24:00&level=response')
-            ],
+#             [
+#                 ('http://service.iris.edu/fdsnws/dataselect/1/query?'
+#                  '&net=TA&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
+#                  '&end=2019-01-04T23:24:00'),
+#                 ('http://service.iris.edu/fdsnws/station/1/query?&net=TA'
+#                  '&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
+#                  '&end=2019-01-04T23:24:00&level=response')
+#             ],
         ):
             # trace, inv = 'GE.FLT1..HH?.mseed', 'GE.FLT1.xml'
             orig_stream = read(file)
