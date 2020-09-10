@@ -7,7 +7,7 @@ Created on 18 Jun 2020
 '''
 import numpy as np
 
-from sdaas.utils.psd import psd_values
+from sdaas.psd import psd_values
 
 
 PSD_PERIODS_SEC = (5.,)  # use floats for safety (numpy cast errors?)

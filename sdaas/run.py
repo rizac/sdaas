@@ -3,13 +3,12 @@ seismic waveforms anomaly scores'''
 
 import argparse
 from argparse import RawTextHelpFormatter
-from urllib import parse
 import sys
 import re
 import time
 import inspect
 from random import randrange
-from datetime import datetime, timedelta
+from datetime import timedelta
 from os.path import isdir, splitext, isfile, join, abspath, basename
 from os import listdir
 from urllib.error import HTTPError
@@ -22,13 +21,8 @@ from obspy.core.inventory.inventory import read_inventory
 from sdaas.model import get_scores_from_traces, get_scores
 from sdaas.features import get_features_from_trace
 from sdaas.utils.cli import redirect, ansi_colors_escape_codes
-
-# extensions = {
-#     '.mseed', '.miniseed', '.hdf', '.h5', '.hdf5', '.he5',
-#     '.hdf5', '.hf', 'npz'
-# }
-
-fdsn_re = '[a-zA-Z_]+://.+?/fdsnws/(?:station|dataselect)/\\d/query?.*'
+from sdaas.utils.fdsn import fdsn_re, get_querydict, get_dataselect_url,\
+    get_station_metadata_url
 
 
 def process(data, metadata='', threshold=-1.0,
@@ -346,84 +340,6 @@ def random_datetime(start, end):
     if total_sec < 1:
         raise ValueError('start and end time must be greater than 1 second')
     return start + timedelta(seconds=randrange(total_sec))
-
-
-# minimum requirements: net, sta, start time (uniquely identifying a station)
-
-def get_querydict(url):
-    url_splitted = parse.urlsplit(url)
-    # object above is of the form:
-    # ParseResult(scheme='http', netloc='www.example.org',
-    #             path='/default.html', query='ct=32&op=92&item=98',
-    #             fragment='')
-    # now parse its query. Note that each element is a LIST!
-    # (arguments might appear more times)
-    queryargs = parse.parse_qs(url_splitted.query)
-    # mandatory arguments:
-    ret = {
-        'net': get_url_arg(queryargs, url, "net", "network"),
-        'sta': get_url_arg(queryargs, url, "sta", "station"),
-        'start': get_url_datetime_arg(queryargs, url, 'start', 'starttime')
-    }
-    # optional arguments
-    for params in [("loc", "location"), ("cha", "channel")]:
-        try:
-            ret[params[0]] = get_url_arg(queryargs, url, *params)
-        except KeyError:
-            pass
-    # in case of end,if missing, set now as endtime:
-    try:
-        ret['end'] = get_url_datetime_arg(queryargs, url, 'end', 'endtime')
-    except KeyError:
-        ret['end'] = datetime.utcnow().replace(microsecond=0)
-    # little check:
-    if ret['start'] >= ret['end']:
-        raise ValueError('Invalid "start" >= "end": {url}')
-    # add base URL:
-    ret['URL'] = (f'{url_splitted.scheme}://{url_splitted.netloc}'
-                  f'{url_splitted.path}')
-    return ret
-
-
-def get_dataselect_url(querydict, start=None, end=None):
-    return get_url(querydict, start, end).\
-        replace('/station/', '/dataselect/')
-
-
-def get_station_metadata_url(querydict, start=None, end=None):
-    return get_url(querydict, start, end, level='response').\
-        replace('/dataselect/', '/station/')
-
-
-def get_url(querydict, start=None, end=None, **additional_args):
-    args = dict(querydict)
-    args['start'] = (start or args['start']).isoformat()
-    args['end'] = (end or args['end']).isoformat()
-    args = {**args, **additional_args}
-    url = args.pop('URL') + '?'
-    for key, val in args.items():
-        url += f'&{str(key)}={str(val)}'
-    return url
-
-
-def get_url_datetime_arg(query_dict, url, *keys):
-    val = get_url_arg(query_dict, url, *keys)
-    try:
-        return datetime.fromisoformat(val)
-    except Exception:
-        raise ValueError(f'Invalid date/time for "{"/".join(keys)}" '
-                         f'in {url}')
-
-
-def get_url_arg(query_dict, url, *keys):
-    for key in keys:
-        if key in query_dict:
-            val = query_dict[key]
-            if len(val) > 1:
-                raise ValueError(f'Invalid multiple values for '
-                                 f'"{"/".join(keys)}" in {url}')
-            return val[0]
-    raise KeyError(f'Missing parameter "{"/".join(keys)}" in {url}')
 
 
 def getdoc(param=None):
