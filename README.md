@@ -86,7 +86,6 @@ or:
 sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=BKB&cha=BH?&start=2016-01-01&level=response" -c -th 0.7
 ```
 
-
 Example output:
 
 ```bash
@@ -107,7 +106,7 @@ Example 1: to compute the scores on each stream trace:
 ```python
 from sdaas.core.model import get_scores_from_traces
 
-scores = get_scores_from_traces(stream, inv)
+scores = get_scores_from_traces(stream, inventory)
 # scores (assuming the stream has 3 traces) will be a numpy array of length 3
 ```
 
@@ -123,8 +122,8 @@ features = []
 #  than calling get_scores_from_traces() on any given stream)
 for stream in streams:
     for trace in stream:
-        feats.append(get_features_from_trace(trace, inv))
-        id_, st_, et_ = trace.get_id(), trace.stats.starttime, trace.stats.endtime  # @UnusedVariable
+        feats.append(get_features_from_trace(trace, inventory))
+        id_, st_, et_ = trace.get_id(), trace.stats.starttime, trace.stats.endtime
         ids.append((id_, st_, et_))
 trace_scores = get_scores(np.asarray(feats))
 ```
