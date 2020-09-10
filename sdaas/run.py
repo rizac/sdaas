@@ -7,7 +7,6 @@ import sys
 import re
 import time
 import inspect
-from random import randrange
 from datetime import timedelta
 from os.path import isdir, splitext, isfile, join, abspath, basename
 from os import listdir
@@ -329,17 +328,6 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
                           'check URL parameters. ') +
                          (f'Timeout ({wtimeout_sec} s) exceeded'
                           if timeout_expired else ''))
-
-
-def random_datetime(start, end):
-    """
-    This function will return a random datetime between two datetime
-    objects.
-    """
-    total_sec = int((end - start).total_seconds())
-    if total_sec < 1:
-        raise ValueError('start and end time must be greater than 1 second')
-    return start + timedelta(seconds=randrange(total_sec))
 
 
 def getdoc(param=None):
