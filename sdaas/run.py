@@ -73,7 +73,7 @@ def process(data, metadata='', threshold=-1.0, waveform_length=120,  # in sec
     :param metadata: the metadata, as path to a file (Station XML), or url. See
         the 'data' argument
 
-    :param threshold: decision threshold T. When in [0, 1], scores > T
+    :param threshold: decision threshold T. When 0 < T < 1, then scores > T
         will be classified as anomaly (and thus scores<=T as regular data), and
         an additional column 'anomaly' with values 0 (False) or 1 (True) will
         be shown. The algorithm default theoretical T=0.5 is generally ok for
@@ -164,7 +164,7 @@ def process(data, metadata='', threshold=-1.0, waveform_length=120,  # in sec
          f"{', anomaly' if is_threshold_set(threshold) else ''}"
          '):')
 
-    max_traceid_len = 2 + 5 + 2 + 3 + 3 # default trace id length
+    max_traceid_len = 2 + 5 + 2 + 3 + 3  # default trace id length
     with redirect(sys.stderr if capture_stderr else None):
         if filenames is None:
             for stream in iter_stream:

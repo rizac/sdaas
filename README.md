@@ -67,6 +67,9 @@ Cons:
 
 ## Usage
 
+
+### As command line application
+
 Activate your virtual environment (see above), and then to use the program
 as command line application, type `sdaas --help` or `python sdaas/run.py --help` (depending
 on the installation above).
@@ -81,4 +84,31 @@ or:
 
 ```bash
 sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=BKB&cha=BH?&start=2016-01-01&level=response" -c -th 0.7
+```
+
+### As library in Python code
+Assuming you have one or more [stream](https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html)
+with relative [inventory](https://docs.obspy.org/packages/obspy.core.inventory.html), then
+
+Example 1: to compute the scores on each stream trace:
+
+```python
+scores = get_scores_from_traces(stream, inv)
+# scores (assuming the stream has 3 traces) will be a numpy array of length 3
+```
+
+Example 2: to compute the scores on several streams (iterable of Stream objects),
+and compute the traces scores keeping track of their id:
+
+```python
+trace_ids = []
+features = []
+# (compute first the features, and then the scores at once. This is faster
+#  than calling get_scores() each time for any given trace)
+for stream in streams:
+    for trace in stream:
+        feats.append(get_features_from_trace(trace, inv))
+        id_, st_, et_ = trace.get_id(), trace.stats.starttime, trace.stats.endtime  # @UnusedVariable
+        ids.append((id_, st_, et_))
+trace_scores = get_scores(np.asarray(feats))
 ```
