@@ -7,7 +7,7 @@ Created on 18 Jun 2020
 '''
 import numpy as np
 
-from sdaas.psd import psd_values
+from sdaas.core.psd import psd_values
 
 
 PSD_PERIODS_SEC = (5.,)  # use floats for safety (numpy cast errors?)
@@ -25,7 +25,7 @@ def get_features_from_streams(streams, metadata):
         :func:`sdaas.features.featappend` to concatenate two feature arrays
             returned from this method
 
-        :func:`sdaas.utils.cli.redirect` for capturing potential external
+        :func:`sdaas.cli.cli.redirect` for capturing potential external
             C-libraries output:
             ```with redirect(sys.stderr):
                     get_features_from_traces(...)
@@ -57,7 +57,7 @@ def get_features_from_traces(traces, metadata):
         :func:`sdaas.features.featappend` to concatenate two feature arrays
             returned from this method
 
-        :func:`sdaas.utils.cli.redirect`for capturing potential external
+        :func:`sdaas.cli.cli.redirect`for capturing potential external
             C-libraries output:
             ```with redirect(sys.stderr):
                     get_features_from_traces(...)
@@ -90,7 +90,7 @@ def get_features_from_trace(trace, metadata):
         `featappend` to concatenate two feature arrays returned from this
         method
 
-        :func:`sdaas.utils.cli.redirect` for capturing potential external
+        :func:`sdaas.cli.cli.redirect` for capturing potential external
             C-libraries output:
             ```with redirect(sys.stderr):
                     get_features_from_trace(...)

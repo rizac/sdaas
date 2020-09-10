@@ -11,8 +11,8 @@ from obspy.core.stream import read, Stream
 from obspy.core.inventory.inventory import read_inventory
 from obspy.signal.spectral_estimation import PPSD
 
-from sdaas.model import get_scores
-from sdaas.features import get_features_from_traces
+from sdaas.core.model import get_scores
+from sdaas.core.features import get_features_from_traces
 
 
 class Test(unittest.TestCase):

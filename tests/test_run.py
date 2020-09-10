@@ -10,7 +10,7 @@ from unittest.mock import patch
 from io import StringIO
 
 from sdaas.run import process, is_threshold_set
-from sdaas.utils.cli import ansi_colors_escape_codes
+from sdaas.cli.utils import ansi_colors_escape_codes
 
 
 def check_output(output, threshold, sep, expected_rows=None):

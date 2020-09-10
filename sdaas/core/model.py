@@ -17,7 +17,7 @@ import numpy as np
 from joblib import load
 from sklearn.ensemble.iforest import IsolationForest
 
-from sdaas.features import FEATURES, get_features_from_traces
+from sdaas.core.features import FEATURES, get_features_from_traces
 
 
 DEFAULT_TRAINED_MODEL = load(join(dirname(__file__), 'models',

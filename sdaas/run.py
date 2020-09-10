@@ -18,10 +18,10 @@ import numpy as np
 from obspy.core.stream import read
 from obspy.core.inventory.inventory import read_inventory
 
-from sdaas.model import get_scores_from_traces, get_scores
-from sdaas.features import get_features_from_trace
-from sdaas.utils.cli import redirect, ansi_colors_escape_codes
-from sdaas.utils.fdsn import fdsn_re, get_querydict, get_dataselect_url,\
+from sdaas.core.model import get_scores_from_traces, get_scores
+from sdaas.core.features import get_features_from_trace
+from sdaas.cli.utils import redirect, ansi_colors_escape_codes
+from sdaas.cli.fdsn import fdsn_re, get_querydict, get_dataselect_url,\
     get_station_metadata_url
 
 
