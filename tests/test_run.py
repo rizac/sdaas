@@ -9,7 +9,7 @@ from os.path import join, dirname
 from unittest.mock import patch
 from io import StringIO
 
-from sdaas.run import process
+from sdaas.run import process, is_threshold_set
 from sdaas.utils.cli import ansi_colors_escape_codes
 
 
@@ -19,7 +19,7 @@ def check_output(output, threshold, sep, expected_rows=None):
     if expected_rows is not None:  # check num of rows (if given)
         assert len(out) == expected_rows
     ptr = '\\s+' if not sep else sep
-    is_th_set = 0 < threshold < 1
+    is_th_set = is_threshold_set(threshold)
     colors = not sep and is_th_set
     for _ in out:
         score_str = re.split(ptr, _)[3]

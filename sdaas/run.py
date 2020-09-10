@@ -46,8 +46,8 @@ def process(data, metadata='', threshold=-1.0,
     The anomaly score is a number in [0, 1] (0: regular waveform or inlier,
     1: anomaly, or outlier) where 0.5 represents the theoretical decision
     threshold T. Note however that in the practice scores are returned roughly
-    in the range [0.4, 0.8]: scores <=0.5 can be safely considered as inliers,
-    and - for binary classification - scores >0.5 need to inspected to
+    in the range [0.4, 0.8]: scores <= 0.5 can be safely considered as inliers,
+    and - for binary classification - scores > 0.5 might need inspection to
     determine the optimal T (see also parameter 'threshold').
 
     :param data: the data to be tested. In conjunction with 'metadata', the
@@ -91,14 +91,14 @@ def process(data, metadata='', threshold=-1.0,
         is set, the 'sep' argument is not provided and the terminal supports
         color, then scores will be colored according to the derived class
 
-    :param sep: the column separator. Each trace will be printed as a row of a
-        tabular output with columns: trace_id, trace_start_time,
-        trace_end_time, anomaly_score and optionally 'anomaly'
-        (see 'threshold' argument). By default, 'sep' is empty
-        and computed for readability on a terminal, but for printing
-        the output to e.g., CSV-formatted file, you can set 'sep' to, comma
-        "," or  semicolon ";" . If this argument is set, nothing will be
-        printed in colors
+    :param sep: the column separator. Because each waveform is printed as a
+        row of a tabular output with columns "id" "start" "end" "score" and
+        optionally "anomaly" (see 'threshold' argument), you might want to set
+        explicitly the column separator. For instance to print CSV-formatted
+        output, set 'sep' to, comma "," or  semicolon ";" . Default is the
+        empty string, meaning that 'sep' is computed each time to align columns
+        and provide a more readable output). If this argument is set, nothing
+        will be printed in colors
 
     :param waveform_length: length (in seconds) of the waveforms to download
         and test. Used only when testing anomalies in metadata (see 'data'),
@@ -168,7 +168,10 @@ def process(data, metadata='', threshold=-1.0,
     inv = read_metadata(metadata)
 
     # echo('Computing anomaly score(s) in [0, 1]:')
-    echo('Results (each row denotes: trace_id, start_time, end_time, anomaly_score):')
+    echo('Results (columns: waveform_id, waveform_start_time, '
+         'waveform_end_time, anomaly_score'
+         f"{', anomaly' if is_threshold_set(threshold) else ''}"
+         '):')
 
     max_traceid_len = 3 + 5 + 2 + 3  # default trace id length
     with redirect(None if not capture_stderr else sys.stderr):
@@ -206,7 +209,7 @@ def print_result(trace_id: str, trace_start: str, trace_end: str,
     '''prints a classification result form a single trace'''
     score_str = f'{score:4.2f}'
     outlier_str = ''
-    th_set = 0 < threshold < 1
+    th_set = is_threshold_set(threshold)
     if th_set:
         outlier = score > threshold
         outlier_str = f'{outlier:d}'
@@ -224,6 +227,10 @@ def print_result(trace_id: str, trace_start: str, trace_end: str,
         f'{trace_id}{sep}{trace_start}{sep}{trace_end}{sep}{score_str}'
         f'{sep if outlier_str else ""}{outlier_str}'
     )
+
+
+def is_threshold_set(threshold):
+    return 0 < threshold < 1
 
 
 def read_metadata(path_or_url):
