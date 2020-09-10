@@ -31,9 +31,11 @@ from sdaas.utils.cli import redirect, ansi_colors_escape_codes
 fdsn_re = '[a-zA-Z_]+://.+?/fdsnws/(?:station|dataselect)/\\d/query?.*'
 
 
-def process(data, metadata='', threshold=-1.0, colors=False,
-            verbose=0, waveform_length=120,  # in seconds
+def process(data, metadata='', threshold=-1.0,
+            waveform_length=120,  # in seconds
             download_count=5, download_timeout=30,  # in seconds
+            sep='',
+            verbose=0,
             capture_stderr=True,
             **open_kwargs):
     '''
@@ -85,10 +87,18 @@ def process(data, metadata='', threshold=-1.0, colors=False,
         a fast estimation, although for a more fine grained classification we
         suggest to tune and set the optimal T empirically (e.g., in two use
         benchmark cases we observed the optimal T to be between 0.5 and 0.6).
-        Default is -1 (do not set the decision threshold)
+        Default is -1 (do not set the decision threshold). If a threshold
+        is set, the 'sep' argument is not provided and the terminal supports
+        color, then scores will be colored according to the derived class
 
-    :param colors: (boolean flag) print anomalies in yellow, and regular data
-        in green. Ignored if 'threshold' is not set or -1 (the default)
+    :param sep: the column separator. Each trace will be printed as a row of a
+        tabular output with columns: trace_id, trace_start_time,
+        trace_end_time, anomaly_score and optionally 'anomaly'
+        (see 'threshold' argument). By default, 'sep' is empty
+        and computed for readability on a terminal, but for printing
+        the output to e.g., CSV-formatted file, you can set 'sep' to, comma
+        "," or  semicolon ";" . If this argument is set, nothing will be
+        printed in colors
 
     :param waveform_length: length (in seconds) of the waveforms to download
         and test. Used only when testing anomalies in metadata (see 'data'),
@@ -106,7 +116,7 @@ def process(data, metadata='', threshold=-1.0, colors=False,
 
     :param verbose: (boolean flag) increase verbosity
     '''
-    separator = None
+    separator = sep
     sort_by_time = True
     echo = print
     if not verbose:
@@ -169,7 +179,7 @@ def process(data, metadata='', threshold=-1.0, colors=False,
                     id_, st_, et_ = get_id(trace)  # @UnusedVariable
                     if not separator:  # align left
                         id_ += ' ' * max(0, max_traceid_len - len(id_))
-                    print_result(id_, st_, et_, score, threshold, colors, separator)
+                    print_result(id_, st_, et_, score, threshold, separator)
         else:
             feats = []
             ids = []
@@ -187,12 +197,12 @@ def process(data, metadata='', threshold=-1.0, colors=False,
             if sort_by_time:
                 iter_ = sorted(iter_, key=lambda _: _[0][1])
             for id_, score in iter_:
-                print_result(*id_, score, threshold, colors, separator)
+                print_result(*id_, score, threshold, separator)
 
 
 def print_result(trace_id: str, trace_start: str, trace_end: str,
                  score: float, threshold: float = None,
-                 print_colors=False, separator: str = None):
+                 separator: str = None):
     '''prints a classification result form a single trace'''
     score_str = f'{score:4.2f}'
     outlier_str = ''
@@ -200,8 +210,8 @@ def print_result(trace_id: str, trace_start: str, trace_end: str,
     if th_set:
         outlier = score > threshold
         outlier_str = f'{outlier:d}'
-        if ansi_colors_escape_codes.are_supported_on_current_terminal() and \
-                print_colors and not separator:
+        if ansi_colors_escape_codes.are_supported_on_current_terminal() \
+                and not separator:
             colorstart = ansi_colors_escape_codes.WARNING if outlier else \
                 ansi_colors_escape_codes.OKGREEN
             colorend = ansi_colors_escape_codes.ENDC
@@ -462,11 +472,11 @@ if __name__ == '__main__':
                         dest='threshold',
                         metavar='threshold',
                         help=getdoc('threshold'))
-    parser.add_argument('-c',
-                        action='store_false' if getdef('colors') else 'store_true',
-                        dest='colors',
-                        # metavar='colors',  # invalid for store_true action
-                        help=getdoc('colors'))
+    parser.add_argument('-sep',
+                        default=getdef('sep'),
+                        dest='sep',
+                        metavar='sep',
+                        help=getdoc('sep'))
     parser.add_argument('-wl',  # <- optional argument
                         type=type(getdef('waveform_length')),
                         default=getdef('waveform_length'),
