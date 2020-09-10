@@ -164,7 +164,7 @@ def process(data, metadata='', threshold=-1.0, waveform_length=120,  # in sec
          f"{', anomaly' if is_threshold_set(threshold) else ''}"
          '):')
 
-    max_traceid_len = 3 + 5 + 2 + 3  # default trace id length
+    max_traceid_len = 2 + 5 + 2 + 3 + 3 # default trace id length
     with redirect(sys.stderr if capture_stderr else None):
         if filenames is None:
             for stream in iter_stream:
