@@ -132,7 +132,7 @@ def get_query_entry_dtime(query_dict, *keys):
     '''
     par, val = get_query_entry(query_dict, *keys)
     try:
-        return datetime.fromisoformat(val)
+        return par, datetime.fromisoformat(val)
     except Exception:
         raise ValueError(f'Invalid date-time in "{par}"')
 

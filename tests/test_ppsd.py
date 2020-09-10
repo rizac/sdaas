@@ -44,15 +44,16 @@ class Test(unittest.TestCase):
             ],
             [
                 ('http://service.iris.edu/fdsnws/dataselect/1/query?'
-                 '&net=TA&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
+                 '&net=TA&sta=A2*&start=2019-01-04T23:22:00&cha=BH?'
                  '&end=2019-01-04T23:24:00'),
                 ('http://service.iris.edu/fdsnws/station/1/query?&net=TA'
-                 '&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
+                 '&sta=A2*&start=2019-01-04T23:22:00&cha=BH?'
                  '&end=2019-01-04T23:24:00&level=response')
             ],
         ):
             # trace, inv = 'GE.FLT1..HH?.mseed', 'GE.FLT1.xml'
             orig_stream = read(file)
+            # print([_.get_id() for _ in orig_stream])
             metadata = read_inventory(inv)
             for multip_fact in [-1000, 1, 10000]:
                 stream = Stream()

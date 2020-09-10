@@ -24,13 +24,9 @@ from sdaas.cli.fdsn import fdsn_re, get_querydict, get_dataselect_url,\
     get_station_metadata_url
 
 
-def process(data, metadata='', threshold=-1.0,
-            waveform_length=120,  # in seconds
-            download_count=5, download_timeout=30,  # in seconds
-            sep='',
-            verbose=0,
-            capture_stderr=True,
-            **open_kwargs):
+def process(data, metadata='', threshold=-1.0, waveform_length=120,  # in sec
+            download_count=5, download_timeout=30,  # in sec
+            sep='', verbose=False, capture_stderr=True):
     '''
     Computes and prints the amplitude anomaly scores of each waveform segment
     in 'data'. Anomalies are typically due to artifacts in the data (e.g.
@@ -169,7 +165,7 @@ def process(data, metadata='', threshold=-1.0,
          '):')
 
     max_traceid_len = 3 + 5 + 2 + 3  # default trace id length
-    with redirect(None if not capture_stderr else sys.stderr):
+    with redirect(sys.stderr if capture_stderr else None):
         if filenames is None:
             for stream in iter_stream:
                 scores = get_scores_from_traces(stream, inv)
@@ -334,7 +330,7 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
 
 def getdoc(param=None):
     '''
-    Parses the doc of the process function and returns the doc for the
+    Parses the doc of the `process` function and returns the doc for the
     given param. If the latter is None, returns the doc for the whole
     function (portion of text from start until first occurrence of ":param "
     '''
@@ -374,51 +370,44 @@ if __name__ == '__main__':
                         # dest='data',  # invalid for positional argument
                         metavar='data',
                         help=getdoc('data'))
-    parser.add_argument('-m',  # <- optional argument
-                        type=type(getdef('metadata')),
-                        default=getdef('metadata'),
-                        dest='metadata',
-                        metavar='metadata',
-                        help=getdoc('metadata'))
-    parser.add_argument('-th',
-                        type=type(getdef('threshold')),
-                        default=getdef('threshold'),
-                        dest='threshold',
-                        metavar='threshold',
-                        help=getdoc('threshold'))
-    parser.add_argument('-sep',
-                        default=getdef('sep'),
-                        dest='sep',
-                        metavar='sep',
-                        help=getdoc('sep'))
-    parser.add_argument('-wl',  # <- optional argument
-                        type=type(getdef('waveform_length')),
-                        default=getdef('waveform_length'),
-                        dest='waveform_length',
-                        metavar='waveform_length',
-                        help=getdoc('waveform_length'))
-    parser.add_argument('-dc',  # <- optional argument
-                        type=type(getdef('download_count')),
-                        default=getdef('download_count'),
-                        dest='download_count',
-                        metavar='download_count',
-                        help=getdoc('download_count'))
-    parser.add_argument('-dt',  # <- optional argument
-                        type=type(getdef('download_timeout')),
-                        default=getdef('download_timeout'),
-                        dest='download_timeout',
-                        metavar='download_timeout',
-                        help=getdoc('download_timeout'))
-    parser.add_argument('-v',
-                        action='store_false' if getdef('verbose') else 'store_true',
-                        dest='verbose',
-                        # metavar='colors',  # invalid for store_true action
-                        help=getdoc('verbose'))
+    # optional arguments. Argparse argument here must have a match with
+    # an argument of the `process` function above (the match is based on the
+    # function name with the names defined below). To implement any new
+    # optional argument, provide it in `process` WITH A DEFAULT (mandatory)
+    # and a help in the function doc (recommended) and add the argument
+    # name here below, with a correponding flag
+    for flag, name in [
+        ('-m', 'metadata'),
+        ('-th', 'threshold'),
+        ('-sep', 'sep'),
+        ('-wl', 'waveform_length'),
+        ('-dc', 'download_count'),
+        ('-dt', 'download_timeout'),
+        ('-v', 'verbose')
+    ]:
+        param_default, param_doc = getdef(name), getdoc(name)
+        kwargs = {
+            'dest': name,
+            'metavar': name,
+            'help': param_doc
+        }
+        if param_default in (True, False):  # boolean flag
+            kwargs['action'] = 'store_false' if param_default else 'store_true'
+            kwargs.pop('metavar')  # invalid for store_true action
+        else:  # no boolean flag
+            kwargs['default'] = param_default
+            kwargs['type'] = type(param_default)
+
+        # add argument to ArgParse:
+        parser.add_argument(flag, **kwargs)
+
+    # parse arguments and pass them to `process`
+    # (here we see why names must match):
     args = parser.parse_args()
     try:
         process(**vars(args))
         sys.exit(0)
     except Exception as exc:
-        # raise
+        raise
         print(f'ERROR: {str(exc)}', file=sys.stderr)
         sys.exit(1)
