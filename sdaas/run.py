@@ -201,7 +201,7 @@ def print_result(trace_id: str, trace_start: str, trace_end: str,
         outlier = score > threshold
         outlier_str = f'{outlier:d}'
         if ansi_colors_escape_codes.are_supported_on_current_terminal() and \
-                print_colors and separator:
+                print_colors and not separator:
             colorstart = ansi_colors_escape_codes.WARNING if outlier else \
                 ansi_colors_escape_codes.OKGREEN
             colorend = ansi_colors_escape_codes.ENDC
