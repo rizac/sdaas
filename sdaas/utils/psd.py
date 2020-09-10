@@ -25,7 +25,7 @@ def psd_values(psd_periods, tr, metadata, special_handling=None,
         as the given parameter where those used for training.
         For any further information, see
         :class:`~obspy.signal.spectral_estimation.PPSD` and
-        :class:`~obspy.signal.spectral_estimation.PPSD.__process`
+        :meth:`~obspy.signal.spectral_estimation.PPSD.__process`
 
     :psd_periods: numeric list/array of periods (in second)
     :param tr: obspy Trace
@@ -197,7 +197,12 @@ def psd_values(psd_periods, tr, metadata, special_handling=None,
 
 
 def _get_response(tr, metadata, nfft):
-    '''Returns the response from the given trace and the given metadata'''
+    '''Returns the response from the given trace and the given metadata
+    Simplified version of:
+    :meth:`~obspy.signal.spectral_estimation.PPSD._get_response`
+    (rationale: to optimize the PSD computation, we need to re-implement
+    some methods of :class:`~obspy.signal.spectral_estimation.PPSD`)
+    '''
     # This function is the same as _get_response_from_inventory
     # but we keep the original PPSd skeleton to show how it
     # might be integrated with new metadata object. For the
@@ -218,37 +223,60 @@ def _get_response(tr, metadata, nfft):
 
 
 def _get_response_from_inventory(tr, metadata, nfft):
+    '''Replaces
+    :meth:`~obspy.signal.spectral_estimation.PPSD._get_response_from_inventory`
+    (rationale: to optimize the PSD computation, we need to re-implement
+    some methods of :class:`~obspy.signal.spectral_estimation.PPSD`)
+    '''
     inventory = metadata
     delta = 1.0 / tr.stats.sampling_rate
     id_ = "%(network)s.%(station)s.%(location)s.%(channel)s" % tr.stats
     response = inventory.get_response(id_, tr.stats.starttime)
-    resp, _ = response.get_evalresp_response(t_samp=delta, nfft=nfft,
-                                             output="VEL")
+    # In new ObsPy versions you can uncomment this line:
+    # resp, _ = response.get_evalresp_response(t_samp=delta, nfft=nfft,
+    #                                          output="VEL")
+    # and add the argument
+    # hide_sensitivity_mismatch_warning=True
+    #
+    # For the moment though, we need to creata a hacky solution with
+    # wrapping functions in this module:
+    resp, _ = get_evalresp_response(response, t_samp=delta, nfft=nfft,
+                                    output="VEL")
     return resp
 
 
-def _get_response_from_inventory_new(tr, metadata, nfft):
-    # this methods replaces _get_response_from_inventory_old (see below)
-    # because we want to hide sensitivity mismatch warnings
-    inventory = metadata
-    delta = 1.0 / tr.stats.sampling_rate
-    id_ = "%(network)s.%(station)s.%(location)s.%(channel)s" % tr.stats
-    response = inventory.get_response(id_, tr.stats.starttime)
-#     resp, _ = response.get_evalresp_response(t_samp=delta, nfft=nfft,
-#                                              output="VEL")
-    t_samp = delta
-    nfft = nfft
-    output = "VEL"
-    # copied from response.get_evalresp_response
+def get_evalresp_response(response, t_samp, nfft, output="VEL",
+                          start_stage=None, end_stage=None):
+    '''Replaces
+    :meth:`~obspy.core.inventory.response.Response.get_evalresp_response`
+    (rationale: suppress annoying warning issued from external libraries.
+    See :func:`get_evalresp_response_for_frequencies` for details. Note that
+    in new ObsPy versions we will be able to remove this function)
+    '''
+    # Calculate the output frequencies.
     fy = 1 / (t_samp * 2.0)
     # start at zero to get zero for offset/ DC of fft
     freqs = np.linspace(0, fy, nfft // 2 + 1).astype(np.float64)
 
-    # copied from response.get_evalresp_response_for_frequencies
-    resp, chan = response._call_eval_resp_for_frequencies(
-        freqs, output=output, start_stage=None,
-        end_stage=None, hide_sensitivity_mismatch_warning=True)
-    return resp
+    response = get_evalresp_response_for_frequencies(response,
+                                                     freqs, output=output,
+                                                     start_stage=start_stage,
+                                                     end_stage=end_stage)
+    return response, freqs
+
+
+def get_evalresp_response_for_frequencies(
+        response, frequencies, output="VEL", start_stage=None, end_stage=None):
+    '''Replaces
+    :meth:`~obspy.core.inventory.response.Response.get_evalresp_response_for_frequencies`
+    (rationale: suppress annoying warning issued from external libraries
+    by setting explicitly `hide_sensitivity_mismatch_warning=True`. Note that
+    in new ObsPy versions we will be able to remove this function)
+    '''
+    output, chan = response._call_eval_resp_for_frequencies(
+        frequencies, output=output, start_stage=start_stage,
+        end_stage=end_stage, hide_sensitivity_mismatch_warning=True)
+    return output
 
 
 def _yield_period_binning(psd_periods, period_smoothing_width_octaves):

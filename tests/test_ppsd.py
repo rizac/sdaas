@@ -42,14 +42,14 @@ class Test(unittest.TestCase):
                 join(dataroot, 'GE.FLT1..HH?.mseed'),
                 join(dataroot, 'GE.FLT1.xml')
             ],
-#             [
-#                 ('http://service.iris.edu/fdsnws/dataselect/1/query?'
-#                  '&net=TA&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
-#                  '&end=2019-01-04T23:24:00'),
-#                 ('http://service.iris.edu/fdsnws/station/1/query?&net=TA'
-#                  '&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
-#                  '&end=2019-01-04T23:24:00&level=response')
-#             ],
+            [
+                ('http://service.iris.edu/fdsnws/dataselect/1/query?'
+                 '&net=TA&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
+                 '&end=2019-01-04T23:24:00'),
+                ('http://service.iris.edu/fdsnws/station/1/query?&net=TA'
+                 '&sta=A*&start=2019-01-04T23:22:00&cha=BH?'
+                 '&end=2019-01-04T23:24:00&level=response')
+            ],
         ):
             # trace, inv = 'GE.FLT1..HH?.mseed', 'GE.FLT1.xml'
             orig_stream = read(file)
@@ -62,8 +62,7 @@ class Test(unittest.TestCase):
                     stream.append(t)
                 # calculate features but do not capture stderr cause it causes
                 # problems with temporarily set output captures:
-                feats = get_features_from_traces(stream, metadata,
-                                                 capture_stderr=False)
+                feats = get_features_from_traces(stream, metadata)
                 feats_old = np.asarray([_old.psd_values([5], _, metadata)
                                         for _ in stream])
                 self.assertTrue(np.allclose(feats, feats_old, rtol=rtol,
