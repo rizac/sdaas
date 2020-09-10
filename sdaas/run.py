@@ -43,6 +43,10 @@ def process(data, metadata='', threshold=-1.0,
     and - for binary classification - scores > 0.5 might need inspection to
     determine the optimal T (see also parameter 'threshold').
 
+    Each waveform will be printed as a row of a tabular output with columns
+    "waveform_id" "waveform_start" "waveform_end" "anomaly_score" and
+    optionally "anomaly" (see 'threshold' argument)
+
     :param data: the data to be tested. In conjunction with 'metadata', the
         following combinations of options are valid (note that urls below must
         be FDSN compliant with at least the query parameters "net", "sta" and
@@ -79,19 +83,17 @@ def process(data, metadata='', threshold=-1.0,
         be shown. The algorithm default theoretical T=0.5 is generally ok for
         a fast estimation, although for a more fine grained classification we
         suggest to tune and set the optimal T empirically (e.g., in two use
-        benchmark cases we observed the optimal T to be between 0.5 and 0.6).
-        Default is -1 (do not set the decision threshold). If a threshold
-        is set, the 'sep' argument is not provided and the terminal supports
-        color, then scores will be colored according to the derived class
+        cases we observed the optimal T to be between 0.5 and 0.6). Default is
+        -1 (do not set the decision threshold). Otherwise, when a threshold is
+        given, if the 'sep' argument is not provided and the terminal
+        is interactive, then scores will be colored according to the derived
+        class (0 or 1)
 
-    :param sep: the column separator. Because each waveform is printed as a
-        row of a tabular output with columns "id" "start" "end" "score" and
-        optionally "anomaly" (see 'threshold' argument), you might want to set
-        explicitly the column separator. For instance to print CSV-formatted
-        output, set 'sep' to, comma "," or  semicolon ";" . Default is the
-        empty string, meaning that 'sep' is computed each time to align columns
-        and provide a more readable output). If this argument is set, nothing
-        will be printed in colors
+    :param sep: the column separator, particularly useful if the output must be
+        redirected to file. E.g., for CSV-formatted output set 'sep' to comma
+        "," or  semicolon ";". Default is the empty string, meaning that 'sep'
+        is computed each time to align columns and provide a more readable
+        output). If this argument is set, nothing will be printed in colors
 
     :param waveform_length: length (in seconds) of the waveforms to download
         and test. Used only when testing anomalies in metadata (see 'data'),
@@ -214,7 +216,6 @@ def print_result(trace_id: str, trace_start: str, trace_end: str,
             score_str = f'{colorstart}{score_str}{colorend}'
             outlier_str = f'{colorstart}{outlier_str}{colorend}'
 
-        # bcolors.FAIL
     sep = separator or '  '
     print(
         f'{trace_id}{sep}{trace_start}{sep}{trace_end}{sep}{score_str}'
@@ -243,7 +244,8 @@ def read_data(path_or_url, format='MSEED', headonly=False, **kwargs):  # @Reserv
 
 
 def get_id(trace):
-    '''Returns the ID of the given trace as tuple (id, starttime, endtime)
+    '''
+    Returns the ID of the given trace as tuple (id, starttime, endtime)
 
     :return: the tuple of strings (id, starttime, endtime), where id is in the
     form 'net.sta.loc.cha' and  starttime and endtime are ISO formatted
@@ -331,7 +333,8 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
 
 
 def getdoc(param=None):
-    '''Parses the doc of the process function and returns the doc for the
+    '''
+    Parses the doc of the process function and returns the doc for the
     given param. If the latter is None, returns the doc for the whole
     function (portion of text from start until first occurrence of ":param "
     '''
