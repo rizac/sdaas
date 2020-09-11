@@ -106,6 +106,7 @@ Example 1: to compute the scores on a stream or iterable of traces (e.g. list. t
 ```python
 >>> from sdaas.core.model import get_traces_scores
 >>> get_traces_scores(stream, inventory)
+
 array([ 0.47279325,  0.46220043,  0.44874805])
 ```
 
@@ -114,6 +115,7 @@ Example 2: to compute the scores on an iterable of streams (e.g., when reading f
 ```python
 >>> from sdaas.core.model import get_streams_scores
 >>> get_streams_scores(streams, inventory)
+
 array([ 0.47279325,  0.46220043,  0.44874805,  0.51276321,  0.43225043, 0.74856103])
 ```
 
@@ -123,6 +125,7 @@ Example 3: to compute ids and scores on a stream or iterable of traces (e.g. lis
 ```python
 >>> from sdaas.core.model import get_traces_idscores
 >>> get_traces_idscores(stream, inventory)
+
 ([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
 ```
 
@@ -132,6 +135,7 @@ Example 4: to compute the ids and scores on an iterable of streams (e.g., when r
 ```python
 >>> from sdaas.core.model import get_streams_idscores
 >>> get_streams_idscores(streams, inventory)
+
 ([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
 ```
 
@@ -149,7 +153,8 @@ import time
 from sdaas.core.features import get_trace_features
 from sdaas.core.model import get_trace_score, get_traces_scores, get_streams_scores,\
     get_scores 
-    
+
+
 print(f"Computing scores on {N} Streams")
 
 
@@ -163,7 +168,7 @@ print('To obtain the same results with more control over the loop,\n'
       'check these alternative options:')
 
 
-# method 2a (equivelent as the above, with more control over the loop)
+# method 2a (same as method 1, with more control over the loop)
 t = time.time()
 feats = []
 for stream in streams:
@@ -173,7 +178,7 @@ scores = get_scores(feats)
 print(f'2a) `get_trace_features` within loop + `get_scores`: {(time.time() - t):.2f}s')
 
 
-# method 2b (equivelent as 2a, less performant)
+# method 2b (same as 2a, less performant)
 scores = []
 t = time.time()
 for stream in streams:
@@ -181,7 +186,8 @@ for stream in streams:
 scores = np.array(scores)
 print(f'2b) `get_traces_score` within loop: {(time.time() - t):.2f}s')
 
-# method 2c (equivelent as 2a, less performant)
+
+# method 2c (same as 2a, less performant)
 scores = []
 t = time.time()
 for stream in streams:
