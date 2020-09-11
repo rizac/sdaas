@@ -199,7 +199,7 @@ print(f'2c) `get_trace_score` within loop: {(time.time() - t):.2f}s')
 
 Output:
 
-```python
+```
 >>> Computing scores on 10 Streams
 1)  `get_streams_scores`: 0.43s
 To obtain the same results with more control over the loop,
