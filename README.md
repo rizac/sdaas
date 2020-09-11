@@ -143,50 +143,50 @@ are faster if you can call them once and not in a loop (same principle of many n
 Example script
 
 ```python
-	import time
-    from sdaas.core.features import get_trace_features
-    from sdaas.core.model import get_trace_score, get_traces_scores, get_streams_scores,\
-        get_scores 
-        
-    print(f'Computing scores on {N} Streams')
+import time
+from sdaas.core.features import get_trace_features
+from sdaas.core.model import get_trace_score, get_traces_scores, get_streams_scores,\
+    get_scores 
+    
+print(f"Computing scores on {N} Streams")
 
 
-    # method 1 (standard)
-    t = time.time()
-    scores = get_streams_scores(streams, metadata)
-    print(f'1)  `get_streams_scores`: {(time.time() - t):.2f}s')
+# method 1 (standard)
+t = time.time()
+scores = get_streams_scores(streams, metadata)
+print(f'1)  `get_streams_scores`: {(time.time() - t):.2f}s')
 
 
-    print('To obtain the same results with more control over the loop,\n'
-          'check these alternative options:')
+print('To obtain the same results with more control over the loop,\n'
+      'check these alternative options:')
 
 
-    # method 2a (equivelent as the above, with more control over the loop)
-    t = time.time()
-    feats = []
-    for stream in streams:
-        for trace in stream:
-            feats.append(get_trace_features(trace, metadata))
-    scores = get_scores(feats)
-    print(f'2a) `get_trace_features` within loop + `get_scores`: {(time.time() - t):.2f}s')
+# method 2a (equivelent as the above, with more control over the loop)
+t = time.time()
+feats = []
+for stream in streams:
+    for trace in stream:
+        feats.append(get_trace_features(trace, metadata))
+scores = get_scores(feats)
+print(f'2a) `get_trace_features` within loop + `get_scores`: {(time.time() - t):.2f}s')
 
 
-    # method 2b (equivelent as 2a, less performant)
-    scores = []
-    t = time.time()
-    for stream in streams:
-        scores.extend(get_traces_scores(stream, metadata))
-    scores = np.array(scores)
-    print(f'2b) `get_traces_score` within loop: {(time.time() - t):.2f}s')
+# method 2b (equivelent as 2a, less performant)
+scores = []
+t = time.time()
+for stream in streams:
+    scores.extend(get_traces_scores(stream, metadata))
+scores = np.array(scores)
+print(f'2b) `get_traces_score` within loop: {(time.time() - t):.2f}s')
 
-	# method 2c (equivelent as 2a, less performant)
-    scores = []
-    t = time.time()
-    for stream in streams:
-        for trace in stream:
-            scores.append(get_trace_score(trace, metadata)[0])
-    scores = np.array(scores)
-    print(f'2c) `get_trace_score` within loop: {(time.time() - t):.2f}s')
+# method 2c (equivelent as 2a, less performant)
+scores = []
+t = time.time()
+for stream in streams:
+    for trace in stream:
+        scores.append(get_trace_score(trace, metadata)[0])
+scores = np.array(scores)
+print(f'2c) `get_trace_score` within loop: {(time.time() - t):.2f}s')
 ```
 
 Output:
