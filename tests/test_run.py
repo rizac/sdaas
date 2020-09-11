@@ -4,6 +4,7 @@ Created on 22 Jun 2020
 @author: riccardo
 '''
 import unittest
+from datetime import datetime
 import re
 from os.path import join, dirname
 from unittest.mock import patch
@@ -16,13 +17,22 @@ from sdaas.cli.utils import ansi_colors_escape_codes
 def check_output(output, threshold, sep, expected_rows=None):
     '''checks the string output of a score calculation from the command line'''
     out = output.strip().split('\n')
+    ptr = '\\s+' if not sep else sep
+    out = [re.split(ptr, _) for _ in out]
+    if not sep:
+        # datetimes are printed with the space, we have to join
+        # four "fake" col into 2 columns:
+        out2 = []
+        for _ in out:
+            line = [_[0], _[1] + ' ' + _[2], _[3] + ' ' + _[4]] + _[5:]
+            out2.append(line)
+        out = out2
     if expected_rows is not None:  # check num of rows (if given)
         assert len(out) == expected_rows
-    ptr = '\\s+' if not sep else sep
     is_th_set = is_threshold_set(threshold)
     colors = not sep and is_th_set
-    for _ in out:
-        score_str = re.split(ptr, _)[3]
+    for row in out:
+        score_str = row[-1 if not is_th_set else -2]
         if colors:
             # remove ansi colors from score
             score_str = score_str.replace(ansi_colors_escape_codes.ENDC, '').\
@@ -32,8 +42,8 @@ def check_output(output, threshold, sep, expected_rows=None):
         assert _ > 0.3 and _ < 0.9  # check score is meaningful (heuristically)
     numcols = 4
     if is_th_set:
-        for _ in out:
-            anomaly_class = re.split(ptr, _)[-1]
+        for row in out:
+            anomaly_class = row[-1]
             if colors:
                 # remove ansi colors from score
                 anomaly_class = \
@@ -45,13 +55,19 @@ def check_output(output, threshold, sep, expected_rows=None):
         assert _ in (0, 1)
         numcols += 1
     # check the correct number of columns (if th_set, it has one more column):
-    assert all(len(re.split(ptr, _)) == numcols for _ in out)
+    assert all(len(row) == numcols for row in out)
+    # check datetimes:
+    for row in out:
+        datetime.fromisoformat(row[1])
+        datetime.fromisoformat(row[2])
     # check colors are printed:
     if colors:
-        assert all((ansi_colors_escape_codes.ENDC in _) and
-                   (ansi_colors_escape_codes.OKGREEN in _ or
-                    ansi_colors_escape_codes.WARNING in _)
-                   for _ in out)
+        for row in out:
+            cells2check = row[-2:] if is_th_set else row[-1:]
+            assert all((ansi_colors_escape_codes.ENDC in _) and
+                       (ansi_colors_escape_codes.OKGREEN in _ or
+                        ansi_colors_escape_codes.WARNING in _)
+                       for _ in cells2check)
 
 
 class Test(unittest.TestCase):
@@ -122,13 +138,13 @@ class Test(unittest.TestCase):
                                      expected_rows=expected_rows)
 
     def test_run_from_data_dir_bad_inventory(self):
-        
+
         # wrong metadata:
         with self.assertRaises(Exception) as context:
             process(join(self.datadir, 'testdir1'),
                     metadata=join(self.datadir, 'inventory_GE.APE.xml'),
                     capture_stderr=False)
-        
+
         # no metadata found in directory
         with self.assertRaises(Exception) as context:
             process(join(self.datadir, 'testdir2'),

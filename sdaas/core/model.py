@@ -17,7 +17,8 @@ import numpy as np
 from joblib import load
 from sklearn.ensemble.iforest import IsolationForest
 
-from sdaas.core.features import FEATURES, get_features_from_traces
+from sdaas.core.features import FEATURES, get_traces_idfeatures, get_traces_features,\
+    get_streams_idfeatures, get_streams_features, get_trace_features
 
 
 DEFAULT_TRAINED_MODEL = load(join(dirname(__file__), 'models',
@@ -32,53 +33,141 @@ DEFAULT_TRAINED_MODEL = load(join(dirname(__file__), 'models',
                                   '.sklmodel'))
 
 
-def get_scores_from_traces(traces, metadata):
-    '''Computes the amplitude anomaly score in [0, 1] from the given ObsPy
-    Traces element wise. The closer a scores is to 1, the more likely it
-    represents an anomaly. Note however that in the practice scores are returned
-    in the range [0.4, 0.8]: scores <=0.5 can be safely considered inliers
-    (with no particular numerical meaning), and - for binary classification -
-    scores >0.5 need to inspected to determine the onset of the decision
-    threshold.
-    This function can be used also to test the
-    correctness of a channel/station metadata on a set of traces
-    representing recordings from that channel/station
-
-    :param traces: an iterable of ObsPy Traces (e.g., list of trace, or ObsPy
-        Stream object). Tocompute the PSD features of a single trace, pass
-        the 1-element list `[trace]`.
-    :param metadata: the trace metadata (Obspy Inventory object), usually
-        obtained by calling `read_inventory` on a given StationXML file
-        (https://www.fdsn.org/xml/station/)
-
-    :return: the amplitude anomaly score in [0, 1] (1=anomaly). NaN values
-        denotes undecided outcome, i.e. when the score could not be computed
-        (errors or NaN during PSD computation)
+def get_streams_idscores(streams, metadata):
     '''
-    psd_values = get_features_from_traces(traces, metadata)
-    return get_scores(psd_values, check_nan=True)
+    Computes the amplitude anomaly score in [0, 1] from the Traces in the given
+    Streams and their identifiers. For details, see :func:`get_scores`
+
+    :param streams: an iterable of
+        `Stream objects<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
+    :param metadata: the Streams metadata as
+        `Inventory object <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
+
+    :return: the tuple `(ids, scores)`: if N = number of processed traces,
+        then ids is a list N identifiers in the for of tuples
+        `(trace_id:str, tracs_start:datetime, trace_end:datetime)` and scores
+        is a numpy array of N floats in [0, 1]. NaN values
+        might be present when any computed trace feature is NaN
+
+    .. seealso:: :func:`get_scores`
+    '''
+    ids, feats = get_streams_idfeatures(streams, metadata)
+    return ids, get_scores(feats, check_nan=True)
+
+
+def get_streams_scores(streams, metadata):
+    '''
+    Computes the amplitude anomaly score in [0, 1] from the given Streams.
+    For details, see :func:`get_scores`
+
+    :param streams: an iterable of
+        `Stream objects<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
+    :param metadata: the Streams metadata as
+        `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
+
+    :return: a numpy array of N floats in [0, 1], where N is the number of
+        processed Traces. NaN values might be present when any computed trace
+        feature is NaN
+
+    .. seealso:: :func:`get_scores`
+    '''
+    feats = get_streams_features(streams, metadata)
+    return get_scores(feats, check_nan=True)
+
+
+def get_traces_idscores(traces, metadata):
+    '''
+    Computes the amplitude anomaly score in [0, 1] from the given Traces and
+    their identifiers. For details on the scores, see :func:`get_scores`
+
+    :param streams: an iterable of
+        `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
+        including a
+        `Stream object<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
+    :param metadata: the Traces metadata as
+        `Inventory object <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
+
+    :return: the tuple `(ids, scores)`: if N = number of processed traces,
+        then ids is a list N identifiers in the for of tuples
+        `(trace_id:str, tracs_start:datetime, trace_end:datetime)` and scores
+        is a numpy array of N floats in [0, 1]. NaN values
+        might be present when any computed trace feature is NaN
+
+    .. seealso:: :func:`get_scores`
+    '''
+    ids, feats = get_traces_idfeatures(traces, metadata)
+    return ids, get_scores(feats, check_nan=True)
+
+
+def get_traces_scores(traces, metadata):
+    '''
+    Computes the amplitude anomaly score in [0, 1] from the given Traces.
+    For details, see :func:`get_scores`
+
+    :param streams: an iterable of
+        `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
+        including a
+        `Stream object<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
+    :param metadata: the Traces metadata as
+        `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
+
+    :return: a numpy array of N floats in [0, 1], where N is the number of
+        processed Traces. NaN values might be present when any computed trace
+        feature is NaN
+
+    .. seealso:: :func:`get_scores`
+    '''
+    feats = get_traces_features(traces, metadata)
+    return get_scores(feats, check_nan=True)
+
+
+def get_trace_score(trace, metadata):
+    '''
+    Computes the amplitude anomaly score in [0, 1] from the given Trace.
+    For details, see :func:`get_scores`
+
+    :param streams: a
+        `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
+    :param metadata: the Trace metadata as
+        `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
+
+    :return: a numpy float in [0, 1]
+
+    .. seealso:: :func:`get_scores`
+    '''
+    feats = get_trace_features(trace, metadata)
+    return get_scores(feats, check_nan=True)
 
 
 def get_scores(features, model=None, check_nan=True):
-    '''Computes the amplitude anomaly scores from the given feature vectors,
+    '''
+    Computes the amplitude anomaly scores from the given feature vectors,
     element wise. Returns a numpy array of anomaly scores in [0, 1], where
     the closer a scores is to 1, the more likely it represents an anomaly.
+    Note however that in the default scenario (`model` is None or missing, i.e.
+    use the pre-trained model), we observed scores are returned in the range
+    [0.4, 0.8]: scores <=0.5 can be safely considered inliers (with no
+    particular numerical meaning), and - for binary classification -
+    scores > 0.5 need to inspected to determine the onset of the decision
+    threshold.
 
     :param features: a numpy array of shape [N, M], where M=1 is the
         single feature denoting the PSD (in decibels) computed at 5 seconds
-        (PSD@5s). As M=1, an array of length N (i.e., shape (N,)) is also a
-        valid argument and will be reshaped internally before classification.
-        If `model` is None (i.e., the pre-trained and validated model is used),
-        the features should have been calculated with the function
-        `get_features`
-    :param model: a scikit.ensemble.IsolationForest, or None. If None (the
+        (PSD@5s). As M=1, an array of length N (e.g., [1, 0.35, ..]) is also a
+        valid argument and will be reshaped internally before classification
+        (e.g., [[1], [0.35], ..]).
+        *IMPORTANT*: If `model` is None (the default and recommended, meaning
+        that the pre-trained and validated model is used), the features should
+        have been calculated with the functions of this package (see
+        :module:`sdaas.core.features` and :sdaas.core.psd`)
+    :param model: a :class:`scikit.ensemble.IsolationForest`, or None. If None (the
         default), the pre-trained model evaluated on a general dataset of
         seismic waveforms will be used. See also :func:`create_model`
     :param check_nan: boolean (default: True), checks for NaN in features
         and skip their computation: NaNs (numpy.nan) will be returned for these
         elements. If this parameter is False, `features` must not contain
         NaNs, otherwise an Exception is raised
-    :return: a numpy array of scores in [0, 1] or NaN (when the
+    :return: a numpy array of N scores in [0, 1] or NaNs (when the
         feature was NaN. Isolation Forest models do not handle NaNs in the
         feature space)
     '''

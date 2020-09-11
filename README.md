@@ -101,29 +101,102 @@ GE.EIL..BHZ    2019-11-23T17:49:59  2019-11-23T17:52:16  0.66  1
 Assuming you have one or more [Stream](https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html)
 with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.html), then
 
-Example 1: to compute the scores on each stream trace:
+Example 1: to compute the scores on a stream or iterable of traces (e.g. list. tuple):
 
 ```python
-from sdaas.core.model import get_scores_from_traces
-
-scores = get_scores_from_traces(stream, inventory)
-# scores (assuming the stream has 3 traces) will be a numpy array of length 3
+>>> from sdaas.core.model import get_traces_scores
+>>> get_traces_scores(stream, inventory)
+array([ 0.47279325,  0.46220043,  0.44874805])
 ```
 
-Example 2: to compute the scores on several streams (iterable of Stream objects),
-and compute the traces scores keeping track of their id:
+Example 2: to compute the scores on an iterable of streams (e.g., when reading from files)
 
 ```python
-from sdaas.core.model import get_features_from_traces, get_scores
+>>> from sdaas.core.model import get_streams_scores
+>>> get_streams_scores(streams, inventory)
+array([ 0.47279325,  0.46220043,  0.44874805,  0.51276321,  0.43225043, 0.74856103])
+```
 
-trace_ids = []
-features = []
-# (compute first the features, and then the scores at once. This is faster
-#  than calling get_scores_from_traces() on any given stream)
-for stream in streams:
-    for trace in stream:
-        feats.append(get_features_from_trace(trace, inventory))
-        id_, st_, et_ = trace.get_id(), trace.stats.starttime, trace.stats.endtime
-        ids.append((id_, st_, et_))
-trace_scores = get_scores(np.asarray(feats))
+Example 3: to compute ids and scores on a stream or iterable of traces (e.g. list. tuple):
+
+```python
+>>> from sdaas.core.model import get_traces_idscores
+>>> get_traces_idscores(stream, inventory)
+([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), ..., datetime.datetime(2011, 9, 3, 16, 42, 9, 670000))], array([ 0.47279325, ...,  0.44874805]))
+```
+
+Example 4: to compute the ids and scores on an iterable of streams (e.g., when reading from files)
+
+```python
+>>> from sdaas.core.model import get_streams_idscores
+>>> get_streams_idscores(streams, inventory)
+([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), ..., datetime.datetime(2011, 9, 3, 16, 42, 9, 670000))], array([ 0.47279325, ...,  0.44874805]))
+```
+
+
+Example 5 (Performance hint):
+All score computing functions above first transform a given trace into a feature vector via
+the functions in the `sdaas.core.features` module. The feature computation is the
+more time consuming part and can not be further optimized. However, the score computing functions
+are faster if you can call them once and not in a loop (same principle of many numpy functions).
+
+Example script
+
+```python
+	import time
+    from sdaas.core.features import get_trace_features
+    from sdaas.core.model import get_trace_score, get_traces_scores, get_streams_scores,\
+        get_scores 
+        
+    print(f'Computing scores on {N} Streams')
+
+
+    # method 1 (standard)
+    t = time.time()
+    scores = get_streams_scores(streams, metadata)
+    print(f'1)  `get_streams_scores`: {(time.time() - t):.2f}s')
+
+
+    print('To obtain the same results with more control over the loop,\n'
+          'check these alternative options:')
+
+
+    # method 2a (equivelent as the above, with more control over the loop)
+    t = time.time()
+    feats = []
+    for stream in streams:
+        for trace in stream:
+            feats.append(get_trace_features(trace, metadata))
+    scores = get_scores(feats)
+    print(f'2a) `get_trace_features` within loop + `get_scores`: {(time.time() - t):.2f}s')
+
+
+    # method 2b (equivelent as 2a, less performant)
+    scores = []
+    t = time.time()
+    for stream in streams:
+        scores.extend(get_traces_scores(stream, metadata))
+    scores = np.array(scores)
+    print(f'2b) `get_traces_score` within loop: {(time.time() - t):.2f}s')
+
+	# method 2c (equivelent as 2a, less performant)
+    scores = []
+    t = time.time()
+    for stream in streams:
+        for trace in stream:
+            scores.append(get_trace_score(trace, metadata)[0])
+    scores = np.array(scores)
+    print(f'2c) `get_trace_score` within loop: {(time.time() - t):.2f}s')
+```
+
+Output:
+
+```python
+>>> Computing scores on 10 Streams
+>>> 1)  `get_streams_scores`: 0.48s
+>>> To obtain the same results with more control over the loop,
+>>> check these alternative options:
+>>> 2a) `get_trace_features` within loop + `get_scores`: 0.43s
+>>> 2b) `get_traces_score` within loop: 1.06s
+>>> 2c) `get_trace_score` within loop: 2.49s
 ```

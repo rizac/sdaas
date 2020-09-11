@@ -12,7 +12,7 @@ from obspy.core.inventory.inventory import read_inventory
 from obspy.signal.spectral_estimation import PPSD
 
 from sdaas.core.model import get_scores
-from sdaas.core.features import get_features_from_traces
+from sdaas.core.features import get_traces_features
 
 
 class Test(unittest.TestCase):
@@ -63,7 +63,7 @@ class Test(unittest.TestCase):
                     stream.append(t)
                 # calculate features but do not capture stderr cause it causes
                 # problems with temporarily set output captures:
-                feats = get_features_from_traces(stream, metadata)
+                feats = get_traces_features(stream, metadata)
                 feats_old = np.asarray([_old.psd_values([5], _, metadata)
                                         for _ in stream])
                 self.assertTrue(np.allclose(feats, feats_old, rtol=rtol,

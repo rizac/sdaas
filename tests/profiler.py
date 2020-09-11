@@ -6,14 +6,16 @@ Created on 8 Sep 2020
 from obspy.core.stream import read
 import time
 
-from sdaas.features import get_features_from_traces, featappend, FEATURES
-from sdaas.model import get_scores_from_traces, get_scores
+from sdaas.core.features import get_trace_features, get_traces_features, featappend, FEATURES,\
+    get_streams_features
+from sdaas.core.model import get_traces_scores, get_scores, get_streams_scores,\
+    get_trace_score
 from obspy.core.inventory.inventory import read_inventory
 import numpy as np
 from os.path import basename
 import sys
-from sdaas.utils.psd import psd_values
-from sdaas.utils.cli import redirect
+from sdaas.core.psd import psd_values
+from sdaas.cli.utils import redirect
 
 
 def testperf_mseed():
@@ -28,14 +30,14 @@ def testperf_mseed():
     feats = []
     t = time.time()
     for _ in range(N):
-        feats.append(get_scores_from_traces(read(path), metadata))
+        feats.append(get_traces_scores(read(path), metadata))
         print('a')
     print(f'Read computefeat computescore join: {(time.time() -t)}')
     
     feats = []
     t = time.time()
     for _ in range(N):
-        feats = featappend(feats, get_features_from_traces(read(path), metadata))
+        feats = featappend(feats, get_traces_features(read(path), metadata))
     get_scores(feats)
     print(f'Read computefeat join computescore: {(time.time() -t)}')
 
@@ -72,25 +74,69 @@ def testwithstatement_perfs():
     path = '/Users/riccardo/work/gfz/projects/sources/python/sdaas/tests/data/GE.FLT1..HH?.mseed'
     s = read(path)
     metadata = read_inventory('/Users/riccardo/work/gfz/projects/sources/python/sdaas/tests/data/GE.FLT1.xml')
-    N = 100
+    N = 10
+    streams = [s] * N
 
-    t = time.time()
-    for _ in range(N):
-        for tr in s:
-            _get_features_from_trace(tr, metadata)
-    print(f'get_features_from_trace: {(time.time() -t)}')
+# This is the same as get_streams_scores:
+#     t = time.time()
+#     feats = []
+#     for stream in streams:
+#         for trace in stream:
+#             feats.append(get_trace_features(trace, metadata))
+#     scores = get_scores(feats)
+#     print(f'get_trace_features + get_scores: {(time.time() -t):.2f}')
+#     print(scores.shape)
 
-    t = time.time()
-    for _ in range(N):
-        for tr in s:
-            _get_features_from_trace_with1(tr, metadata)
-    print(f'get_features_from_trace_with1: {(time.time() -t)}')
+# this is also the same as get_streams_scores:
+#     t = time.time()
+#     feats = get_streams_features(streams, metadata)
+#     scores = get_scores(feats)
+#     print(f'get_streams_features + get_scores: {(time.time() -t):.2f}')
+#     print(scores.shape)
 
+    import time
+    from sdaas.core.features import get_trace_features
+    from sdaas.core.model import get_trace_score, get_traces_scores, get_streams_scores,\
+        get_scores 
+        
+    print(f'Computing scores on {N} Streams')
+    
+    # method 1 (standard)
     t = time.time()
-    for _ in range(N):
-        for tr in s:
-            _get_features_from_trace_with2(tr, metadata)
-    print(f'get_features_from_trace_with2: {(time.time() -t)}')
+    scores = get_streams_scores(streams, metadata)
+    print(f'1)  `get_streams_scores`: {(time.time() -t):.2f}s')
+    # print(scores.shape)
+
+    print('To obtain the same results with more control over the loop,\n'
+          'check these alternative options:')
+
+    # method 2a (equivelent as the above, with more control over the loop)
+    t = time.time()
+    feats = []
+    for stream in streams:
+        for trace in stream:
+            feats.append(get_trace_features(trace, metadata))
+    scores = get_scores(feats)
+    print(f'2a) `get_trace_features` within loop + `get_scores`: {(time.time() -t):.2f}s')
+    # print(scores.shape)
+
+    # method 2b (less performant)
+    scores = []
+    t = time.time()
+    for stream in streams:
+        scores.extend(get_traces_scores(stream, metadata))
+    scores = np.array(scores)
+    print(f'2b) `get_traces_score` within loop: {(time.time() -t):.2f}s')
+    # print(scores.shape)
+
+    scores = []
+    t = time.time()
+    for stream in streams:
+        for trace in stream:
+            scores.append(get_trace_score(trace, metadata)[0])
+    scores = np.array(scores)
+    print(f'2c) `get_trace_score` within loop: {(time.time() -t):.2f}s')
+    # print(scores.shape)
 
 
 if __name__ == '__main__':

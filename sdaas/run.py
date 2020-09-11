@@ -7,7 +7,7 @@ import sys
 import re
 import time
 import inspect
-from datetime import timedelta
+from datetime import timedelta, datetime
 from os.path import isdir, splitext, isfile, join, abspath, basename
 from os import listdir
 from urllib.error import HTTPError
@@ -17,8 +17,8 @@ import numpy as np
 from obspy.core.stream import read
 from obspy.core.inventory.inventory import read_inventory
 
-from sdaas.core.model import get_scores_from_traces, get_scores
-from sdaas.core.features import get_features_from_trace
+from sdaas.core.features import get_trace_idfeatures
+from sdaas.core.model import get_traces_idscores, get_scores
 from sdaas.cli.utils import redirect, ansi_colors_escape_codes
 from sdaas.cli.fdsn import fdsn_re, get_querydict, get_dataselect_url,\
     get_station_metadata_url
@@ -167,26 +167,40 @@ def process(data, metadata='', threshold=-1.0, waveform_length=120,  # in sec
     max_traceid_len = 2 + 5 + 2 + 3 + 3  # default trace id length
     with redirect(sys.stderr if capture_stderr else None):
         if filenames is None:
+            # iterate over each stream and print result
+            # immediately: we could get all streams and then compute their
+            # scores once, which is faster, but not in this case as we are
+            # downloading from the web. Also, printing results as-we-get-it
+            # it's nicer for the user whoi can start check scores while waiting
             for stream in iter_stream:
-                scores = get_scores_from_traces(stream, inv)
-                for trace, score in zip(stream, scores):
-                    id_, st_, et_ = get_id(trace)  # @UnusedVariable
+                ids, scores = get_traces_idscores(stream, inv)
+                for (id_, st_, et_), score in zip(ids, scores):
                     if not separator:  # align left
                         id_ += ' ' * max(0, max_traceid_len - len(id_))
                     print_result(id_, st_, et_, score, threshold, separator)
         else:
+            max_traceid_len += len(max(filenames, key=len)) + 1
+            # Here we can compute the streams scores once,
+            # which is the fastest:
+            # `ids, scores = get_streams_idscores(iter_stream, inv)`
+            # but we need to keep track of the file names and the mapping
+            # filename <-> trace is 1 to N. So, we could then compute
+            # scores in a for loop:
+            # `get_get_traces_idscores` (as above), which is the slowest.
+            # We have a halfway solution: compute features in a
+            # loop, and then scores all at once
             feats = []
             ids = []
-            max_traceid_len += len(max(filenames, key=len)) + 1
             for fname, stream in zip(filenames, iter_stream):
                 for trace in stream:
-                    feats.append(get_features_from_trace(trace, inv))
-                    id_, st_, et_ = get_id(trace)  # @UnusedVariable
+                    (id_, st_, et_), feat = get_trace_idfeatures(trace, inv)
+                    feats.append(feat)
                     id_ = f'{fname}/{id_}'
                     if not separator:  # align left
                         id_ += ' ' * max(0, max_traceid_len - len(id_))
                     ids.append((id_, st_, et_))
             scores = get_scores(np.asarray(feats))
+            # now sort (if needed) and print them at once:
             iter_ = zip(ids, scores)
             if sort_by_time:
                 iter_ = sorted(iter_, key=lambda _: _[0][1])
@@ -194,7 +208,7 @@ def process(data, metadata='', threshold=-1.0, waveform_length=120,  # in sec
                 print_result(*id_, score, threshold, separator)
 
 
-def print_result(trace_id: str, trace_start: str, trace_end: str,
+def print_result(trace_id: str, trace_start: datetime, trace_end: datetime,
                  score: float, threshold: float = None,
                  separator: str = None):
     '''prints a classification result form a single trace'''
@@ -211,6 +225,15 @@ def print_result(trace_id: str, trace_start: str, trace_end: str,
             colorend = ansi_colors_escape_codes.ENDC
             score_str = f'{colorstart}{score_str}{colorend}'
             outlier_str = f'{colorstart}{outlier_str}{colorend}'
+
+    if not separator:
+        # format for readability:
+        trace_start = f'{trace_start.isoformat(" "):<26}'
+        trace_end = f'{trace_end.isoformat(" "):<26}'
+    else:
+        # format for CSV
+        trace_start = f'{trace_start.isoformat()}'
+        trace_end = f'{trace_end.isoformat()}'
 
     sep = separator or '  '
     print(
@@ -239,23 +262,23 @@ def read_data(path_or_url, format='MSEED', headonly=False, **kwargs):  # @Reserv
                         f'(path/url: {path_or_url})')
 
 
-def get_id(trace):
-    '''
-    Returns the ID of the given trace as tuple (id, starttime, endtime)
-
-    :return: the tuple of strings (id, starttime, endtime), where id is in the
-    form 'net.sta.loc.cha' and  starttime and endtime are ISO formatted
-    date-time strings
-    '''
-    start, end = trace.stats.starttime.datetime, trace.stats.endtime.datetime
-    # round start and end: first add 1 second and then use .replace (see below)
-    if start.microsecond >= 500000:
-        start = start + timedelta(seconds=1)
-    if end.microsecond >= 500000:
-        end = end + timedelta(seconds=1)
-    return (trace.get_id(),
-            start.replace(microsecond=0).isoformat(),
-            end.replace(microsecond=0).isoformat())
+# def get_id(trace):
+#     '''
+#     Returns the ID of the given trace as tuple (id, starttime, endtime)
+# 
+#     :return: the tuple of strings (id, starttime, endtime), where id is in the
+#     form 'net.sta.loc.cha' and  starttime and endtime are ISO formatted
+#     date-time strings
+#     '''
+#     start, end = trace.stats.starttime.datetime, trace.stats.endtime.datetime
+#     # round start and end: first add 1 second and then use .replace (see below)
+#     if start.microsecond >= 500000:
+#         start = start + timedelta(seconds=1)
+#     if end.microsecond >= 500000:
+#         end = end + timedelta(seconds=1)
+#     return (trace.get_id(),
+#             start.replace(microsecond=0).isoformat(),
+#             end.replace(microsecond=0).isoformat())
 
 
 def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
