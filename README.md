@@ -118,19 +118,21 @@ array([ 0.47279325,  0.46220043,  0.44874805,  0.51276321,  0.43225043, 0.748561
 ```
 
 Example 3: to compute ids and scores on a stream or iterable of traces (e.g. list. tuple):
+(ids are tuples of the form (trace_id:str, trace_start:datetime, trace_end:datetime))
 
 ```python
 >>> from sdaas.core.model import get_traces_idscores
 >>> get_traces_idscores(stream, inventory)
-([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), ..., datetime.datetime(2011, 9, 3, 16, 42, 9, 670000))], array([ 0.47279325, ...,  0.44874805]))
+([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
 ```
 
 Example 4: to compute the ids and scores on an iterable of streams (e.g., when reading from files)
+(ids are tuples of the form (trace_id:str, trace_start:datetime, trace_end:datetime))
 
 ```python
 >>> from sdaas.core.model import get_streams_idscores
 >>> get_streams_idscores(streams, inventory)
-([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), ..., datetime.datetime(2011, 9, 3, 16, 42, 9, 670000))], array([ 0.47279325, ...,  0.44874805]))
+([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
 ```
 
 
@@ -193,10 +195,10 @@ Output:
 
 ```python
 >>> Computing scores on 10 Streams
->>> 1)  `get_streams_scores`: 0.48s
->>> To obtain the same results with more control over the loop,
->>> check these alternative options:
->>> 2a) `get_trace_features` within loop + `get_scores`: 0.43s
->>> 2b) `get_traces_score` within loop: 1.06s
->>> 2c) `get_trace_score` within loop: 2.49s
+1)  `get_streams_scores`: 0.43s
+To obtain the same results with more control over the loop,
+check these alternative options:
+2a) `get_trace_features` within loop + `get_scores`: 0.43s
+2b) `get_traces_score` within loop: 1.06s
+2c) `get_trace_score` within loop: 2.49s
 ```
