@@ -18,7 +18,7 @@ from joblib import load
 from sklearn.ensemble.iforest import IsolationForest
 
 from sdaas.core.features import FEATURES, get_traces_idfeatures, get_traces_features,\
-    get_streams_idfeatures, get_streams_features, get_trace_features
+    get_streams_idfeatures, get_streams_features, get_trace_features, _get_id
 
 
 DEFAULT_TRAINED_MODEL = load(join(dirname(__file__), 'models',
@@ -33,25 +33,27 @@ DEFAULT_TRAINED_MODEL = load(join(dirname(__file__), 'models',
                                   '.sklmodel'))
 
 
-def get_streams_idscores(streams, metadata):
+def get_streams_idscores(streams, metadata, idfunc=_get_id):
     '''
-    Computes the amplitude anomaly score in [0, 1] from the Traces in the given
-    Streams and their identifiers. For details, see :func:`get_scores`
+    Computes the amplitude anomaly score in [0, 1] from the
+    `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
+    in `streams`, and their identifiers. For details, see :func:`get_scores`
 
     :param streams: an iterable of
         `Streams<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
     :param metadata: the Streams metadata as
         `Inventory object <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
+    :param idfunc: the (optional) function `f(trace)` used to get the trace id.
+        When None or missing, each trace id will be computed as the tuple
+        `(trace_channel_seedID:str, trace_start:datetime, trace_end:datetime)`
 
-    :return: the tuple `(ids, scores)`: if N = number of processed traces,
-        then ids is a list N identifiers in the for of tuples
-        `(trace_id:str, trace_start:datetime, trace_end:datetime)` and scores
-        is a numpy array of N floats in [0, 1]. NaN values
-        might be present (meaning: could not compute score)
+    :return: the tuple `(ids, scores)` where, called N the processed traces
+        number, `ids` is a list N identifiers and scores is a numpy array of N
+        floats in [0, 1], or numpy.nan (if score could not be computed)
 
     .. seealso:: :func:`get_scores`
     '''
-    ids, feats = get_streams_idfeatures(streams, metadata)
+    ids, feats = get_streams_idfeatures(streams, metadata, idfunc)
     return ids, get_scores(feats, check_nan=True)
 
 
@@ -65,9 +67,8 @@ def get_streams_scores(streams, metadata):
     :param metadata: the Streams metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
-    :return: a numpy array of N floats in [0, 1], where N is the number of
-        processed Traces.  NaN values might be present (meaning: could not
-        compute score)
+    :return: a numpy array of N floats in [0, 1], or numpy.nan (if score could
+        not be computed)
 
     .. seealso:: :func:`get_scores`
     '''
@@ -75,7 +76,7 @@ def get_streams_scores(streams, metadata):
     return get_scores(feats, check_nan=True)
 
 
-def get_traces_idscores(traces, metadata):
+def get_traces_idscores(traces, metadata, idfunc=_get_id):
     '''
     Computes the amplitude anomaly score in [0, 1] from the given Traces and
     their identifiers. For details on the scores, see :func:`get_scores`
@@ -86,16 +87,17 @@ def get_traces_idscores(traces, metadata):
         `Stream <https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
     :param metadata: the Traces metadata as
         `Inventory object <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
+    :param idfunc: the (optional) function `f(trace)` used to get the trace id.
+        When None or missing, each trace id will be computed as the tuple
+        `(trace_channel_seedID:str, trace_start:datetime, trace_end:datetime)`
 
-    :return: the tuple `(ids, scores)`: if N = number of processed traces,
-        then ids is a list N identifiers in the for of tuples
-        `(trace_id:str, trace_start:datetime, trace_end:datetime)` and scores
-        is a numpy array of N floats in [0, 1].  NaN values
-        might be present (meaning: could not compute score)
+    :return: the tuple `(ids, scores)` where, called N the processed traces
+        number, `ids` is a list N identifiers and scores is a numpy array of N
+        floats in [0, 1], or numpy.nan (if score could not be computed)
 
     .. seealso:: :func:`get_scores`
     '''
-    ids, feats = get_traces_idfeatures(traces, metadata)
+    ids, feats = get_traces_idfeatures(traces, metadata, idfunc)
     return ids, get_scores(feats, check_nan=True)
 
 
@@ -131,8 +133,8 @@ def get_trace_score(trace, metadata):
     :param metadata: the Trace metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
-    :return: a numpy float in [0, 1]. numpy.nan can be returned and means:
-        could not compute the score
+    :return: a numpy float in [0, 1], or numpy.nan  (if score could not be
+        computed)
 
     .. seealso:: :func:`get_scores`
     '''

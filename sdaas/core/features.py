@@ -18,9 +18,22 @@ PSD_PERIODS_SEC = (5.,)  # use floats for safety (numpy cast errors?)
 FEATURES = tuple(PSD_PERIODS_SEC)
 
 
+def _get_id(trace):
+    '''Returns the default id from a given trace'''
+    # this id uniquely identfies a trace. Note that we could return
+    # trace.stats.starttime and trace.stats.endtime (UTCDateTimes)
+    # we choose here to provide standard Python classes (potentially loosing
+    # nanosecond precision though) which seem to be also more lightweight
+    # (almost half of the size, from tests)
+    return (trace.get_id(), trace.stats.starttime.datetime,
+            trace.stats.endtime.datetime)
+
+
 def get_streams_features(streams, metadata):
     '''
-    Computes the features of all traces in streams
+    Computes the features of all
+    `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
+     in `streams`
 
     :param streams: an iterable of
         `Streams <https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
@@ -28,8 +41,7 @@ def get_streams_features(streams, metadata):
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
     :return: a N X 1 numpy array of floats representing the N one-dimensional
-        feature vectors, where N is the total number of processed ObsPy
-        `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
+        feature vectors, where N is the total number of processed traces
 
     .. seealso:: :func:`get_trace_features`
     '''
@@ -40,29 +52,30 @@ def get_streams_features(streams, metadata):
     return np.array(values)
 
 
-def get_streams_idfeatures(streams, metadata):
+def get_streams_idfeatures(streams, metadata, idfunc=_get_id):
     '''
-    Computes the features of all traces in streams returning also the
-    traces identifiers
+    Computes the features of all
+    `Traces<https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
+    in `streams` returning also the traces identifiers
 
     :param streams: an iterable of
         `Streams <https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
     :param metadata: the streams metadata as
         `Inventory object <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
+    :param idfunc: the (optional) function `f(trace)` used to get the trace id.
+        When None or missing, each trace id will be computed as the tuple
+        `(trace_channel_seedID:str, trace_start:datetime, trace_end:datetime)`
 
-    :return: the tuple `(ids, features)` where, called N the number of processed
-        ObsPy `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`,
-        ids is a list N identifiers in the for of tuples
-        `(trace_id:str, trace_start:datetime, trace_end:datetime)`, and
-        features is a N X 1 numpy array of floats representing the N
-        one-dimensional feature vectors
+    :return: the tuple `(ids, features)` where, called N the processed traces
+        number, ids is a list N identifiers and features is a N X 1 numpy array
+        of floats representing the N one-dimensional feature vectors
 
     .. seealso:: :func:`get_trace_idfeatures`
     '''
     values, ids = [], []
     for stream in streams:
         for trace in stream:
-            id_, val = get_trace_idfeatures(trace, metadata)
+            id_, val = get_trace_idfeatures(trace, metadata, idfunc)
             ids.append(id_)
             values.append(val)
     return ids, np.array(values)
@@ -74,7 +87,7 @@ def get_traces_features(traces, metadata):
 
     :param streams: an iterable of
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
-        including a
+        including also the
         `Stream object<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
     :param metadata: the streams metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
@@ -90,29 +103,29 @@ def get_traces_features(traces, metadata):
     return np.array(values)
 
 
-def get_traces_idfeatures(traces, metadata):
+def get_traces_idfeatures(traces, metadata, idfunc=_get_id):
     '''
     Computes the features of all traces and their identifiers
 
     :param streams: an iterable of
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
-        including a
+        including also the
         `Stream object<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
     :param metadata: the traces metadata as
         `Inventory object <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
+    :param idfunc: the (optional) function `f(trace)` used to get the trace id.
+        When None or missing, each trace id will be computed as the tuple
+        `(trace_channel_seedID:str, trace_start:datetime, trace_end:datetime)`
 
-    :return: the tuple `(ids, features)` where, called N the number of
-        processed traces,
-        ids is a list N identifiers in the for of tuples
-        `(trace_id:str, trace_start:datetime, trace_end:datetime)`, and
-        features is a N X 1 numpy array of floats representing the N
-        one-dimensional feature vectors
+    :return: the tuple `(ids, features)` where, called N the processed traces
+        number, ids is a list N identifiers and features is a N X 1 numpy array
+        of floats representing the N one-dimensional feature vectors
 
     .. seealso:: :func:`get_trace_idfeatures`
     '''
     values, ids = [], []
     for trace in traces:
-        id_, val = get_trace_idfeatures(trace, metadata)
+        id_, val = get_trace_idfeatures(trace, metadata, idfunc)
         ids.append(id_)
         values.append(val)
     return ids, np.array(values)
@@ -138,7 +151,7 @@ def get_trace_features(trace, metadata):
     return psd_values(FEATURES, trace, metadata)
 
 
-def get_trace_idfeatures(trace, metadata):
+def get_trace_idfeatures(trace, metadata, idfunc=_get_id):
     '''
     Computes the features of the given trace and its identifier.
     Note that the outcome of the Feature selection employed for identifying the
@@ -151,25 +164,14 @@ def get_trace_idfeatures(trace, metadata):
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
     :param metadata: the streams metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
+    :param idfunc: the (optional) function `f(trace)` used to get the trace id.
+        When None or missing, the trace id will be computed as the tuple
+        `(trace_channel_seedID:str, trace_start:datetime, trace_end:datetime)`
 
-    :return: the tuple `(id, features)` where
-        id is the tuple
-        `(trace_id:str, trace_start:datetime, trace_end:datetime)`, and
-        features is a numpy array of length 1 representing the trace feature
-        vector
+    :return: the tuple `(id, features)` where id is the trace id and features
+        is a numpy array of length 1 representing the trace features vector
     '''
-    return _get_id(trace), psd_values(FEATURES, trace, metadata)
-
-
-def _get_id(trace):
-    '''Returns an id from the given trace'''
-    # this id uniquely identfies a trace. Note that we could return
-    # trace.stats.starttime and trace.stats.endtime (UTCDateTimes)
-    # we choose here to provide standard Python classes (potentially loosing
-    # nanosecond precision though) which seem to be also more lightweight
-    # (almost half of the size, from tests)
-    return (trace.get_id(), trace.stats.starttime.datetime,
-            trace.stats.endtime.datetime)
+    return idfunc(trace), psd_values(FEATURES, trace, metadata)
 
 
 def featappend(features1, features2):
