@@ -1,5 +1,5 @@
 '''
-Core module for computing amplitude anomaly scores using by default
+Module for computing amplitude anomaly scores using by default
 our IsolationForest trained machine learning model based on the
 IsolationForest:
 ```
@@ -39,15 +39,15 @@ def get_streams_idscores(streams, metadata):
     Streams and their identifiers. For details, see :func:`get_scores`
 
     :param streams: an iterable of
-        `Stream objects<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
+        `Streams<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
     :param metadata: the Streams metadata as
         `Inventory object <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
     :return: the tuple `(ids, scores)`: if N = number of processed traces,
         then ids is a list N identifiers in the for of tuples
-        `(trace_id:str, tracs_start:datetime, trace_end:datetime)` and scores
+        `(trace_id:str, trace_start:datetime, trace_end:datetime)` and scores
         is a numpy array of N floats in [0, 1]. NaN values
-        might be present when any computed trace feature is NaN
+        might be present (meaning: could not compute score)
 
     .. seealso:: :func:`get_scores`
     '''
@@ -61,13 +61,13 @@ def get_streams_scores(streams, metadata):
     For details, see :func:`get_scores`
 
     :param streams: an iterable of
-        `Stream objects<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
+        `Streams<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
     :param metadata: the Streams metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
     :return: a numpy array of N floats in [0, 1], where N is the number of
-        processed Traces. NaN values might be present when any computed trace
-        feature is NaN
+        processed Traces.  NaN values might be present (meaning: could not
+        compute score)
 
     .. seealso:: :func:`get_scores`
     '''
@@ -81,17 +81,17 @@ def get_traces_idscores(traces, metadata):
     their identifiers. For details on the scores, see :func:`get_scores`
 
     :param streams: an iterable of
-        `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
-        including a
-        `Stream object<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
+        `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
+        like e.g., list, tuple, generator,
+        `Stream <https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
     :param metadata: the Traces metadata as
         `Inventory object <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
     :return: the tuple `(ids, scores)`: if N = number of processed traces,
         then ids is a list N identifiers in the for of tuples
-        `(trace_id:str, tracs_start:datetime, trace_end:datetime)` and scores
-        is a numpy array of N floats in [0, 1]. NaN values
-        might be present when any computed trace feature is NaN
+        `(trace_id:str, trace_start:datetime, trace_end:datetime)` and scores
+        is a numpy array of N floats in [0, 1].  NaN values
+        might be present (meaning: could not compute score)
 
     .. seealso:: :func:`get_scores`
     '''
@@ -106,14 +106,14 @@ def get_traces_scores(traces, metadata):
 
     :param streams: an iterable of
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
-        including a
-        `Stream object<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
+        like e.g., list, tuple, generator,
+        `Stream <https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
     :param metadata: the Traces metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
     :return: a numpy array of N floats in [0, 1], where N is the number of
-        processed Traces. NaN values might be present when any computed trace
-        feature is NaN
+        processed Traces.  NaN values might be present (meaning: could not
+        compute score)
 
     .. seealso:: :func:`get_scores`
     '''
@@ -131,7 +131,8 @@ def get_trace_score(trace, metadata):
     :param metadata: the Trace metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
-    :return: a numpy float in [0, 1]
+    :return: a numpy float in [0, 1]. numpy.nan can be returned and means:
+        could not compute the score
 
     .. seealso:: :func:`get_scores`
     '''

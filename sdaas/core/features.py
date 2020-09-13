@@ -1,5 +1,9 @@
 '''
-Module for computing model features from ObsPy objects (Traces Streams)
+Module for computing model features from ObsPy objects (Traces Streams).
+The features will be used as input of our model to compute the traces
+anomaly scores
+
+.. seealso:: :mod:`module`
 
 Created on 18 Jun 2020
 
@@ -23,7 +27,11 @@ def get_streams_features(streams, metadata):
     :param metadata: the streams metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
-    :return: a N X 1 numpy array of floats representing the traces features
+    :return: a N X 1 numpy array of floats representing the N one-dimensional
+        feature vectors, where N is the total number of processed ObsPy
+        `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
+
+    .. seealso:: :func:`get_trace_features`
     '''
     values = []
     for stream in streams:
@@ -42,10 +50,14 @@ def get_streams_idfeatures(streams, metadata):
     :param metadata: the streams metadata as
         `Inventory object <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
-    :return: the tuple `(ids, features)`: if N = number of processed traces,
-        then ids is a list N identifiers in the for of tuples
-        `(trace_id:str, tracs_start:datetime, trace_end:datetime)` and features
-        is a N X 1 numpy array of floats representing the traces features
+    :return: the tuple `(ids, features)` where, called N the number of processed
+        ObsPy `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`,
+        ids is a list N identifiers in the for of tuples
+        `(trace_id:str, trace_start:datetime, trace_end:datetime)`, and
+        features is a N X 1 numpy array of floats representing the N
+        one-dimensional feature vectors
+
+    .. seealso:: :func:`get_trace_idfeatures`
     '''
     values, ids = [], []
     for stream in streams:
@@ -67,7 +79,10 @@ def get_traces_features(traces, metadata):
     :param metadata: the streams metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
-    :return: a N X 1 numpy array of floats representing the traces features
+    :return: a N X 1 numpy array of floats representing the N one-dimensional
+        feature vectors, where N is the total number of processed Traces
+
+    .. seealso:: :func:`get_trace_features`
     '''
     values = []
     for trace in traces:
@@ -86,10 +101,14 @@ def get_traces_idfeatures(traces, metadata):
     :param metadata: the traces metadata as
         `Inventory object <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
-    :return: the tuple `(ids, features)`: if N = number of processed traces,
-        then ids is a list N identifiers in the for of tuples
-        `(trace_id:str, tracs_start:datetime, trace_end:datetime)` and features
-        is a N X 1 numpy array of floats representing the traces features
+    :return: the tuple `(ids, features)` where, called N the number of
+        processed traces,
+        ids is a list N identifiers in the for of tuples
+        `(trace_id:str, trace_start:datetime, trace_end:datetime)`, and
+        features is a N X 1 numpy array of floats representing the N
+        one-dimensional feature vectors
+
+    .. seealso:: :func:`get_trace_idfeatures`
     '''
     values, ids = [], []
     for trace in traces:
@@ -101,40 +120,43 @@ def get_traces_idfeatures(traces, metadata):
 
 def get_trace_features(trace, metadata):
     '''
-    Computes the features of the given trace
+    Computes the features of the given trace.
+    Note that the outcome of the Feature selection employed for identifying the
+    best combination of features resulted in a single feature among all PSD
+    periods inspected (PSD computed at 5s period). Consequently, our feature
+    space has dimenion 1 and each trace feature vector is returned as a
+    1-length numpy array of shape (1,)
 
     :param trace: a
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
     :param metadata: the streams metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
-    :return: a 1-length numpy float array of shape (1,) representing the traces
-        features.
-        NOTE: the features computed from a trace is always a vector (numpy
-        arrays) of M scalars: it happens to be M=1 because of the evaluation
-        process revealing that a single PSD period produces the best results.
-        In general (or in the future with new implementations) M might be > 1
+    :return: a 1-length numpy float array of shape (1,) representing the trace
+        features vector
     '''
     return psd_values(FEATURES, trace, metadata)
 
 
 def get_trace_idfeatures(trace, metadata):
     '''
-    Computes the features of the given trace and its identifier
+    Computes the features of the given trace and its identifier.
+    Note that the outcome of the Feature selection employed for identifying the
+    best combination of features resulted in a single feature among all PSD
+    periods inspected (PSD computed at 5s period). Consequently, our feature
+    space has dimenion 1 and each trace feature vector is returned as a
+    1-length numpy array of shape (1,)
 
     :param trace: a
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
     :param metadata: the streams metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`
 
-    :return: the tuple `(id, features)`: id is a tuple of the form
-        `(trace_id:str, tracs_start:datetime, trace_end:datetime)` and features
-        is a 1-length numpy float array of shape (1,) representing the traces
-        features.
-        NOTE: the features computed from a trace is always a vector (numpy
-        arrays) of M scalars: it happens to be M=1 because of the evaluation
-        process revealing that a single PSD period produces the best results.
-        In general (or in the future with new implementations) M might be > 1
+    :return: the tuple `(id, features)` where
+        id is the tuple
+        `(trace_id:str, trace_start:datetime, trace_end:datetime)`, and
+        features is a numpy array of length 1 representing the trace feature
+        vector
     '''
     return _get_id(trace), psd_values(FEATURES, trace, metadata)
 
