@@ -136,7 +136,7 @@ array([ 0.47279325,  0.46220043,  0.44874805,  0.51276321,  0.43225043, 0.748561
 ([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
 ```
 
-`(Note: the last two functions have an additional argument `idfunc=lambda trace -> trace_id` for customizing the returned trace id)`
+*(Note: the last two functions have an optionl argument `idfunc=lambda trace -> trace_id` for customizing the returned trace id)*
 
 
 **Example 5** (Performance hint):
