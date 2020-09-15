@@ -81,7 +81,7 @@ def get_traces_idscores(traces, metadata, idfunc=_get_id):
     Computes the amplitude anomaly score in [0, 1] from the given Traces and
     their identifiers. For details on the scores, see :func:`get_scores`
 
-    :param streams: an iterable of
+    :param traces: an iterable of
         `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
         like e.g., list, tuple, generator,
         `Stream <https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
@@ -106,7 +106,7 @@ def get_traces_scores(traces, metadata):
     Computes the amplitude anomaly score in [0, 1] from the given Traces.
     For details, see :func:`get_scores`
 
-    :param streams: an iterable of
+    :param traces: an iterable of
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
         like e.g., list, tuple, generator,
         `Stream <https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
@@ -128,7 +128,7 @@ def get_trace_score(trace, metadata):
     Computes the amplitude anomaly score in [0, 1] from the given Trace.
     For details, see :func:`get_scores`
 
-    :param streams: a
+    :param trace: a
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
     :param metadata: the Trace metadata as
         `Inventory <https://docs.obspy.org/packages/obspy.core.inventory.html>_`

@@ -85,7 +85,7 @@ def get_traces_features(traces, metadata):
     '''
     Computes the features of all traces
 
-    :param streams: an iterable of
+    :param traces: an iterable of
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
         including also the
         `Stream object<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
@@ -107,7 +107,7 @@ def get_traces_idfeatures(traces, metadata, idfunc=_get_id):
     '''
     Computes the features of all traces and their identifiers
 
-    :param streams: an iterable of
+    :param traces: an iterable of
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
         including also the
         `Stream object<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
