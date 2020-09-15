@@ -133,7 +133,7 @@ def testwithstatement_perfs():
     t = time.time()
     for stream in streams:
         for trace in stream:
-            scores.append(get_trace_score(trace, metadata)[0])
+            scores.append(get_trace_score(trace, metadata))
     scores = np.array(scores)
     print(f'2c) `get_trace_score` within loop: {(time.time() -t):.2f}s')
     # print(scores.shape)
