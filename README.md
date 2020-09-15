@@ -102,7 +102,7 @@ Assuming you have one or more [Stream](https://docs.obspy.org/packages/autogen/o
 or [Trace](https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html),
 with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.html), then
 
-Example 1: to compute the traces scores in a stream or iterable of traces (e.g. list. tuple):
+**Example 1**: to compute the traces scores in a stream or iterable of traces (e.g. list. tuple):
 
 ```python
 >>> from sdaas.core.model import get_traces_scores
@@ -110,7 +110,7 @@ Example 1: to compute the traces scores in a stream or iterable of traces (e.g. 
 array([ 0.47279325,  0.46220043,  0.44874805])
 ```
 
-Example 2: to compute the traces scores in an iterable of streams (e.g., when reading from files)
+**Example 2**: to compute the traces scores in an iterable of streams (e.g., when reading from files)
 
 ```python
 >>> from sdaas.core.model import get_streams_scores
@@ -118,7 +118,7 @@ Example 2: to compute the traces scores in an iterable of streams (e.g., when re
 array([ 0.47279325,  0.46220043,  0.44874805,  0.51276321,  0.43225043, 0.74856103])
 ```
 
-Example 3: to compute the traces ids and scores in a stream or iterable of traces (e.g. list. tuple):
+**Example 3**: to compute the traces ids and scores in a stream or iterable of traces (e.g. list. tuple):
 (ids are tuples of the form (trace_id:str, trace_start:datetime, trace_end:datetime))
 
 ```python
@@ -127,7 +127,7 @@ Example 3: to compute the traces ids and scores in a stream or iterable of trace
 ([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
 ```
 
-Example 4: to compute the traces ids and scores on an iterable of streams (e.g., when reading from files)
+**Example 4**: to compute the traces ids and scores on an iterable of streams (e.g., when reading from files)
 (ids are tuples of the form (trace_id:str, trace_start:datetime, trace_end:datetime))
 
 ```python
@@ -136,10 +136,10 @@ Example 4: to compute the traces ids and scores on an iterable of streams (e.g.,
 ([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
 ```
 
-(Note: the last two functions have an additional argument `idfunc=lambda trace -> trace_id` for customizing the returned trace id)
+`(Note: the last two functions have an additional argument `idfunc=lambda trace -> trace_id` for customizing the returned trace id)`
 
 
-Example 5 (Performance hint):
+**Example 5** (Performance hint):
 All score computing functions above first transform a given trace into a feature vector via
 the functions in the `sdaas.core.features` module. The feature computation is the
 more time consuming part and can not be further optimized. However, the score computing functions

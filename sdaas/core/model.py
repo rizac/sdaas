@@ -139,7 +139,7 @@ def get_trace_score(trace, metadata):
     .. seealso:: :func:`get_scores`
     '''
     feats = get_trace_features(trace, metadata)
-    return get_scores(feats, check_nan=True)
+    return get_scores(feats, check_nan=True)[0]
 
 
 def get_scores(features, model=None, check_nan=True):
