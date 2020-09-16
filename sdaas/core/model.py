@@ -1,7 +1,7 @@
 '''
 Module for computing amplitude anomaly scores using by default
-our IsolationForest trained machine learning model based on the
-IsolationForest:
+our trained machine learning model based on the
+Isolation Forest algorithm:
 ```
 Liu, F. T., Ting, K., and Zhou, Z.-H. (2008). Isolation forest.
 In 2008 Eighth IEEE Inter- national Conference on Data Mining, pages 413–422.
