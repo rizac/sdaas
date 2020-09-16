@@ -136,11 +136,12 @@ array([ 0.47279325,  0.46220043,  0.44874805,  0.51276321,  0.43225043, 0.748561
 ([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
 ```
 
-*(Note: the last two functions have an optionl argument `idfunc=lambda trace -> trace_id` for customizing the returned trace id)*
+*(Note: the last two functions have an optionl argument `idfunc=lambda trace: custom_trace_id` for customizing the returned trace id)*
 
 
 **Example 5** (Performance hint):
-All score computing functions above first transform a given trace into a feature vector via
+All functions computing the anomaly score from an ObsPy Trace or Stream
+first transform a given object into a feature vector via
 the functions in the `sdaas.core.features` module. The feature computation is the
 more time consuming part and can not be further optimized. However, the score computing functions
 are faster if you can call them once and not in a loop (same principle of many numpy functions).
@@ -186,7 +187,7 @@ scores = np.array(scores)
 print(f'2b) `get_traces_score` within loop: {(time.time() - t):.2f}s')
 
 
-# method 2c (same as 2a, less performant)
+# method 2c (same as 2a, even less performant)
 scores = []
 t = time.time()
 for stream in streams:
