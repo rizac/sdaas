@@ -141,10 +141,11 @@ array([ 0.47279325,  0.46220043,  0.44874805,  0.51276321,  0.43225043, 0.748561
 
 **Example 5** (Performance hint):
 All functions computing the anomaly score from an ObsPy Trace or Stream
-first transform a given object into a feature vector via
-the functions in the `sdaas.core.features` module. The feature computation is the
-more time consuming part and can not be further optimized. However, the score computing functions
-are faster if you can call them once and not in a loop (same principle of many numpy functions).
+first transform the given object into a feature vector via
+the functions implemented in the `sdaas.core.features` module. The feature computation
+is the time consuming part and can not be further optimized. However, the function computing scores
+from the given features is faster if you can call it once 
+and not in a loop (same principle of many numpy functions).
 
 Example script
 
@@ -168,7 +169,7 @@ print('To obtain the same results with more control over the loop,\n'
       'check these alternative options:')
 
 
-# method 2a (same as method 1, with more control over the loop)
+# method 2a (same as method 1, compute scores once avoiding loops)
 t = time.time()
 feats = []
 for stream in streams:
@@ -178,7 +179,7 @@ scores = get_scores(feats)
 print(f'2a) `get_trace_features` within loop + `get_scores`: {(time.time() - t):.2f}s')
 
 
-# method 2b (same as 2a, less performant)
+# method 2b (same as 2a, compute scores in loop. Less performant)
 scores = []
 t = time.time()
 for stream in streams:
@@ -187,7 +188,7 @@ scores = np.array(scores)
 print(f'2b) `get_traces_score` within loop: {(time.time() - t):.2f}s')
 
 
-# method 2c (same as 2a, even less performant)
+# method 2c (same as 2a, compute scores in loop, even less performant)
 scores = []
 t = time.time()
 for stream in streams:
