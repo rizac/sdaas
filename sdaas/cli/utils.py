@@ -8,6 +8,21 @@ Created on 10 Sep 2020
 import os
 import sys
 from contextlib import contextmanager
+import math
+import shutil
+from typing import TextIO
+
+
+def isatty(stream):
+    '''
+    returns true if the given stream (e.g. sys.stdout, sys.stderr)
+    is interactive
+    '''
+    # isatty is not always implemented, #6223 (<- of which project???)
+    try:
+        return stream.isatty()
+    except AttributeError:
+        return False
 
 
 class ansi_colors_escape_codes:
@@ -32,10 +47,7 @@ class ansi_colors_escape_codes:
         https://github.com/django/django/blob/master/django/core/management/color.py#L12
         """
         supported_platform = sys.platform != 'win32' or 'ANSICON' in os.environ
-
-        # isatty is not always implemented, #6223.
-        is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
-        return supported_platform and is_a_tty
+        return supported_platform and isatty(sys.stdout)
 
 
 @contextmanager
@@ -101,3 +113,75 @@ def redirect(src=None, dst=os.devnull):
         finally:
             # restore stdout/err. buffering and flags such as CLOEXEC may be different:
             _redirect_to(src_fileobject)
+
+
+class ProgressBar:
+    """
+    Produce progress bar with ANSI code output.
+    """
+    # Code modified from:
+    # https://mike42.me/blog/2018-06-make-better-cli-progress-bars-with-unicode-block-characters
+
+    def __init__(self, target: TextIO or None = sys.stderr):
+        self._target = target
+        self._text_only = not isatty(self._target)
+        if self._target:
+            self._update_width()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            # Set to 100% for neatness, if no exception is thrown
+            self.update(1.0)
+        if not self._text_only:
+            # ANSI-output should be rounded off with a newline
+            self._target.write('\n')
+        self._target.flush()
+
+    def _update_width(self):
+        self._width, _ = shutil.get_terminal_size((80, 20))
+
+    def update(self, progress: float):
+        if not self._target:
+            return
+        # Update width in case of resize
+        self._update_width()
+        # Progress bar itself
+        if self._width < 12:
+            # No label in excessively small terminal
+            percent_str = ''
+            progress_bar_str = ProgressBar.progress_bar_str(progress, self._width - 2)
+#         elif self._width < 40:
+#             # No padding at smaller size
+#             percent_str = "{:6.2f} %".format(progress * 100)
+#             progress_bar_str = ProgressBar.progress_bar_str(progress, self._width - 11) + ' '
+#         else:
+#             # Standard progress bar with padding and label
+#             percent_str = "{:6.2f} %".format(progress * 100) + "  "
+#             progress_bar_str = " " * 5 + ProgressBar.progress_bar_str(progress, self._width - 21)
+        else:
+            percent_str = "{:6.2f} %".format(progress * 100)
+            progress_bar_str = ProgressBar.progress_bar_str(progress, self._width - 11)
+
+        # Write output
+        if self._text_only:
+            self._target.write(progress_bar_str + percent_str + '\n')
+            self._target.flush()
+        else:
+            self._target.write('\033[G' + progress_bar_str + percent_str)
+            self._target.flush()
+
+    @staticmethod
+    def progress_bar_str(progress: float, width: int):
+        # 0 <= progress <= 1
+        progress = min(1, max(0, progress))
+        whole_width = math.floor(progress * width)
+        remainder_width = (progress * width) % 1
+        part_width = math.floor(remainder_width * 8)
+        part_char = [" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉"][part_width]
+        if (width - whole_width - 1) < 0:
+            part_char = ""
+        line = "[" + "█" * whole_width + part_char + " " * (width - whole_width - 1) + "]"
+        return line

@@ -90,7 +90,7 @@ class Test(unittest.TestCase):
 #             process(data)
 #             # self.assertEqual(fakeOutput.getvalue().strip(), 'hello world')
 
-    def test_run_from_data_dir(self):  # , mock_ansi_colors_escape_codes_supported):
+    def tst_run_from_data_dir(self):  # , mock_ansi_colors_escape_codes_supported):
         '''tests scores from several files in directory 
         '''
         with patch('sdaas.run.ansi_colors_escape_codes.are_supported_on_current_terminal',
@@ -107,7 +107,7 @@ class Test(unittest.TestCase):
                         check_output(captured, th, sep,
                                      expected_rows=expected_rows)
 
-    def test_run_from_data_file(self):
+    def tst_run_from_data_file(self):
         '''tests a particular case of station download from geofon.
         Needs internet connection
         '''
@@ -137,7 +137,7 @@ class Test(unittest.TestCase):
                         check_output(captured, th, sep,
                                      expected_rows=expected_rows)
 
-    def test_run_from_data_dir_bad_inventory(self):
+    def tst_run_from_data_dir_bad_inventory(self):
 
         # wrong metadata:
         with self.assertRaises(Exception) as context:
@@ -152,6 +152,27 @@ class Test(unittest.TestCase):
                     capture_stderr=False)
 
 
+    def tst_run_from_http(self):
+        url = ('http://geofon.gfz-potsdam.de/fdsnws/station/1/'
+               'query?net=GE&sta=EIL&cha=BH?&start=2019-06-01')
+        process(url, capture_stderr=False, download_count=10, threshold=0.6)
+
+    def tst_run_from_url_no_data(self):
+        url = ('http://geofon.gfz-potsdam.de/fdsnws/station/1/'
+               'query?net=GE&sta=E?&cha=BH?&start=2019-06-01')
+        process(url, capture_stderr=False, download_count=10, threshold=0.6)
+        
+    def tst_run_from_url_several(self):
+        url = ("http://geofon.gfz-potsdam.de/fdsnws/station/1/query"
+               "?net=GE&sta=A*&cha=BH?&start=2019-06-01")
+        process(url, capture_stderr=False, download_count=10, threshold=0.6)
+
+    def test_run_from_url_several_aggregate(self):
+        url = ("http://geofon.gfz-potsdam.de/fdsnws/station/1/query"
+               "?net=GE&sta=A*&cha=BH?&start=2019-06-01")
+        process(url, aggregate='median',
+                capture_stderr=False, download_count=10, threshold=0.6)
+        
 if __name__ == "__main__":
     #  import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

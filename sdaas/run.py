@@ -3,6 +3,7 @@ seismic waveforms anomaly scores'''
 
 import argparse
 from argparse import RawTextHelpFormatter
+from collections import defaultdict
 import sys
 import re
 import time
@@ -19,12 +20,16 @@ from obspy.core.inventory.inventory import read_inventory
 
 from sdaas.core.features import get_trace_idfeatures
 from sdaas.core.model import get_traces_idscores, get_scores
-from sdaas.cli.utils import redirect, ansi_colors_escape_codes
-from sdaas.cli.fdsn import fdsn_re, get_querydict, get_dataselect_url,\
-    get_station_metadata_url
+from sdaas.cli.utils import redirect, ansi_colors_escape_codes, ProgressBar
+from sdaas.cli.fdsn import get_querydict, get_dataselect_url,\
+    get_station_url, get_url, is_fdsn_dataselect_url,\
+    is_fdsn_station_url, is_fdsn, get_station_urls
+from typing import TextIO
+from _io import StringIO
 
 
-def process(data, metadata='', threshold=-1.0, waveform_length=120,  # in sec
+def process(data, metadata='', threshold=-1.0, aggregate='',
+            waveform_length=120,  # in sec
             download_count=5, download_timeout=30,  # in sec
             sep='', verbose=False, capture_stderr=True):
     '''
@@ -39,14 +44,17 @@ def process(data, metadata='', threshold=-1.0, waveform_length=120,  # in sec
     and - for binary classification - scores > 0.5 might need inspection to
     determine the optimal T (see also parameter 'threshold').
 
-    Each waveform will be printed as a row of a tabular output with columns
-    "waveform_id" "waveform_start" "waveform_end" "anomaly_score" and
-    optionally "anomaly" (see 'threshold' argument)
+    Each waveform will be printed to stdout as a row of a tabular output with
+    columns
+    "waveform_id" "waveform_start" "waveform_end" "anomaly_score"
+    and optionally "anomaly" (see 'threshold' argument). The output can be
+    redirected to file to produce e.g, CSV files (see 'sep' argument). In this
+    case, note that the progress bar and all additional messages (if 'verbose'
+    is on) are printed to stderr and thus not written to file
 
     :param data: the data to be tested. In conjunction with 'metadata', the
         following combinations of options are valid (note that urls below must
-        be FDSN compliant with at least the query parameters "net", "sta" and
-        "start" provided. For info see https://www.fdsn.org/webservices/):
+        be FDSN compliant. For info see https://www.fdsn.org/webservices/):
 
         To test anomalies in waveform data:
         -----------------------------------
@@ -62,12 +70,12 @@ def process(data, metadata='', threshold=-1.0, waveform_length=120,  # in sec
         To test anomalies in metadata:
         ------------------------------
         data:     url (e.g. http://service.iris.edu/fdsnws/station/1/...). The
-                  url should have either no "level" query parameter specified,
-                  or "level=response". The routine randomly downloads
-                  segments recorded by the station and computes their anomaly
-                  score (see parameters 'download_count', 'waveform_length' and
-                  'download_timeout'). Scores persistently low (<=0.5) or
-                  high (>>0.5) denote "good" or "bad" metadata, respectively
+                  routine fetches all stations requested by the url, and for
+                  each station it randomly downloads segments, computing their
+                  anomaly score (see parameters 'download_count', 'waveform_length'
+                  and 'download_timeout'). For a given station channel, scores
+                  persistently low (<=0.5) or high (>>0.5) most likely denote
+                  "good" or "bad" metadata, respectively
         metadata: ignored (if provided, a conflict error is raised)
 
     :param metadata: the metadata, as path to a file (Station XML), or url. See
@@ -84,6 +92,11 @@ def process(data, metadata='', threshold=-1.0, waveform_length=120,  # in sec
         given, if the 'sep' argument is not provided and the terminal
         is interactive, then scores will be colored according to the derived
         class (0 or 1)
+
+    :param aggregate: the aggregate function to use (string in '', 'mean', 'median'.
+        default '': do not aggregate): scores from the same channels will be
+        grouped and the given aggregate function will be returned for all of
+        them.
 
     :param sep: the column separator, particularly useful if the output must be
         redirected to file. E.g., for CSV-formatted output set 'sep' to comma
@@ -109,109 +122,99 @@ def process(data, metadata='', threshold=-1.0, waveform_length=120,  # in sec
     '''
     separator = sep
     sort_by_time = True
-    echo = print
+    echo = lambda *args, **kwargs: print(*args, **kwargs, file=sys.stderr)
     if not verbose:
         def echo(*args, **kwargs):
             pass
     is_dir = isdir(data)
     is_file = not is_dir and isfile(data)  # splitext(data)[1].lower() == '.mseed'
-    is_fdsn = not is_dir and not is_file and re.match(fdsn_re, data)
-    is_station_fdsn = is_fdsn and '/station/' in data
-    is_dataselect_fdsn = is_fdsn and '/dataselect' in data
-    filenames = None
+#     is_fdsn = not is_dir and not is_file and re.match(fdsn_re, data)
+#     is_station_fdsn = is_statio is_fdsn and '/station/' in data
+#     is_dataselect_fdsn = is_fdsn and '/dataselect' in data
+#     filepaths = None
+    streamiterator = StreamIterator()
     if is_dir:
-        filenames = [_ for _ in listdir(data)
-                     if splitext(_)[1].lower() == '.mseed']
-        if not filenames:
-            raise FileNotFoundError('No miniseed found (extension: .mseed)')
-        iter_stream = (read_data(abspath(join(data, _))) for _ in filenames)
-        if not metadata:
-            metadata = [abspath(join(data, _)) for _ in listdir(data)
-                        if splitext(_)[1].lower() == '.xml']
-            if len(metadata) != 1:
-                raise ValueError(f'Expected 1 metadata file (Station XML) in '
-                                 f'"{basename(data)}", found {len(metadata)}')
-            metadata = metadata[0]
-    elif is_file or is_dataselect_fdsn:
-        iter_stream = (read_data(_) for _ in [data])
-        if is_file:
-            filenames = [basename(data)]
-        if not metadata:
-            if is_dataselect_fdsn:
-                metadata = get_station_metadata_url(get_querydict(data))
-            else:
-                raise ValueError('"metadata" argument required')
-    elif is_station_fdsn:
-        if metadata:
-            raise ValueError('Conflict: if you input "data" as station url '
-                             'you can not also provide the "metadata"'
-                             'argument')
-        # normalize metadata URL (e.g., add level=response, endtime=now etcetera):
-        metadata = get_station_metadata_url(get_querydict(data))
-        data = get_dataselect_url(get_querydict(metadata))
-        iter_stream = download_streams(data, waveform_length, download_count,
-                                       download_timeout)
+        streamiterator.add_dir(data, metadata or None)
+    elif is_file:
+        streamiterator.add_file(data, metadata or None)
+    elif is_fdsn(data):
+        streamiterator.add_url(data, metadata, waveform_length, download_count,
+                               download_timeout)
     else:
-        raise ValueError(f'Invalid file/directory/URL path: {data}')
+        raise ValueError(f'Invalid file/directory/FDSN url: {data}')
     echo(f'Data    : "{data}"')
     echo(f'Metadata: "{metadata}"')
 
-    inv = read_metadata(metadata)
+    # inv = read_metadata(metadata)
 
+    out = StringIO()
+    for _ in streamiterator.process(sys.stderr,
+                                    sort_by_time=sort_by_time and not aggregate,
+                                    group_cha=aggregate):
+        for id_, score_ in _:
+            print_result(*id_, score_, threshold, separator, file=out)
     # echo('Computing anomaly score(s) in [0, 1]:')
-    echo('Results (columns: waveform_id, waveform_start_time, '
-         'waveform_end_time, anomaly_score'
-         f"{', anomaly' if is_threshold_set(threshold) else ''}"
-         '):')
+    echo('Output (| waveform_id | waveform_start | '
+         'waveform_end | anomaly_score'
+         f"{' | anomaly' if is_threshold_set(threshold) else ''}"
+         ' |):')
+    print(out.getvalue()[:-1])  # remove last newline
+    echo('Done')
 
-    max_traceid_len = 2 + 5 + 2 + 3 + 3  # default trace id length
-    with redirect(sys.stderr if capture_stderr else None):
-        if filenames is None:
-            # iterate over each stream and print result
-            # immediately: we could get all streams and then compute their
-            # scores once, which is faster, but not in this case as we are
-            # downloading from the web. Also, printing results as-we-get-it
-            # it's nicer for the user whoi can start check scores while waiting
-            for stream in iter_stream:
-                ids, scores = get_traces_idscores(stream, inv)
-                for (id_, st_, et_), score in zip(ids, scores):
-                    if not separator:  # align left
-                        id_ += ' ' * max(0, max_traceid_len - len(id_))
-                    print_result(id_, st_, et_, score, threshold, separator)
-        else:
-            max_traceid_len += len(max(filenames, key=len)) + 1
-            # Here we can compute the streams scores once,
-            # which is the fastest:
-            # `ids, scores = get_streams_idscores(iter_stream, inv)`
-            # but we need to keep track of the file names and the mapping
-            # filename <-> trace is 1 to N. So, we could then compute
-            # scores in a for loop:
-            # `get_get_traces_idscores` (as above), which is the slowest.
-            # We have a halfway solution: compute features in a
-            # loop, and then scores all at once
-            feats = []
-            ids = []
-            for fname, stream in zip(filenames, iter_stream):
-                for trace in stream:
-                    (id_, st_, et_), feat = get_trace_idfeatures(trace, inv)
-                    feats.append(feat)
-                    id_ = f'{fname}/{id_}'
-                    if not separator:  # align left
-                        id_ += ' ' * max(0, max_traceid_len - len(id_))
-                    ids.append((id_, st_, et_))
-            scores = get_scores(np.asarray(feats))
-            # now sort (if needed) and print them at once:
-            iter_ = zip(ids, scores)
-            if sort_by_time:
-                iter_ = sorted(iter_, key=lambda _: _[0][1])
-            for id_, score in iter_:
-                print_result(*id_, score, threshold, separator)
+#     with redirect(sys.stderr if capture_stderr else None):
+#         if is_fdsn:  # scores from web service
+#             # iterate over each stream and print result
+#             # immediately: we could get all streams and then compute their
+#             # scores once, which is faster, but not in this case as we are
+#             # downloading from the web. Also, printing results as-we-get-it
+#             # it's nicer for the user whoi can start check scores while waiting
+#             for url, stream in iter_stream:
+#                 ids, scores = get_traces_idscores(stream, inv)
+#                 for (id_, st_, et_), score in zip(ids, scores):
+#                     print_result(url, id_, st_, et_, score, threshold, separator)
+#         else:  # scores from local files
+#             # Here we can compute the streams scores once,
+#             # which is the fastest:
+#             # `ids, scores = get_streams_idscores(iter_stream, inv)`
+#             # but we need to keep track of the file names and the mapping
+#             # filename <-> trace is 1 to N. So, we could then compute
+#             # scores in a for loop:
+#             # `get_get_traces_idscores` (as above), which is the slowest.
+#             # We have a halfway solution: compute features in a
+#             # loop, and then scores all at once
+#             feats = []
+#             ids = []
+#             for fpath, stream in iter_stream:
+#                 for trace in stream:
+#                     (id_, st_, et_), feat = get_trace_idfeatures(trace, inv)
+#                     feats.append(feat)
+#                     ids.append((fpath, id_, st_, et_))
+#             scores = get_scores(np.asarray(feats))
+#             # now sort (if needed) and print them at once:
+#             iter_ = zip(ids, scores)
+#             if sort_by_time:
+#                 iter_ = sorted(iter_, key=lambda _: _[0][1])
+#             for id_, score in iter_:
+#                 print_result(*id_, score, threshold, separator)
 
 
-def print_result(trace_id: str, trace_start: datetime, trace_end: datetime,
-                 score: float, threshold: float = None,
-                 separator: str = None):
+def print_result(src: str, trace_id: str, trace_start: datetime,
+                 trace_end: datetime, score: float, threshold: float = None,
+                 separator: str = None, file: TextIO = sys.stdout):
     '''prints a classification result form a single trace'''
+    is_file = isfile(src)
+    if is_file:
+        trace_id = join(basename(src), trace_id)
+    # left align trace_id column
+    if not separator:
+        max_traceid_len = 2 + 5 + 2 + 3 + 3  # default traceid length (N.S.L.C)
+        if is_file:
+            max_traceid_len = 25
+        if len(trace_id) > max_traceid_len:
+            prefix = '...'
+            trace_id = '...' + trace_id[-max_traceid_len+len(prefix):]
+        trace_id = ('{:>%d}' % max_traceid_len).format(trace_id)
+
     score_str = f'{score:4.2f}'
     outlier_str = ''
     th_set = is_threshold_set(threshold)
@@ -236,9 +239,11 @@ def print_result(trace_id: str, trace_start: datetime, trace_end: datetime,
         trace_end = f'{trace_end.isoformat()}'
 
     sep = separator or '  '
+
     print(
         f'{trace_id}{sep}{trace_start}{sep}{trace_end}{sep}{score_str}'
-        f'{sep if outlier_str else ""}{outlier_str}'
+        f'{sep if outlier_str else ""}{outlier_str}',
+        file=file
     )
 
 
@@ -262,30 +267,145 @@ def read_data(path_or_url, format='MSEED', headonly=False, **kwargs):  # @Reserv
                         f'(path/url: {path_or_url})')
 
 
-# def get_id(trace):
-#     '''
-#     Returns the ID of the given trace as tuple (id, starttime, endtime)
-# 
-#     :return: the tuple of strings (id, starttime, endtime), where id is in the
-#     form 'net.sta.loc.cha' and  starttime and endtime are ISO formatted
-#     date-time strings
-#     '''
-#     start, end = trace.stats.starttime.datetime, trace.stats.endtime.datetime
-#     # round start and end: first add 1 second and then use .replace (see below)
-#     if start.microsecond >= 500000:
-#         start = start + timedelta(seconds=1)
-#     if end.microsecond >= 500000:
-#         end = end + timedelta(seconds=1)
-#     return (trace.get_id(),
-#             start.replace(microsecond=0).isoformat(),
-#             end.replace(microsecond=0).isoformat())
+class StreamIterator(dict):
+
+    def __init__(self):
+        self._data = []
+
+    def add_url(self, url, metadata_path,
+                waveform_length, download_count, download_timeout):
+        if is_fdsn_dataselect_url(url):
+            metadata_path = get_station_url(get_querydict(url),
+                                            level='response')
+            self._add_files(url, [url], metadata_path)
+            return
+
+        if metadata_path:
+            raise ValueError('Conflict: with a station url '
+                             'you cannot also provide the "metadata" '
+                             'argument')
+
+        # echo(f'{len(station_urls)} station(s) to check')
+        # qdic = get_querydict(url)
+        for station_url in get_station_urls(url):
+            qdic = get_querydict(station_url)
+            # normalize metadata URL (e.g., add level=response, endtime=now etcetera):
+            metadata_path = get_station_url(qdic, level='response')
+            data = get_dataselect_url(qdic)
+            iter_stream = download_streams(data, waveform_length,
+                                           download_count,
+                                           download_timeout)
+            self._add_item(station_url, iter_stream, metadata_path,
+                           download_count)
+
+    def add_dir(self, path, metadata_path=None):
+        '''metadata = None: try to search it on the directory'''
+        filepaths = [abspath(join(path, _)) for _ in listdir(path)
+                     if splitext(_)[1].lower() == '.mseed']
+        if not filepaths:
+            raise FileNotFoundError('No miniseed found (extension: .mseed)')
+        if not metadata_path:
+            metadata = [abspath(join(path, _)) for _ in listdir(path)
+                        if splitext(_)[1].lower() == '.xml']
+            if len(metadata) != 1:
+                raise ValueError(f'Expected 1 metadata file (Station XML) in '
+                                 f'"{basename(path)}", found {len(metadata)}')
+            metadata_path = metadata[0]
+        self._add_files(path, filepaths, metadata_path)
+
+    def add_file(self, filepath, metadata_path):
+        if not metadata_path:
+            raise ValueError('"metadata" argument required')
+        if not isfile(metadata_path):
+            raise ValueError('File does not exist: %s' % filepath)
+        self._add_files(filepath, [filepath], metadata_path)
+
+    def add_files(self, key, filepaths, metadata_path):
+        if not filepaths:
+            raise FileNotFoundError('No miniseed file provided')
+        if not metadata_path:
+            raise FileNotFoundError('No metadata (Station XML) file provided')
+        if not isfile(metadata_path):
+            raise ValueError('No metadata (Station XML) file: %s' %
+                             metadata_path)
+        self._add_files(key, filepaths, metadata_path)
+
+    def _add_files(self, key, filepaths, metadata_path):
+        self._add_item(key, ((_, read_data(_)) for _ in filepaths),
+                       metadata_path, len(filepaths))
+
+    def _add_item(self, key, streamiterator, metadata_path, length):
+        '''streamiterator: an iterator of key, Stream tuples'''
+        self._data.append((key, streamiterator, metadata_path, length))
+
+    def process(self, progress: TextIO or None=sys.stderr,
+                sort_by_time=False,
+                group_cha=None):  # <- group cha can be mean median
+        count, total = 0, sum(_[-1] for _ in self._data)
+        data = {}
+        with ProgressBar(progress) as pbar:
+            for key, streamiterator, metadata_path, length in self._data:
+                try:
+                    inv = read_inventory(metadata_path)
+                except Exception:
+                    raise ValueError('{key}. Metadata error: {str(exc)}')
+
+                feats = []
+                ids = []
+                kount = 0
+                for fpath, stream in streamiterator:
+                    kount += 1
+                    for trace in stream:
+                        (id_, st_, et_), feat = get_trace_idfeatures(trace, inv)
+                        feats.append(feat)
+                        ids.append((fpath, id_, st_, et_))
+
+                    count += 1
+                    pbar.update(count / total)
+
+                if kount < length:
+                    count += length - kount
+                    pbar.update(count / total)
+
+                scores = get_scores(np.asarray(feats))
+
+                iter_ = zip(ids, scores)
+                if group_cha:
+                    data = defaultdict(lambda: [None, []])
+                    for (fpath, id_, stime, etime), score in iter_:
+                        timeranges, scores_ = data[id_]
+                        if not timeranges:
+                            data[id_][0] = [stime, etime]
+                        else:
+                            timeranges[0] = min(stime, timeranges[0])
+                            timeranges[1] = max(etime, timeranges[1])
+                        scores_.append(score)
+                    ids = []
+                    scores = []
+                    for id_, (timeranges, scores_) in data.items():
+                        ids.append(('', id_, *timeranges))
+                        scores_ = np.asarray(scores_)
+                        if np.isnan(scores_).all():
+                            scores.append(np.nan)
+                        elif group_cha == 'mean':
+                            scores.append(np.nanmean(scores_))
+                        else:
+                            scores.append(np.nanmedian(scores_))
+
+                    # now sort (if needed) and print them at once:
+                    iter_ = zip(ids, scores)
+
+                if sort_by_time:
+                    yield sorted(iter_, key=lambda _: _[0][1])
+                yield iter_
 
 
 def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
     args = get_querydict(station_url)
     yielded = 0
     total_time = 0
-    start, end = args['start'], args['end']
+    start, end = datetime.fromisoformat(args['start']), \
+        datetime.fromisoformat(args['end'])
     total_period = end - start
     wcount = int(total_period.total_seconds() / float(wlen_sec))
     if wcount < 1:
@@ -337,7 +457,7 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
         if stream is not None and len(stream) and \
                 all(len(_.data) for _ in stream):
             yielded += 1
-            yield stream
+            yield dataselect_url, stream
 #         if yielded >= wmaxcount:
 #             break
         if total_time > wtimeout_sec:
@@ -403,6 +523,7 @@ if __name__ == '__main__':
         ('-m', 'metadata'),
         ('-th', 'threshold'),
         ('-sep', 'sep'),
+        ('-agg', 'aggregate'),
         ('-wl', 'waveform_length'),
         ('-dc', 'download_count'),
         ('-dt', 'download_timeout'),

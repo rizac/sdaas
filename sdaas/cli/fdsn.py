@@ -6,11 +6,28 @@ Created on 10 Sep 2020
 @author: riccardo
 '''
 
-from urllib import parse
+import re
+from urllib import parse, request
 from datetime import datetime
 
 
 fdsn_re = '[a-zA-Z_]+://.+?/fdsnws/(?:station|dataselect)/\\d/query?.*'
+
+
+def is_fdsn_dataselect_url(url):
+    if not is_fdsn(url):
+        raise ValueError('Invalid FDSN URL: %s' % url)
+    return '/dataselect/' in url
+
+
+def is_fdsn_station_url(url):
+    if not is_fdsn(url):
+        raise ValueError('Invalid FDSN URL: %s' % url)
+    return '/station/' in url
+
+
+def is_fdsn(url):
+    return re.match(fdsn_re, url)
 
 
 def get_querydict(url):
@@ -36,23 +53,30 @@ def get_querydict(url):
         # mandatory arguments:
         ret = {
             'net': get_query_entry(queryargs, "net", "network")[1],
-            'sta': get_query_entry(queryargs, "sta", "station")[1],
-            'start': get_query_entry_dtime(queryargs, 'start', 'starttime')[1]
+             # 'sta': get_query_entry(queryargs, "sta", "station")[1],
+             # 'start': get_query_entry_dtime(queryargs, 'start', 'starttime')[1]
         }
         # optional arguments
-        for params in [("loc", "location"), ("cha", "channel")]:
+        for params in [("loc", "location"), ("cha", "channel"),
+                       ("sta", "station"), ('start', 'starttime'),
+                       ('end', 'endtime')]:
             try:
                 ret[params[0]] = get_query_entry(queryargs, *params)[1]
+                if params[0] in ('start', 'end'):
+                    # check datetime (just a check, keep str as value)
+                    try:
+                        datetime.fromisoformat(ret[params[0]])
+                    except Exception:
+                        raise ValueError(f'Invalid date-time in "{params[0]}"')
             except KeyError:
                 pass
-        # in case of end,if missing, set now as endtime:
-        try:
-            ret['end'] = get_query_entry_dtime(queryargs, 'end', 'endtime')[1]
-        except KeyError:
-            ret['end'] = datetime.utcnow().replace(microsecond=0)
+
         # little check:
-        if ret['start'] >= ret['end']:
-            raise ValueError(f'Invalid "start" >= "end": {url}')
+        if 'start' in ret:
+            now = datetime.utcnow().isoformat()
+            if datetime.fromisoformat(ret['start']) >= \
+                    datetime.fromisoformat(ret.get('end', now)):
+                raise ValueError(f'Invalid time range, check (start, end) in {url}')
     except (KeyError, ValueError) as exc:
         raise ValueError(f'{str(exc)}. URL: {url}')
     # add base URL:
@@ -61,80 +85,111 @@ def get_querydict(url):
     return ret
 
 
-def get_dataselect_url(querydict, start=None, end=None):
+def get_dataselect_url(querydict, **queryargs):
     '''
     Converts the given `querydict` to the relative dataselect url
     for downloading data in the command line interface
 
     :param: querydict: a `dict` as returned from :func:`get_querydict`
-    :param start: (datetime.datetime or None) if provided and not None,
-        replaces the url start time with this value
-    :param start: (datetime.datetime or None) if provided and not None,
-        replaces the url end time with this value
+    :param queryargs: additional query arguments which will override
+        any given argument, if present. Values will be converted with the
+        `str` function when encoded in the url (for datetimes, isoformat
+        will be used instead). None values means: remove the parameter
 
     :return: a string denoting a valid FDSN dataselect url
     '''
-    return get_url(querydict, start, end).\
+    return get_url(querydict, **queryargs).\
         replace('/station/', '/dataselect/')
 
 
-def get_station_metadata_url(querydict, start=None, end=None):
+def get_station_url(querydict, **queryargs):
     '''
     Converts the given `querydict` to the relative station url
     for downloading metadata in the command line interface. The parameter
     'level' in the returned url will be set to 'response'
 
     :param: querydict: a `dict` as returned from :func:`get_querydict`
-    :param start: (datetime.datetime or None) if provided and not None,
-        replaces the url start time with this value
-    :param start: (datetime.datetime or None) if provided and not None,
-        replaces the url end time with this value
+    :param queryargs: additional query arguments which will override
+        any given argument, if present (e.g., level='response' to download
+        the station xml). Values will be converted with the
+        `str` function when encoded in the url (for datetimes, isoformat
+        will be used instead). None values means: remove the parameter
 
     :return: a string denoting a valid FDSN dataselect url
     '''
-    return get_url(querydict, start, end, level='response').\
+    return get_url(querydict, **queryargs).\
         replace('/dataselect/', '/station/')
 
 
-def get_url(querydict, start=None, end=None, **additional_args):
+def get_station_urls(station_query_url, timeout=None):
+    qdic = get_querydict(station_query_url.replace('/dataselect/',
+                                                   '/station/'))
+    url = get_url(qdic, level='station', format='text')
+    req = request.Request(url)
+    with request.urlopen(req, timeout=timeout) as response:
+        the_page = response.read().strip().decode('utf-8')
+    urls = []
+    now = datetime.utcnow().replace(microsecond=0).isoformat()
+    for line in the_page.split('\n'):
+        if '#' in line:
+            continue
+        cells = line.split('|')
+        args = {
+            'net': cells[0],
+            'sta': cells[1],
+            'start': cells[-2]
+        }
+        args['end'] = cells[-1].strip() or now
+        urls.append(get_url(qdic, **args))
+    return urls
+
+
+def get_url(querydict, **queryargs):
     '''
     Converts the given `querydict` to the relative url
 
     :param: querydict: a `dict` as returned from :func:`get_querydict`
-    :param start: (datetime.datetime or None) if provided and not None,
-        replaces the url start time with this value
-    :param start: (datetime.datetime or None) if provided and not None,
-        replaces the url end time with this value
-    :param additional_args: additional arguments which will override
+    :param queryargs: additional query arguments which will override
         any given argument, if present. Values will be converted with the
-        `str` function when encoded in the url
+        `str` function when encoded in the url (for datetimes, isoformat
+        will be used instead). None values means: remove the parameter
 
     :return a string denoting the url build from the given querydict
     '''
     args = dict(querydict)
-    args['start'] = (start or args['start']).isoformat()
-    args['end'] = (end or args['end']).isoformat()
-    args = {**args, **additional_args}
+    # args['start'] = (start or args['start']).isoformat()
+    # args['end'] = (end or args['end']).isoformat()
+    args = {**args, **queryargs}
+    for key, val in queryargs.items():
+        if val is None:
+            args.pop(key)
     url = args.pop('URL') + '?'
     for key, val in args.items():
-        url += f'&{str(key)}={str(val)}'
+        url += f'&{str(key)}={_str(val)}'
     return url
 
 
-def get_query_entry_dtime(query_dict, *keys):
-    '''
-    Same as :func:`get_query_entry` but converts the parameter value to
-    date time (raises if not parsable)
-
-    :see: :func:`get_query_entry`
-
-    :return: the tuple (param, value) (value is a datetime object)
-    '''
-    par, val = get_query_entry(query_dict, *keys)
+def _str(paramvalue):
     try:
-        return par, datetime.fromisoformat(val)
-    except Exception:
-        raise ValueError(f'Invalid date-time in "{par}"')
+        return paramvalue.isoformat()
+    except AttributeError:
+        return str(paramvalue)
+
+
+# def get_query_entry_dtime(query_dict, *keys):
+#     '''
+#     Same as :func:`get_query_entry` but converts the parameter value to
+#     date time (raises if not parsable)
+# 
+#     :see: :func:`get_query_entry`
+# 
+#     :return: the tuple (param, value) (value is a datetime object)
+#     '''
+#     par, val = get_query_entry(query_dict, *keys)
+#     try:
+#         return par, datetime.fromisoformat(val)
+#     except Exception:
+#         raise ValueError(f'Invalid date-time in "{par}"')
 
 
 def get_query_entry(query_dict, *keys):
