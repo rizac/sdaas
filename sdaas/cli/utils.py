@@ -7,6 +7,8 @@ Created on 10 Sep 2020
 '''
 import os
 import sys
+import re
+from datetime import datetime
 from contextlib import contextmanager
 import math
 import shutil
@@ -122,16 +124,23 @@ class ProgressBar:
     # Code modified from:
     # https://mike42.me/blog/2018-06-make-better-cli-progress-bars-with-unicode-block-characters
 
-    def __init__(self, target: TextIO or None = sys.stderr):
+    def __init__(self, target: TextIO or None = sys.stderr,
+                 show_percent=True, show_eta=True):
         self._target = target
         self._text_only = not isatty(self._target)
-        if self._target:
-            self._update_width()
+        self._show_percent = show_percent
+        self._show_eta = show_eta
+        self._start = None
+        self._lpad, self._rpad = '[', ']'  # pbar paddings (left and right)
 
     def __enter__(self):
+        if self._show_eta:
+            self._start = datetime.utcnow()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self._target:
+            return
         if exc_type is None:
             # Set to 100% for neatness, if no exception is thrown
             self.update(1.0)
@@ -140,38 +149,62 @@ class ProgressBar:
             self._target.write('\n')
         self._target.flush()
 
-    def _update_width(self):
-        self._width, _ = shutil.get_terminal_size((80, 20))
-
     def update(self, progress: float):
+        '''0 <= progress <= 1 '''
         if not self._target:
             return
         # Update width in case of resize
-        self._update_width()
-        # Progress bar itself
-        if self._width < 12:
-            # No label in excessively small terminal
-            percent_str = ''
-            progress_bar_str = ProgressBar.progress_bar_str(progress, self._width - 2)
-#         elif self._width < 40:
-#             # No padding at smaller size
-#             percent_str = "{:6.2f} %".format(progress * 100)
-#             progress_bar_str = ProgressBar.progress_bar_str(progress, self._width - 11) + ' '
-#         else:
-#             # Standard progress bar with padding and label
-#             percent_str = "{:6.2f} %".format(progress * 100) + "  "
-#             progress_bar_str = " " * 5 + ProgressBar.progress_bar_str(progress, self._width - 21)
+        width, _ = shutil.get_terminal_size((80, 20))
+        # on our terminal, it is visually nicer to leave the last char
+        # empty as it is filled with a square semi-opaque cursor
+        # let's leave the last char empty (this has no bad visual effect and
+        # will assure we see all info on any terminal):
+        width -= 1
+
+        min_pbar_width = 3
+        if width < min_pbar_width:
+            return
+
+        # adjust left and right padding. If there is no space, remove padding:
+        lpad, rpad = self._lpad, self._rpad
+        if width >= min_pbar_width + len(lpad) + len(rpad):
+            width -= len(lpad) + len(rpad)
         else:
-            percent_str = "{:6.2f} %".format(progress * 100)
-            progress_bar_str = ProgressBar.progress_bar_str(progress, self._width - 11)
+            lpad, rpad = '', ''
+
+        # Progress bar itself
+        percent_str, eta_str = '', ''
+        eta_width = 13  # length of string
+        if self._show_eta and width >= eta_width + min_pbar_width:
+            eta = (1-progress) * \
+                (datetime.utcnow() - self._start) / progress
+            d, s, m = eta.days, eta.seconds, eta.microseconds
+            if m >= 500000:
+                s += 1
+            if d >= 100:
+                eta_str = str(d).rjust(eta_width)
+            else:
+                h = int(s / 3600)
+                s -= h * 3600
+                m = int(s / 60)
+                s -= m * 60
+                eta_str = f' {d:>2}d {h:02}:{m:02}:{s:02}'  # 13 chars
+            width -= eta_width
+
+        percent_width = 4  # length of string
+        if self._show_percent and width >= percent_width + min_pbar_width:
+            percent_str = "{:3d}%".format(int(0.5 + progress * 100))
+            width -= percent_width
+
+        pbar_str = ProgressBar.progress_bar_str(progress, width)
 
         # Write output
+        pbar_str = f'{lpad}{pbar_str}{rpad}{percent_str}{eta_str}'
         if self._text_only:
-            self._target.write(progress_bar_str + percent_str + '\n')
-            self._target.flush()
+            self._target.write(pbar_str + '\n')
         else:
-            self._target.write('\033[G' + progress_bar_str + percent_str)
-            self._target.flush()
+            self._target.write('\033[G' + pbar_str)
+        self._target.flush()
 
     @staticmethod
     def progress_bar_str(progress: float, width: int):
@@ -183,5 +216,5 @@ class ProgressBar:
         part_char = [" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉"][part_width]
         if (width - whole_width - 1) < 0:
             part_char = ""
-        line = "[" + "█" * whole_width + part_char + " " * (width - whole_width - 1) + "]"
+        line = "█" * whole_width + part_char + " " * (width - whole_width - 1)
         return line

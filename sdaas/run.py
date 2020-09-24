@@ -8,6 +8,9 @@ import sys
 import re
 import time
 import inspect
+from typing import TextIO
+from io import StringIO
+import warnings
 from datetime import timedelta, datetime
 from os.path import isdir, splitext, isfile, join, abspath, basename
 from os import listdir
@@ -19,19 +22,16 @@ from obspy.core.stream import read
 from obspy.core.inventory.inventory import read_inventory
 
 from sdaas.core.features import get_trace_idfeatures
-from sdaas.core.model import get_traces_idscores, get_scores
-from sdaas.cli.utils import redirect, ansi_colors_escape_codes, ProgressBar
+from sdaas.core.model import get_scores
+from sdaas.cli.utils import ansi_colors_escape_codes, ProgressBar
 from sdaas.cli.fdsn import get_querydict, get_dataselect_url,\
-    get_station_url, get_url, is_fdsn_dataselect_url,\
-    is_fdsn_station_url, is_fdsn, get_station_urls
-from typing import TextIO
-from _io import StringIO
+    get_station_url, is_fdsn_dataselect_url, is_fdsn, get_station_urls
 
 
 def process(data, metadata='', threshold=-1.0, aggregate='',
             waveform_length=120,  # in sec
             download_count=5, download_timeout=30,  # in sec
-            sep='', verbose=False, capture_stderr=True):
+            sep='', verbose=False):
     '''
     Computes and prints the amplitude anomaly scores of each waveform segment
     in 'data'. Anomalies are typically due to artifacts in the data (e.g.
@@ -48,9 +48,9 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
     columns
     "waveform_id" "waveform_start" "waveform_end" "anomaly_score"
     and optionally "anomaly" (see 'threshold' argument). The output can be
-    redirected to file to produce e.g, CSV files (see 'sep' argument). In this
+    redirected to produce e.g, CSV files (see 'sep' argument). In this
     case, note that the progress bar and all additional messages (if 'verbose'
-    is on) are printed to stderr and thus not written to file
+    is on) are printed to stderr and thus not written to file.
 
     :param data: the data to be tested. In conjunction with 'metadata', the
         following combinations of options are valid (note that urls below must
@@ -93,10 +93,10 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
         is interactive, then scores will be colored according to the derived
         class (0 or 1)
 
-    :param aggregate: the aggregate function to use (string in '', 'mean', 'median'.
-        default '': do not aggregate): scores from the same channels will be
-        grouped and the given aggregate function will be returned for all of
-        them.
+    :param aggregate: mean, median or empty string denoting the aggregate
+        function to use: scores from the same channels will be grouped and the
+        given aggregate function will be returned for all of them. The default
+        when missing (empty string) means no aggregation (display all results)
 
     :param sep: the column separator, particularly useful if the output must be
         redirected to file. E.g., for CSV-formatted output set 'sep' to comma
@@ -122,10 +122,14 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
     '''
     separator = sep
     sort_by_time = True
-    echo = lambda *args, **kwargs: print(*args, **kwargs, file=sys.stderr)
+
     if not verbose:
         def echo(*args, **kwargs):
             pass
+    else:
+        def echo(*args, **kwargs):
+            print(*args, **kwargs, file=sys.stderr)
+
     is_dir = isdir(data)
     is_file = not is_dir and isfile(data)  # splitext(data)[1].lower() == '.mseed'
 #     is_fdsn = not is_dir and not is_file and re.match(fdsn_re, data)
@@ -142,60 +146,31 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
                                download_timeout)
     else:
         raise ValueError(f'Invalid file/directory/FDSN url: {data}')
+
     echo(f'Data    : "{data}"')
     echo(f'Metadata: "{metadata}"')
 
-    # inv = read_metadata(metadata)
-
-    out = StringIO()
-    for _ in streamiterator.process(sys.stderr,
-                                    sort_by_time=sort_by_time and not aggregate,
-                                    group_cha=aggregate):
+    sio = StringIO()
+    kount = 0
+    for _ in streamiterator.process(sort_by_time=sort_by_time and not aggregate,
+                                    group_cha=aggregate,
+                                    progress=sys.stderr,
+                                    info=None if not verbose else sys.stderr):
         for id_, score_ in _:
-            print_result(*id_, score_, threshold, separator, file=out)
+            kount += 1
+            print_result(*id_, score_, threshold, separator, file=sio)
     # echo('Computing anomaly score(s) in [0, 1]:')
-    echo('Output (| waveform_id | waveform_start | '
-         'waveform_end | anomaly_score'
-         f"{' | anomaly' if is_threshold_set(threshold) else ''}"
-         ' |):')
-    print(out.getvalue()[:-1])  # remove last newline
+    if not kount:
+        echo('Nothing to process found')
+    else:
+        echo('Output columns: | waveform_id | waveform_start | '
+             'waveform_end | anomaly_score'
+             f"{' | anomaly' if is_threshold_set(threshold) else ''}"
+             ' |')
+    out = sio.getvalue().strip()  # remove last newline
+    if out:
+        print(out, file=sys.stdout)
     echo('Done')
-
-#     with redirect(sys.stderr if capture_stderr else None):
-#         if is_fdsn:  # scores from web service
-#             # iterate over each stream and print result
-#             # immediately: we could get all streams and then compute their
-#             # scores once, which is faster, but not in this case as we are
-#             # downloading from the web. Also, printing results as-we-get-it
-#             # it's nicer for the user whoi can start check scores while waiting
-#             for url, stream in iter_stream:
-#                 ids, scores = get_traces_idscores(stream, inv)
-#                 for (id_, st_, et_), score in zip(ids, scores):
-#                     print_result(url, id_, st_, et_, score, threshold, separator)
-#         else:  # scores from local files
-#             # Here we can compute the streams scores once,
-#             # which is the fastest:
-#             # `ids, scores = get_streams_idscores(iter_stream, inv)`
-#             # but we need to keep track of the file names and the mapping
-#             # filename <-> trace is 1 to N. So, we could then compute
-#             # scores in a for loop:
-#             # `get_get_traces_idscores` (as above), which is the slowest.
-#             # We have a halfway solution: compute features in a
-#             # loop, and then scores all at once
-#             feats = []
-#             ids = []
-#             for fpath, stream in iter_stream:
-#                 for trace in stream:
-#                     (id_, st_, et_), feat = get_trace_idfeatures(trace, inv)
-#                     feats.append(feat)
-#                     ids.append((fpath, id_, st_, et_))
-#             scores = get_scores(np.asarray(feats))
-#             # now sort (if needed) and print them at once:
-#             iter_ = zip(ids, scores)
-#             if sort_by_time:
-#                 iter_ = sorted(iter_, key=lambda _: _[0][1])
-#             for id_, score in iter_:
-#                 print_result(*id_, score, threshold, separator)
 
 
 def print_result(src: str, trace_id: str, trace_start: datetime,
@@ -268,12 +243,20 @@ def read_data(path_or_url, format='MSEED', headonly=False, **kwargs):  # @Reserv
 
 
 class StreamIterator(dict):
-
+    '''
+    Class for iterating over given data and metadata arguments, either
+    given as files / directory or URLs
+    '''
     def __init__(self):
         self._data = []
 
     def add_url(self, url, metadata_path,
                 waveform_length, download_count, download_timeout):
+        '''
+        adds a new FDSN URL, either station or dataselect. In the former
+        case, the last three parameters control what segment waveform to
+        download, and how
+        '''
         if is_fdsn_dataselect_url(url):
             metadata_path = get_station_url(get_querydict(url),
                                             level='response')
@@ -299,7 +282,12 @@ class StreamIterator(dict):
                            download_count)
 
     def add_dir(self, path, metadata_path=None):
-        '''metadata = None: try to search it on the directory'''
+        '''
+        adds a new directory, populated with miniSEED (*.mseed) files
+
+        :param metadata_path: the optional metadata file path  (*.xml). If None
+            (the default) the function tries to search it on the given path
+        '''
         filepaths = [abspath(join(path, _)) for _ in listdir(path)
                      if splitext(_)[1].lower() == '.mseed']
         if not filepaths:
@@ -314,6 +302,9 @@ class StreamIterator(dict):
         self._add_files(path, filepaths, metadata_path)
 
     def add_file(self, filepath, metadata_path):
+        '''
+        Adds a miniSEED file with relative metadata path (StationXML)
+        '''
         if not metadata_path:
             raise ValueError('"metadata" argument required')
         if not isfile(metadata_path):
@@ -321,6 +312,9 @@ class StreamIterator(dict):
         self._add_files(filepath, [filepath], metadata_path)
 
     def add_files(self, key, filepaths, metadata_path):
+        '''
+        Adds miniSEED files with relative metadata path (StationXML)
+        '''
         if not filepaths:
             raise FileNotFoundError('No miniseed file provided')
         if not metadata_path:
@@ -338,34 +332,57 @@ class StreamIterator(dict):
         '''streamiterator: an iterator of key, Stream tuples'''
         self._data.append((key, streamiterator, metadata_path, length))
 
-    def process(self, progress: TextIO or None=sys.stderr,
+    def process(self,
                 sort_by_time=False,
-                group_cha=None):  # <- group cha can be mean median
+                group_cha=None,
+                progress: TextIO or None=sys.stderr,
+                info: TextIO or None=None):  # <- group cha can be mean median
+        '''
+        Processes all added files/URLs and yields the results
+        '''
         count, total = 0, sum(_[-1] for _ in self._data)
         data = {}
+        messages = None if info is None else []
         with ProgressBar(progress) as pbar:
+            # self._data has generally only one element in the current
+            # implementation (see module function `process`), however, it
+            # already supports multiple call of its `add_*` methods above
             for key, streamiterator, metadata_path, length in self._data:
                 try:
                     inv = read_inventory(metadata_path)
-                except Exception:
-                    raise ValueError('{key}. Metadata error: {str(exc)}')
+                except Exception as exc:
+                    if messages is not None:
+                        msg = f'Metadata error, {str(exc)}. {key}'
+                        messages.append(msg)
+                    streamiterator = []  # hack to skip iteration below
+                    # raise ValueError(f'Metadata error: {str(exc)} - {key}')
 
                 feats = []
                 ids = []
                 kount = 0
-                for fpath, stream in streamiterator:
-                    kount += 1
-                    for trace in stream:
-                        (id_, st_, et_), feat = get_trace_idfeatures(trace, inv)
-                        feats.append(feat)
-                        ids.append((fpath, id_, st_, et_))
+                try:
+                    for fpath, stream in streamiterator:
+                        kount += 1
+                        for trace in stream:
+                            (id_, st_, et_), feat = get_trace_idfeatures(trace, inv)
+                            feats.append(feat)
+                            ids.append((fpath, id_, st_, et_))
 
-                    count += 1
-                    pbar.update(count / total)
+                except Exception as exc:
+                    if messages is not None:
+                        msg = f'{str(exc)}. {key}'
+                        messages.append(msg)
+                        feats = []  # hack to stop after updating the pbar
+
+                count += 1
+                pbar.update(count / total)
 
                 if kount < length:
                     count += length - kount
                     pbar.update(count / total)
+
+                if not feats:
+                    continue
 
                 scores = get_scores(np.asarray(feats))
 
@@ -398,6 +415,9 @@ class StreamIterator(dict):
                 if sort_by_time:
                     yield sorted(iter_, key=lambda _: _[0][1])
                 yield iter_
+
+        for msg in (messages or []):
+            print(msg, file=info)
 
 
 def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
@@ -458,14 +478,13 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
                 all(len(_.data) for _ in stream):
             yielded += 1
             yield dataselect_url, stream
-#         if yielded >= wmaxcount:
-#             break
+
         if total_time > wtimeout_sec:
             timeout_expired = True
             break
 
     if not yielded:
-        raise ValueError(('No waveform data found in the specified period, '
+        raise ValueError(('No waveform data in the specified period, '
                           'check URL parameters. ') +
                          (f'Timeout ({wtimeout_sec} s) exceeded'
                           if timeout_expired else ''))
@@ -545,13 +564,16 @@ if __name__ == '__main__':
         # add argument to ArgParse:
         parser.add_argument(flag, **kwargs)
 
-    # parse arguments and pass them to `process`
-    # (here we see why names must match):
-    args = parser.parse_args()
-    try:
-        process(**vars(args))
-        sys.exit(0)
-    except Exception as exc:
-        raise
-        print(f'ERROR: {str(exc)}', file=sys.stderr)
-        sys.exit(1)
+    with warnings.catch_warnings(record=False) as w:
+        # Cause all warnings to always be triggered.
+        warnings.simplefilter("ignore")
+        # parse arguments and pass them to `process`
+        # (here we see why names must match):
+        args = parser.parse_args()
+        try:
+            process(**vars(args))
+            sys.exit(0)
+        except Exception as exc:
+            raise
+            print(f'ERROR: {str(exc)}', file=sys.stderr)
+            sys.exit(1)

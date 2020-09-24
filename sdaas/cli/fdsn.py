@@ -129,6 +129,8 @@ def get_station_urls(station_query_url, timeout=None):
     with request.urlopen(req, timeout=timeout) as response:
         the_page = response.read().strip().decode('utf-8')
     urls = []
+    if not the_page:
+        return urls
     now = datetime.utcnow().replace(microsecond=0).isoformat()
     for line in the_page.split('\n'):
         if '#' in line:
@@ -137,9 +139,12 @@ def get_station_urls(station_query_url, timeout=None):
         args = {
             'net': cells[0],
             'sta': cells[1],
-            'start': cells[-2]
+            'start': qdic.get('start', cells[-2])
         }
-        args['end'] = cells[-1].strip() or now
+        args['end'] = qdic.get('end', cells[-1].strip() or now)
+        # remove args:
+        args['level'] = None
+        args['format'] = None
         urls.append(get_url(qdic, **args))
     return urls
 

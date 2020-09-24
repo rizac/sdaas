@@ -73,13 +73,50 @@ def check_output(output, threshold, sep, expected_rows=None):
 class Test(unittest.TestCase):
 
     datadir = join(dirname(__file__), 'data')
+    _stdout, _stderr = None, None
 
     def setUp(self):
-        pass
+        # https://docs.python.org/3.5/library/unittest.mock.html#patch-methods-start-and-stop
+        patcher1 = patch('sdaas.run.sys.stdout', new=StringIO())
+        self._stdout = patcher1.start()
+        self.addCleanup(patcher1.stop)
 
-    def tearDown(self):
-        pass
+        patcher2 = patch('sdaas.run.sys.stderr', new=StringIO())
+        self._stderr = patcher2.start()
+        self.addCleanup(patcher2.stop)
 
+    @property
+    def stdout(self):
+        '''return the captured stdout and resets it so that calling again
+        this method will not return the previous output'''
+        ret = self._stdout.getvalue()
+        # Truncate and reset (https://stackoverflow.com/a/4330829):
+        self._stdout.truncate(0)
+        self._stdout.seek(0)
+        return ret
+
+    @property
+    def stderr(self):
+        '''return the captured stdout and resets it so that calling again
+        this method will not return the previous output'''
+        ret = self._stderr.getvalue()
+        # Truncate and reset (https://stackoverflow.com/a/4330829):
+        self._stderr.truncate(0)
+        self._stderr.seek(0)
+        return ret
+    
+#     @classmethod
+#     def setUpClass(cls):
+#         cls._stdout_p = patch('sys.stdout', new=StringIO())
+#         cls._stderr_p = patch('sys.stderr', new=StringIO())
+#         cls._stdout = cls._stdout_p.start()
+#         cls._stderr = cls._stderr_p.start()
+# 
+#     @classmethod
+#     def tearDownClass(cls):
+#         cls._stdout_p.stop()
+#         cls._stderr_p.stop()
+    
 #     def test_run_from_station(self):
 #         '''tests a particular case of station download from geofon.
 #         Needs internet connection
@@ -91,24 +128,22 @@ class Test(unittest.TestCase):
 #             # self.assertEqual(fakeOutput.getvalue().strip(), 'hello world')
 
     def tst_run_from_data_dir(self):  # , mock_ansi_colors_escape_codes_supported):
-        '''tests scores from several files in directory 
+        '''
+        tests scores from several files in directory
         '''
         with patch('sdaas.run.ansi_colors_escape_codes.are_supported_on_current_terminal',
                    side_effect=lambda *a, **kw: True):
             for th in [0.5, 0]:
                 for sep in ['', ';']:
-                    with patch('sys.stdout', new=StringIO()) as fakeoutput:
-                        process(join(self.datadir, 'testdir1'),
-                                sep=sep, threshold=th,
-                                # metadata=join(self.datadir, 'GE.FLT1.xml'),
-                                capture_stderr=False)
-                        captured = fakeoutput.getvalue()
-                        expected_rows = 6
-                        check_output(captured, th, sep,
-                                     expected_rows=expected_rows)
+                    process(join(self.datadir, 'testdir1'),
+                            sep=sep, threshold=th,
+                            )
+                    captured = self.stdout
+                    check_output(captured, th, sep, expected_rows=6)
 
-    def tst_run_from_data_file(self):
-        '''tests a particular case of station download from geofon.
+    def test_run_from_data_file(self):
+        '''
+        tests a particular case of station download from geofon.
         Needs internet connection
         '''
         with patch('sdaas.run.ansi_colors_escape_codes.are_supported_on_current_terminal',
@@ -116,26 +151,20 @@ class Test(unittest.TestCase):
             for th in [0.5, 0]:
                 for sep in ['', ';']:
                     # test single-file directory:
-                    with patch('sys.stdout', new=StringIO()) as fakeoutput:
-                        process(join(self.datadir, 'testdir2'),
-                                sep=sep, threshold=th,
-                                metadata=join(self.datadir, 'inventory_GE.APE.xml'),
-                                capture_stderr=False)
-                        captured = fakeoutput.getvalue()
-                        expected_rows = 1
-                        check_output(captured, th, sep,
-                                     expected_rows=expected_rows)
+                    process(join(self.datadir, 'testdir2'),
+                            sep=sep, threshold=th,
+                            metadata=join(self.datadir, 'inventory_GE.APE.xml'),
+                            )
+                    captured = self.stdout
+                    check_output(captured, th, sep, expected_rows=1)
 
                     # test single file:
-                    with patch('sys.stdout', new=StringIO()) as fakeoutput:
-                        process(join(self.datadir, 'testdir2', 'trace_GE.APE.mseed'),
-                                sep=sep, threshold=th,
-                                metadata=join(self.datadir, 'inventory_GE.APE.xml'),
-                                capture_stderr=False)
-                        captured = fakeoutput.getvalue()
-                        expected_rows = 1
-                        check_output(captured, th, sep,
-                                     expected_rows=expected_rows)
+                    process(join(self.datadir, 'testdir2', 'trace_GE.APE.mseed'),
+                            sep=sep, threshold=th,
+                            metadata=join(self.datadir, 'inventory_GE.APE.xml'),
+                            )
+                    captured = self.stdout
+                    check_output(captured, th, sep, expected_rows=1)
 
     def tst_run_from_data_dir_bad_inventory(self):
 
@@ -151,27 +180,26 @@ class Test(unittest.TestCase):
                     # metadata=join(self.datadir, 'inventory_GE.APE.xml'),
                     capture_stderr=False)
 
-
-    def tst_run_from_http(self):
+    def test_run_from_http(self):
         url = ('http://geofon.gfz-potsdam.de/fdsnws/station/1/'
                'query?net=GE&sta=EIL&cha=BH?&start=2019-06-01')
-        process(url, capture_stderr=False, download_count=10, threshold=0.6)
+        process(url, download_count=10, threshold=0.6)
 
-    def tst_run_from_url_no_data(self):
+    def test_run_from_url_no_data(self):
         url = ('http://geofon.gfz-potsdam.de/fdsnws/station/1/'
                'query?net=GE&sta=E?&cha=BH?&start=2019-06-01')
-        process(url, capture_stderr=False, download_count=10, threshold=0.6)
+        process(url, threshold=0.6)
         
-    def tst_run_from_url_several(self):
+    def test_run_from_url_several(self):
         url = ("http://geofon.gfz-potsdam.de/fdsnws/station/1/query"
                "?net=GE&sta=A*&cha=BH?&start=2019-06-01")
-        process(url, capture_stderr=False, download_count=10, threshold=0.6)
+        process(url, download_count=10, threshold=0.6)
 
     def test_run_from_url_several_aggregate(self):
         url = ("http://geofon.gfz-potsdam.de/fdsnws/station/1/query"
                "?net=GE&sta=A*&cha=BH?&start=2019-06-01")
         process(url, aggregate='median',
-                capture_stderr=False, download_count=10, threshold=0.6)
+                download_count=10, threshold=0.6)
         
 if __name__ == "__main__":
     #  import sys;sys.argv = ['', 'Test.testName']
