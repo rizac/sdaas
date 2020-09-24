@@ -31,29 +31,29 @@ source .env/bin/activate
 ```
 (then to deactivate, simply type ... `deactivate` on the terminal). 
 
-#### 1. with requirements.txt
+#### 1. with requirements.txt (recommended on a new, empty virtual environment where you plan to use this program only)
 
 ```bash
-pip install --upgrade pip && pip install "numpy==1.15.4" && pip install -r ./requirements.txt
+pip install --upgrade pip && pip install "numpy==1.15.4" && pip install -r ./requirements.txt && pip install -e .
 ```
+(-e is optional)
 
 Pros:
-  - safest and always working solution (this is why is recommended)
+  - safest and always working solution
 
 Cons: 
-  - The program from the terminal must be invoked via `python sdaas/run.py` (quite verbose)
-  - If the virtual environment is new (usual case), skip this point. Otherwise, if it already has stuff installed,
+  - If the virtual environment has already has stuff installed,
     then you might override specific versions with this program's versions
 
-#### 2. with setup.py
+#### 2. with setup.py (recommended if you already have stuff installed in your virtual environment)
 
 ```bash
-pip install --upgrade pip && pip install "numpy>=1.15.4" && python setup.py install
+pip install --upgrade pip && pip install "numpy>=1.15.4" && pip install -e .
 ```
+(-e is optional)
 
 Pros:
-  - The program from the terminal can be invoked via `sdaas` (simpler)
-  - If the virtual environment is new (usual case), skip this point. Otherwise, if it already has stuff installed,
+  - If the virtual environment has already has stuff installed,
     there are less chances of version conflicts (although scikit-learn is installed with a specific
     version - required to open the saved Isolation Forest model - and thus it might override anyway already
     installed libraries)
