@@ -27,8 +27,10 @@ DEFAULT_TRAINED_MODEL = load(join(dirname(__file__), 'models',
                                   'feats=psd@5sec&'
                                   'behaviour=new&'
                                   'contamination=auto&'
-                                  'max_samples=1024&'
-                                  'n_estimators=100&'
+                                  'max_samples=4096&'
+                                  'n_estimators=50&'
+                                  # 'max_samples=1024&'
+                                  # 'n_estimators=100&'
                                   'random_state=11'
                                   '.sklmodel'))
 
