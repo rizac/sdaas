@@ -234,11 +234,10 @@ def _get_response_from_inventory(tr, metadata, nfft):
     response = inventory.get_response(id_, tr.stats.starttime)
     # In new ObsPy versions you can uncomment this line:
     # resp, _ = response.get_evalresp_response(t_samp=delta, nfft=nfft,
-    #                                          output="VEL")
-    # and add the argument
-    # hide_sensitivity_mismatch_warning=True
+    #             output="VEL", hide_sensitivity_mismatch_warning=True)
     #
-    # For the moment though, we need to creata a hacky solution with
+    # For the moment though, `hide_sensitivity_mismatch_warning` is not
+    # implemented and we need to creata a hacky solution with
     # wrapping functions in this module:
     resp, _ = get_evalresp_response(response, t_samp=delta, nfft=nfft,
                                     output="VEL")
@@ -251,7 +250,8 @@ def get_evalresp_response(response, t_samp, nfft, output="VEL",
     :meth:`~obspy.core.inventory.response.Response.get_evalresp_response`
     (rationale: suppress annoying warning issued from external libraries.
     See :func:`get_evalresp_response_for_frequencies` for details. Note that
-    in new ObsPy versions we will be able to remove this function)
+    in new ObsPy versions we will be able to remove this function. See
+    comments in :func:`_get_response_from_inventory`)
     '''
     # Calculate the output frequencies.
     fy = 1 / (t_samp * 2.0)
@@ -265,13 +265,14 @@ def get_evalresp_response(response, t_samp, nfft, output="VEL",
     return response, freqs
 
 
-def get_evalresp_response_for_frequencies(
-        response, frequencies, output="VEL", start_stage=None, end_stage=None):
+def get_evalresp_response_for_frequencies(response, frequencies, output="VEL",
+                                          start_stage=None, end_stage=None):
     '''Replaces
     :meth:`~obspy.core.inventory.response.Response.get_evalresp_response_for_frequencies`
     (rationale: suppress annoying warning issued from external libraries
     by setting explicitly `hide_sensitivity_mismatch_warning=True`. Note that
-    in new ObsPy versions we will be able to remove this function)
+    in new ObsPy versions we will be able to remove this function. See
+    comments in :func:`_get_response_from_inventory`)
     '''
     output, chan = response._call_eval_resp_for_frequencies(
         frequencies, output=output, start_stage=start_stage,
@@ -352,4 +353,3 @@ def _setup_yield_period_binning(psd_periods, period_smoothing_width_octaves,
             idx += 1
 
         previous_periods = per_left, per_center, per_right
-  
