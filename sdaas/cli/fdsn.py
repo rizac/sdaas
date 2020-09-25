@@ -32,11 +32,12 @@ def is_fdsn(url):
 
 def get_querydict(url):
     '''
-    Returns the query string of `url` in form of a dict, with parameter
-    names (str) mapped to their value (list). An additional 'URL' key
-    is added to the dict, with the query string removed, so that the
-    full url can be reconstructed with :func:`get_dataselect_url` or
-    :func:`get_station_url`
+    Returns the query string of `url` in form of a dict with keys
+    'net' (mandatory), 'sta', 'cha' 'loc' 'start' 'end' (all optional)
+    All dict values (query parameter values) are `str` (i.e., not casted).
+    An additional 'URL' key is added to the dict, with the query string
+    removed, so that the full url can be reconstructed with
+    :func:`get_dataselect_url` or :func:`get_station_url`
 
     Raises if the url does not contain at least the parameters 'net' 'sta'
         'start' (or alternatively 'network', 'station', 'starttime')
@@ -52,16 +53,14 @@ def get_querydict(url):
     try:
         # mandatory arguments:
         ret = {
-            'net': get_query_entry(queryargs, "net", "network")[1],
-             # 'sta': get_query_entry(queryargs, "sta", "station")[1],
-             # 'start': get_query_entry_dtime(queryargs, 'start', 'starttime')[1]
+            'net': _get_query_entry(queryargs, "net", "network")[1]
         }
         # optional arguments
         for params in [("loc", "location"), ("cha", "channel"),
                        ("sta", "station"), ('start', 'starttime'),
                        ('end', 'endtime')]:
             try:
-                ret[params[0]] = get_query_entry(queryargs, *params)[1]
+                ret[params[0]] = _get_query_entry(queryargs, *params)[1]
                 if params[0] in ('start', 'end'):
                     # check datetime (just a check, keep str as value)
                     try:
@@ -83,6 +82,34 @@ def get_querydict(url):
     ret['URL'] = (f'{url_splitted.scheme}://{url_splitted.netloc}'
                   f'{url_splitted.path}')
     return ret
+
+
+def _get_query_entry(parse_qs_result, *keys):
+    '''
+    Returns the tuple (param, value) from the given `parse_qs_result` (dict
+    resulting from :func:`parse.parse_qs`.
+    'param' is the parameter name found (searched in the provided `key`(s))
+    and `value` is the parameter value.
+
+    Raises if zero or more than one key is provided, if the given provided key
+    is typed more than once
+
+    :param: querydict: a `dict` as returned from :func:`get_querydict`
+    :param keys: the parameter names (or keys) to be searched for in the query
+        dict
+
+    :return: the tuple (param, value)
+    '''
+    params = [k for k in keys if k in parse_qs_result]
+    if len(params) > 1:
+        raise ValueError(f'Conflicting parameters "{"/".join(params)}"')
+    elif len(params) == 0:
+        raise KeyError(f'Missing parameter(s) "{"/".join(keys)}" ')
+    param = params[0]
+    val = parse_qs_result[param]
+    if len(val) > 1:
+        raise ValueError(f'Invalid multiple values for "{param}"')
+    return param, val[0]
 
 
 def get_dataselect_url(querydict, **queryargs):
@@ -121,9 +148,15 @@ def get_station_url(querydict, **queryargs):
         replace('/dataselect/', '/station/')
 
 
-def get_station_urls(station_query_url, timeout=None):
-    qdic = get_querydict(station_query_url.replace('/dataselect/',
-                                                   '/station/'))
+def get_station_urls(fdsn_query_url, timeout=None):
+    '''
+    Gets all station urls from the given fdsn_query_url
+
+    :return: a list of station urls. Each url will have the query arguments
+        net, sta, start and end
+    '''
+    qdic = get_querydict(fdsn_query_url.replace('/dataselect/',
+                                                '/station/'))
     url = get_url(qdic, level='station', format='text')
     req = request.Request(url)
     with request.urlopen(req, timeout=timeout) as response:
@@ -179,46 +212,3 @@ def _str(paramvalue):
         return paramvalue.isoformat()
     except AttributeError:
         return str(paramvalue)
-
-
-# def get_query_entry_dtime(query_dict, *keys):
-#     '''
-#     Same as :func:`get_query_entry` but converts the parameter value to
-#     date time (raises if not parsable)
-# 
-#     :see: :func:`get_query_entry`
-# 
-#     :return: the tuple (param, value) (value is a datetime object)
-#     '''
-#     par, val = get_query_entry(query_dict, *keys)
-#     try:
-#         return par, datetime.fromisoformat(val)
-#     except Exception:
-#         raise ValueError(f'Invalid date-time in "{par}"')
-
-
-def get_query_entry(query_dict, *keys):
-    '''
-    Returns the tuple (param, value) from the given `query_dict`.
-    'param' is the parameter name found (searched in the provided `key`(s))
-    and `value` is the parameter value.
-
-    Raises if zero or more than one key is provided, if the given provided key
-    is typed more than once
-
-    :param: querydict: a `dict` as returned from :func:`get_querydict`
-    :param keys: the parameter names (or keys) to be searched for in the query
-        dict
-
-    :return: the tuple (param, value)
-    '''
-    params = [k for k in keys if k in query_dict]
-    if len(params) > 1:
-        raise ValueError(f'Conflicting parameters "{"/".join(params)}"')
-    elif len(params) == 0:
-        raise KeyError(f'Missing parameter(s) "{"/".join(keys)}" ')
-    param = params[0]
-    val = query_dict[param]
-    if len(val) > 1:
-        raise ValueError(f'Invalid multiple values for "{param}"')
-    return param, val[0]

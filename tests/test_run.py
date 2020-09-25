@@ -87,8 +87,10 @@ class Test(unittest.TestCase):
 
     @property
     def stdout(self):
-        '''return the captured stdout and resets it so that calling again
-        this method will not return the previous output'''
+        '''
+        return the captured stdout and resets it so that calling again
+        this method  will only return new captured output
+        '''
         ret = self._stdout.getvalue()
         # Truncate and reset (https://stackoverflow.com/a/4330829):
         self._stdout.truncate(0)
@@ -97,35 +99,15 @@ class Test(unittest.TestCase):
 
     @property
     def stderr(self):
-        '''return the captured stdout and resets it so that calling again
-        this method will not return the previous output'''
+        '''
+        return the captured stdout and resets it so that calling again
+        this method will only return new captured output
+        '''
         ret = self._stderr.getvalue()
         # Truncate and reset (https://stackoverflow.com/a/4330829):
         self._stderr.truncate(0)
         self._stderr.seek(0)
         return ret
-    
-#     @classmethod
-#     def setUpClass(cls):
-#         cls._stdout_p = patch('sys.stdout', new=StringIO())
-#         cls._stderr_p = patch('sys.stderr', new=StringIO())
-#         cls._stdout = cls._stdout_p.start()
-#         cls._stderr = cls._stderr_p.start()
-# 
-#     @classmethod
-#     def tearDownClass(cls):
-#         cls._stdout_p.stop()
-#         cls._stderr_p.stop()
-    
-#     def test_run_from_station(self):
-#         '''tests a particular case of station download from geofon.
-#         Needs internet connection
-#         '''
-#         data = ("http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE"
-#                 "&sta=EIL&cha=BH?&start=2020-02-01")
-#         with patch('sys.stdout', new=StringIO()) as fakeoutput:
-#             process(data)
-#             # self.assertEqual(fakeOutput.getvalue().strip(), 'hello world')
 
     def tst_run_from_data_dir(self):  # , mock_ansi_colors_escape_codes_supported):
         '''
@@ -200,7 +182,7 @@ class Test(unittest.TestCase):
                "?net=GE&sta=A*&cha=BH?&start=2019-06-01")
         process(url, aggregate='median',
                 download_count=10, threshold=0.6)
-        
+
 if __name__ == "__main__":
     #  import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

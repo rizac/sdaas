@@ -7,7 +7,6 @@ Created on 10 Sep 2020
 '''
 import os
 import sys
-import re
 from datetime import datetime
 from contextlib import contextmanager
 import math
@@ -173,25 +172,26 @@ class ProgressBar:
             lpad, rpad = '', ''
 
         # Progress bar itself
-        percent_str, eta_str = '', ''
-        eta_width = 13  # length of string
+        eta_str, eta_width = '', 13  # <- length of eta string
         if self._show_eta and width >= eta_width + min_pbar_width:
             eta = (1-progress) * \
                 (datetime.utcnow() - self._start) / progress
-            d, s, m = eta.days, eta.seconds, eta.microseconds
-            if m >= 500000:
-                s += 1
-            if d >= 100:
-                eta_str = str(d).rjust(eta_width)
+            sec = round(eta.total_seconds() + 1e-7)
+            # 1e-7 because python 3 rounds down 0.5, and we want it up. See
+            # https://stackoverflow.com/questions/10825926/python-3-x-rounding-behavior
+            day = int(sec / (3600 * 24))
+            sec -= day * (3600 * 24)
+            if day >= 100:
+                eta_str = f'>={str(day)}d'.rjust(eta_width)
             else:
-                h = int(s / 3600)
-                s -= h * 3600
-                m = int(s / 60)
-                s -= m * 60
-                eta_str = f' {d:>2}d {h:02}:{m:02}:{s:02}'  # 13 chars
+                hrs = int(sec / 3600)
+                sec -= hrs * 3600
+                mnt = int(sec / 60)
+                sec -= mnt * 60
+                eta_str = f' {day:>2}d {hrs:02}:{mnt:02}:{sec:02}'
             width -= eta_width
 
-        percent_width = 4  # length of string
+        percent_str, percent_width = '', 4  # <- length of perc. string
         if self._show_percent and width >= percent_width + min_pbar_width:
             percent_str = "{:3d}%".format(int(0.5 + progress * 100))
             width -= percent_width

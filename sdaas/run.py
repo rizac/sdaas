@@ -177,7 +177,7 @@ def print_result(src: str, trace_id: str, trace_start: datetime,
                  trace_end: datetime, score: float, threshold: float = None,
                  separator: str = None, file: TextIO = sys.stdout):
     '''prints a classification result form a single trace'''
-    is_file = isfile(src)
+    is_file = src and isfile(src)
     if is_file:
         trace_id = join(basename(src), trace_id)
     # left align trace_id column
