@@ -1,4 +1,4 @@
-'''Main module implementing the cli (command line interface for computing
+'''cli (command line interface) module for computing
 seismic waveforms anomaly scores'''
 
 import argparse
@@ -93,10 +93,12 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
         is interactive, then scores will be colored according to the derived
         class (0 or 1)
 
-    :param aggregate: mean, median or empty string denoting the aggregate
-        function to use: scores from the same channels will be grouped and the
-        given aggregate function will be returned for all of them. The default
-        when missing (empty string) means no aggregation (display all results)
+    :param aggregate: the aggregate function to use (median, mean, min, max).
+        If given, each output row will denote a channel (identified by its
+        <net.sta.loc.cha> code) and its anomaly score will be the given
+        aggregate function computed on all channel's waveforms. The default
+        when missing (empty string) means: no aggregation (display one waveform
+        per row)
 
     :param sep: the column separator, particularly useful if the output must be
         redirected to file. E.g., for CSV-formatted output set 'sep' to comma
@@ -332,14 +334,18 @@ class StreamIterator(dict):
         '''streamiterator: an iterator of key, Stream tuples'''
         self._data.append((key, streamiterator, metadata_path, length))
 
-    def process(self,
-                sort_by_time=False,
-                group_cha=None,
-                progress: TextIO or None=sys.stderr,
-                info: TextIO or None=None):  # <- group cha can be mean median
+    def process(self, sort_by_time=False,
+                aggregate: str or None = None,
+                progress: TextIO or None = sys.stderr,
+                info: TextIO or None = None):
         '''
         Processes all added files/URLs and yields the results
         '''
+        if aggregate:
+            aggregates = ('min', 'max', 'median', 'mean')
+            if aggregate not in aggregates:
+                raise ValueError(f'"aggregate" not in {str(aggregates)}')
+
         count, total = 0, sum(_[-1] for _ in self._data)
         data = {}
         messages = None if info is None else []
@@ -352,10 +358,8 @@ class StreamIterator(dict):
                     inv = read_inventory(metadata_path)
                 except Exception as exc:
                     if messages is not None:
-                        msg = f'Metadata error, {str(exc)}. {key}'
-                        messages.append(msg)
+                        messages.append(f'Metadata error, {str(exc)}. {key}')
                     streamiterator = []  # hack to skip iteration below
-                    # raise ValueError(f'Metadata error: {str(exc)} - {key}')
 
                 feats = []
                 ids = []
@@ -364,14 +368,14 @@ class StreamIterator(dict):
                     for fpath, stream in streamiterator:
                         kount += 1
                         for trace in stream:
-                            (id_, st_, et_), feat = get_trace_idfeatures(trace, inv)
+                            (id_, st_, et_), feat = get_trace_idfeatures(trace,
+                                                                         inv)
                             feats.append(feat)
                             ids.append((fpath, id_, st_, et_))
 
                 except Exception as exc:
                     if messages is not None:
-                        msg = f'{str(exc)}. {key}'
-                        messages.append(msg)
+                        messages.append(f'{str(exc)}. {key}')
                         feats = []  # hack to stop after updating the pbar
 
                 count += 1
@@ -387,7 +391,7 @@ class StreamIterator(dict):
                 scores = get_scores(np.asarray(feats))
 
                 iter_ = zip(ids, scores)
-                if group_cha:
+                if aggregate:
                     data = defaultdict(lambda: [None, []])
                     for (fpath, id_, stime, etime), score in iter_:
                         timeranges, scores_ = data[id_]
@@ -404,8 +408,12 @@ class StreamIterator(dict):
                         scores_ = np.asarray(scores_)
                         if np.isnan(scores_).all():
                             scores.append(np.nan)
-                        elif group_cha == 'mean':
+                        elif aggregate == 'mean':
                             scores.append(np.nanmean(scores_))
+                        elif aggregate == 'min':
+                            scores.append(np.nanmin(scores_))
+                        elif aggregate == 'max':
+                            scores.append(np.nanmax(scores_))
                         else:
                             scores.append(np.nanmedian(scores_))
 
@@ -520,7 +528,7 @@ def getdef(param):
 # ArgumentParser code
 #####################
 
-if __name__ == '__main__':
+def cli_entry_point():
     parser = argparse.ArgumentParser(
         description=getdoc(),
         formatter_class=RawTextHelpFormatter
@@ -564,7 +572,7 @@ if __name__ == '__main__':
         # add argument to ArgParse:
         parser.add_argument(flag, **kwargs)
 
-    with warnings.catch_warnings(record=False) as w:
+    with warnings.catch_warnings(record=False) as wrn:  # @UnusedVariable
         # Cause all warnings to always be triggered.
         warnings.simplefilter("ignore")
         # parse arguments and pass them to `process`
@@ -574,6 +582,10 @@ if __name__ == '__main__':
             process(**vars(args))
             sys.exit(0)
         except Exception as exc:
-            raise
+            # raise
             print(f'ERROR: {str(exc)}', file=sys.stderr)
             sys.exit(1)
+
+
+if __name__ == '__main__':
+    cli_entry_point()
