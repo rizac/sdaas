@@ -15,7 +15,7 @@ from os.path import join, dirname
 
 import numpy as np
 from joblib import load
-from sklearn.ensemble.iforest import IsolationForest
+# from sklearn.ensemble.iforest import IsolationForest
 
 from sdaas.core.features import FEATURES, get_traces_idfeatures, get_traces_features,\
     get_streams_idfeatures, get_streams_features, get_trace_features, _get_id
@@ -218,6 +218,9 @@ def _get_scores(features, model):
 
 def create_model(n_estimators=100, max_samples=1024, contamination='auto',
                  behaviour='new', **kwargs):
+    # IsolationForest might be realtively long to load, import it here
+    # only when needed:
+    from sklearn.ensemble.iforest import IsolationForest
     return IsolationForest(n_estimators, max_samples,
                            contamination=contamination,
                            behaviour=behaviour,
