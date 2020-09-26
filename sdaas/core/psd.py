@@ -8,9 +8,19 @@ import math
 
 import numpy as np
 from matplotlib import mlab
-from obspy.signal.util import prev_pow_2
-from obspy.signal.spectral_estimation import dtiny, fft_taper
-from obspy.core.inventory import Inventory
+# AVOID importing from obspy: 1. it's very slow - up to few seconds (py3.7.3
+# and obspy 1.2.2. In addition consider that the import of the pre-trained
+# scikit model of this package is already quite time consuming, ~=1s).
+# 2. It might be a good idea to be free from obspy changes in general, and
+# especially in the PSD computation which is very critical as it must be
+# exactly the one used for the evaluation. All imported functions have been
+# implemented in this module. Refactored packages, changes in the implemenation,
+# warnings etcetera are all problems we are happy to avoid.
+# In any case, old imports (for info) here:
+# from obspy.signal.util import prev_pow_2
+# from obspy.signal.spectral_estimation import dtiny, fft_taper
+# from obspy.core.inventory.response import Response
+# from obspy.core.inventory import Inventory
 
 
 def psd_values(psd_periods, tr, metadata, special_handling=None,
@@ -207,7 +217,11 @@ def _get_response(tr, metadata, nfft):
     # but we keep the original PPSd skeleton to show how it
     # might be integrated with new metadata object. For the
     # moment `metadata` must be an Inventory object
-    if isinstance(metadata, Inventory):
+
+    # if isinstance(metadata, Inventory):
+    # Note on commented line above: as we want to avoid obspy imports (see
+    # comment at the top of the module) we need and alternative solution:
+    if hasattr(metadata, 'get_response'):
         return _get_response_from_inventory(tr, metadata, nfft)
 #         elif isinstance(self.metadata, Parser):
 #             return self._get_response_from_parser(tr)
@@ -353,3 +367,149 @@ def _setup_yield_period_binning(psd_periods, period_smoothing_width_octaves,
             idx += 1
 
         previous_periods = per_left, per_center, per_right
+
+
+# =======================================================#
+# === Copied obspy utilities to speed up import time === #
+# = (see comments at the top of the module for details)  #
+# =======================================================#
+
+# from obspy.signal.util.prev_pow_2:
+
+
+def prev_pow_2(i):
+    """
+    Find the previous power of two
+
+    >>> prev_pow_2(5)
+    4
+    >>> prev_pow_2(250)
+    128
+    """
+    # do not use NumPy here, math is much faster for single values
+    return int(math.pow(2, math.floor(math.log(i, 2))))
+
+
+# from obspy.signal.spectral_estimation:
+
+dtiny = np.finfo(0.0).tiny
+
+
+def fft_taper(data):
+    """
+    Cosine taper, 10 percent at each end (like done by [McNamara2004]_).
+
+    .. warning::
+        Inplace operation, so data should be float.
+    """
+    data *= cosine_taper(len(data), 0.2)
+    return data
+
+
+# from obspy.signal.invsim:
+
+
+def cosine_taper(npts, p=0.1, freqs=None, flimit=None, halfcosine=True,
+                 sactaper=False):
+    """
+    Cosine Taper.
+
+    :type npts: int
+    :param npts: Number of points of cosine taper.
+    :type p: float
+    :param p: Decimal percentage of cosine taper (ranging from 0 to 1). Default
+        is 0.1 (10%) which tapers 5% from the beginning and 5% form the end.
+    :rtype: float NumPy :class:`~numpy.ndarray`
+    :return: Cosine taper array/vector of length npts.
+    :type freqs: NumPy :class:`~numpy.ndarray`
+    :param freqs: Frequencies as, for example, returned by fftfreq
+    :type flimit: list or tuple of floats
+    :param flimit: The list or tuple defines the four corner frequencies
+        (f1, f2, f3, f4) of the cosine taper which is one between f2 and f3 and
+        tapers to zero for f1 < f < f2 and f3 < f < f4.
+    :type halfcosine: bool
+    :param halfcosine: If True the taper is a half cosine function. If False it
+        is a quarter cosine function.
+    :type sactaper: bool
+    :param sactaper: If set to True the cosine taper already tapers at the
+        corner frequency (SAC behavior). By default, the taper has a value
+        of 1.0 at the corner frequencies.
+
+    .. rubric:: Example
+
+    >>> tap = cosine_taper(100, 1.0)
+    >>> tap2 = 0.5 * (1 + np.cos(np.linspace(np.pi, 2 * np.pi, 50)))
+    >>> np.allclose(tap[0:50], tap2)
+    True
+    >>> npts = 100
+    >>> p = 0.1
+    >>> tap3 = cosine_taper(npts, p)
+    >>> (tap3[int(npts*p/2):int(npts*(1-p/2))]==np.ones(int(npts*(1-p)))).all()
+    True
+    """
+    if p < 0 or p > 1:
+        msg = "Decimal taper percentage must be between 0 and 1."
+        raise ValueError(msg)
+    if p == 0.0 or p == 1.0:
+        frac = int(npts * p / 2.0)
+    else:
+        frac = int(npts * p / 2.0 + 0.5)
+
+    if freqs is not None and flimit is not None:
+        fl1, fl2, fl3, fl4 = flimit
+        idx1 = np.argmin(abs(freqs - fl1))
+        idx2 = np.argmin(abs(freqs - fl2))
+        idx3 = np.argmin(abs(freqs - fl3))
+        idx4 = np.argmin(abs(freqs - fl4))
+    else:
+        idx1 = 0
+        idx2 = frac - 1
+        idx3 = npts - frac
+        idx4 = npts - 1
+    if sactaper:
+        # in SAC the second and third
+        # index are already tapered
+        idx2 += 1
+        idx3 -= 1
+
+    # Very small data lengths or small decimal taper percentages can result in
+    # idx1 == idx2 and idx3 == idx4. This breaks the following calculations.
+    if idx1 == idx2:
+        idx2 += 1
+    if idx3 == idx4:
+        idx3 -= 1
+
+    # the taper at idx1 and idx4 equals zero and
+    # at idx2 and idx3 equals one
+    cos_win = np.zeros(npts)
+    if halfcosine:
+        # cos_win[idx1:idx2+1] =  0.5 * (1.0 + np.cos((np.pi * \
+        #    (idx2 - np.arange(idx1, idx2+1)) / (idx2 - idx1))))
+        cos_win[idx1:idx2 + 1] = 0.5 * (
+            1.0 - np.cos((np.pi * (np.arange(idx1, idx2 + 1) - float(idx1)) /
+                          (idx2 - idx1))))
+        cos_win[idx2 + 1:idx3] = 1.0
+        cos_win[idx3:idx4 + 1] = 0.5 * (
+            1.0 + np.cos((np.pi * (float(idx3) - np.arange(idx3, idx4 + 1)) /
+                          (idx4 - idx3))))
+    else:
+        cos_win[idx1:idx2 + 1] = np.cos(-(
+            np.pi / 2.0 * (float(idx2) -
+                           np.arange(idx1, idx2 + 1)) / (idx2 - idx1)))
+        cos_win[idx2 + 1:idx3] = 1.0
+        cos_win[idx3:idx4 + 1] = np.cos((
+            np.pi / 2.0 * (float(idx3) -
+                           np.arange(idx3, idx4 + 1)) / (idx4 - idx3)))
+
+    # if indices are identical division by zero
+    # causes NaN values in cos_win
+    if idx1 == idx2:
+        cos_win[idx1] = 0.0
+    if idx3 == idx4:
+        cos_win[idx3] = 0.0
+    return cos_win
+
+
+# ================================== #
+# === end copied obspy utilities === #
+# ================================== #

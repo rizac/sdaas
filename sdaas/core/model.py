@@ -15,24 +15,10 @@ from os.path import join, dirname
 
 import numpy as np
 from joblib import load
-from sklearn.ensemble.iforest import IsolationForest
+# from sklearn.ensemble.iforest import IsolationForest
 
 from sdaas.core.features import FEATURES, get_traces_idfeatures, get_traces_features,\
     get_streams_idfeatures, get_streams_features, get_trace_features, _get_id
-
-
-DEFAULT_TRAINED_MODEL = load(join(dirname(__file__), 'models',
-                                  'clf=IsolationForest&'
-                                  'tr_set=uniform_train.hdf&'
-                                  'feats=psd@5sec&'
-                                  'behaviour=new&'
-                                  'contamination=auto&'
-                                  'max_samples=4096&'
-                                  'n_estimators=50&'
-                                  # 'max_samples=1024&'
-                                  # 'n_estimators=100&'
-                                  'random_state=11'
-                                  '.sklmodel'))
 
 
 def get_streams_idscores(streams, metadata, idfunc=_get_id):
@@ -144,6 +130,24 @@ def get_trace_score(trace, metadata):
     return get_scores(feats, check_nan=True)[0]
 
 
+_DEF_MODEL_NAME = (
+    'clf=IsolationForest&'
+    'tr_set=uniform_train.hdf&'
+    'feats=psd@5sec&'
+    'behaviour=new&'
+    'contamination=auto&'
+    'max_samples=4096&'
+    'n_estimators=50&'
+    # 'max_samples=1024&'
+    # 'n_estimators=100&'
+    'random_state=11'
+    '.sklmodel'
+)
+
+
+_DEFAULT_TRAINED_MODEL = None  # load(join(dirname(__file__), 'models', _DEF_MODEL_NAME))  # lazy loaded
+
+
 def get_scores(features, model=None, check_nan=True):
     '''
     Computes the amplitude anomaly scores from the given feature vectors,
@@ -177,7 +181,13 @@ def get_scores(features, model=None, check_nan=True):
         feature space)
     '''
     if model is None:
-        model = DEFAULT_TRAINED_MODEL
+        model = _DEFAULT_TRAINED_MODEL  # @UndefinedVariable
+        if model is None:
+            # A nice pattern is described in the link below, but works
+            # when importing _DEFAULT_TRAINED_MODEL from other modules:
+            # For info see https://stackoverflow.com/a/54616590
+            model = load(join(dirname(__file__), 'models', _DEF_MODEL_NAME))
+            globals()['_DEFAULT_TRAINED_MODEL'] = model
         model_fitted = True
     else:
         model_fitted = hasattr(model, "offset_")  # see IsolationForest
@@ -218,6 +228,8 @@ def _get_scores(features, model):
 
 def create_model(n_estimators=100, max_samples=1024, contamination='auto',
                  behaviour='new', **kwargs):
+    # this import takes quite a lot, use it here only if needed:
+    from sklearn.ensemble.iforest import IsolationForest
     return IsolationForest(n_estimators, max_samples,
                            contamination=contamination,
                            behaviour=behaviour,
