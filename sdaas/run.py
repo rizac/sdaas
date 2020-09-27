@@ -155,7 +155,7 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
     sio = StringIO()
     kount = 0
     for _ in streamiterator.process(sort_by_time=sort_by_time and not aggregate,
-                                    group_cha=aggregate,
+                                    aggregate=aggregate,
                                     progress=sys.stderr,
                                     info=None if not verbose else sys.stderr):
         for id_, score_ in _:

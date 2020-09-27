@@ -151,9 +151,8 @@ Example script
 
 ```python
 import time
-from sdaas.core.features import get_trace_features
-from sdaas.core.model import get_trace_score, get_traces_scores, get_streams_scores,\
-    get_scores 
+from sdaas.core import trace_features, trace_score, traces_scores, streams_scores,\
+    scores 
 
 
 print(f"Computing scores on {N} Streams")
@@ -161,8 +160,8 @@ print(f"Computing scores on {N} Streams")
 
 # method 1 (standard)
 t = time.time()
-scores = get_streams_scores(streams, metadata)
-print(f'1)  `get_streams_scores`: {(time.time() - t):.2f}s')
+scores = streams_scores(streams, metadata)
+print(f'1)  `streams_scores`: {(time.time() - t):.2f}s')
 
 
 print('To obtain the same results with more control over the loop,\n'
@@ -174,38 +173,38 @@ t = time.time()
 feats = []
 for stream in streams:
     for trace in stream:
-        feats.append(get_trace_features(trace, metadata))
-scores = get_scores(feats)
-print(f'2a) `get_trace_features` within loop + `get_scores`: {(time.time() - t):.2f}s')
+        feats.append(trace_features(trace, metadata))
+scores = scores(feats)
+print(f'2a) `trace_features` within loop + `scores`: {(time.time() - t):.2f}s')
 
 
 # method 2b (same as 2a, compute scores in loop. Less performant)
-scores = []
+scores_ = []
 t = time.time()
 for stream in streams:
-    scores.extend(get_traces_scores(stream, metadata))
-scores = np.array(scores)
-print(f'2b) `get_traces_score` within loop: {(time.time() - t):.2f}s')
+    scores_.extend(traces_scores(stream, metadata))
+scores_ = np.array(scores_)
+print(f'2b) `traces_score` within loop: {(time.time() - t):.2f}s')
 
 
 # method 2c (same as 2a, compute scores in loop, even less performant)
-scores = []
+scores_ = []
 t = time.time()
 for stream in streams:
     for trace in stream:
-        scores.append(get_trace_score(trace, metadata))
-scores = np.array(scores)
-print(f'2c) `get_trace_score` within loop: {(time.time() - t):.2f}s')
+        scores_.append(trace_score(trace, metadata))
+scores_ = np.array(scores_)
+print(f'2c) `trace_score` within loop: {(time.time() - t):.2f}s')
 ```
 
 Output:
 
 ```
 >>> Computing scores on 10 Streams
-1)  `get_streams_scores`: 0.43s
+1)  `streams_scores`: 0.43s
 To obtain the same results with more control over the loop,
 check these alternative options:
-2a) `get_trace_features` within loop + `get_scores`: 0.43s
-2b) `get_traces_score` within loop: 1.06s
-2c) `get_trace_score` within loop: 2.49s
+2a) `trace_features` within loop + `scores`: 0.43s
+2b) `traces_score` within loop: 1.06s
+2c) `trace_score` within loop: 2.49s
 ```

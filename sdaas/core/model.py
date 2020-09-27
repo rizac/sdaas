@@ -17,22 +17,24 @@ import numpy as np
 from joblib import load
 # from sklearn.ensemble.iforest import IsolationForest
 
-from sdaas.core.features import FEATURES, get_traces_idfeatures, get_traces_features,\
-    get_streams_idfeatures, get_streams_features, get_trace_features, _get_id
+from sdaas.core.features import (FEATURES, _get_id, get_traces_idfeatures,
+                                 get_traces_features, get_streams_idfeatures,
+                                 get_streams_features, get_trace_features)
 
 
-DEFAULT_TRAINED_MODEL = load(join(dirname(__file__), 'models',
-                                  'clf=IsolationForest&'
-                                  'tr_set=uniform_train.hdf&'
-                                  'feats=psd@5sec&'
-                                  'behaviour=new&'
-                                  'contamination=auto&'
-                                  'max_samples=4096&'
-                                  'n_estimators=50&'
-                                  # 'max_samples=1024&'
-                                  # 'n_estimators=100&'
-                                  'random_state=11'
-                                  '.sklmodel'))
+# define default model file name inside the 'models' directory.
+# (see `_load_default_trained_model` below for details)
+DEFAULT_TRAINED_MODEL_NAME = ('clf=IsolationForest&'
+                              'tr_set=uniform_train.hdf&'
+                              'feats=psd@5sec&'
+                              'behaviour=new&'
+                              'contamination=auto&'
+                              'max_samples=4096&'
+                              'n_estimators=50&'
+                              # 'max_samples=1024&'
+                              # 'n_estimators=100&'
+                              'random_state=11'
+                              '.sklmodel')
 
 
 def get_streams_idscores(streams, metadata, idfunc=_get_id):
@@ -178,6 +180,8 @@ def get_scores(features, model=None, check_nan=True):
     '''
     if model is None:
         model = DEFAULT_TRAINED_MODEL
+        if model is None:
+            model = _load_default_trained_model()
         model_fitted = True
     else:
         model_fitted = hasattr(model, "offset_")  # see IsolationForest
@@ -214,6 +218,17 @@ def _get_scores(features, model):
     NOT be NaN (this is not checked for)
     '''
     return -model.score_samples(features)
+
+
+DEFAULT_TRAINED_MODEL = None
+
+
+# lazy load DEFAULT_TRAINED_MODEL
+def _load_default_trained_model():    
+    global DEFAULT_TRAINED_MODEL
+    DEFAULT_TRAINED_MODEL = load(join(dirname(__file__), 'models',
+                                      DEFAULT_TRAINED_MODEL_NAME))
+    return DEFAULT_TRAINED_MODEL
 
 
 def create_model(n_estimators=100, max_samples=1024, contamination='auto',

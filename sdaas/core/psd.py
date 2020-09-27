@@ -8,9 +8,8 @@ import math
 
 import numpy as np
 from matplotlib import mlab
-from obspy.signal.util import prev_pow_2
-from obspy.signal.spectral_estimation import dtiny, fft_taper
-from obspy.core.inventory import Inventory
+from obspy.signal.invsim import cosine_taper
+from obspy.core.inventory.inventory import Inventory
 
 
 def psd_values(psd_periods, tr, metadata, special_handling=None,
@@ -56,9 +55,11 @@ def psd_values(psd_periods, tr, metadata, special_handling=None,
         the method is faster
     """
     # Convert to float, this is only necessary if in-place operations follow,
-    # which is the case e.g. for the fft_taper function (see below)
-    # (tested with mlab 3.2.2 and obspy 1.1.1)
-    tr.data = tr.data.astype(np.float64)
+    # which was the case e.g. for the fft_taper function (see below)
+    # (tested with mlab 3.2.2 and obspy 1.1.1. However, fft_taper has been
+    # re-implemented here without inplace operations anymore). So comment out
+    # the following line for the moment:
+    # tr.data = tr.data.astype(np.float64)
 
     # if trace has a masked array we fill in zeros
     try:
@@ -82,8 +83,8 @@ def psd_values(psd_periods, tr, metadata, special_handling=None,
     #  - make 13 single segments overlapping by 75%
     #    (1 full segment length + 25% * 12 full segment lengths)
     nfft = nfft / 4.0
-    #  - go to next smaller power of 2 for nfft
-    nfft = prev_pow_2(nfft)
+    #  - go to next smaller power of 2 for nfft:
+    nfft = int(math.pow(2, math.floor(math.log(nfft, 2))))
     #  - use 75% overlap
     #    (we end up with a little more than 13 segments..)
     nlap = int(0.75 * nfft)
@@ -138,9 +139,10 @@ def psd_values(psd_periods, tr, metadata, special_handling=None,
             spec = spec / respamp
         else:
             spec = (w ** 2) * spec / respamp
-    # avoid calculating log of zero
-    idx = spec < dtiny
-    spec[idx] = dtiny
+    # avoid calculating log of zero (define dtiny here. In obspy's PPSD it was
+    # imported from obspy.signal.spectral_estimation):
+    dtiny = np.finfo(0.0).tiny
+    spec[spec < dtiny] = dtiny
 
     # go to dB
     spec = np.log10(spec)
@@ -194,6 +196,15 @@ def psd_values(psd_periods, tr, metadata, special_handling=None,
         val = np.array(smoothed_psd)
 
     return val
+
+
+def fft_taper(data):
+    """
+    Cosine taper, 10 percent at each end (like done by [McNamara2004]).
+    Re-implements obspy.signal.spectral_estimation.fft_taper to avoid inplace
+    operations (not necessary here)
+    """
+    return data * cosine_taper(len(data), 0.2)
 
 
 def _get_response(tr, metadata, nfft):
