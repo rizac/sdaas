@@ -4,8 +4,8 @@
 
 
 Simple program to compute amplitude anomaly scores in seismic data and metadata.
-Given a set of waveforms and their metadata, it removes the waveform response and returns
-the relative anomaly score computed on the waveform amplitudes.
+Given a set of waveforms and their metadata, it removes the waveform response
+and returns the relative anomaly score computed on the waveform amplitudes.
 
 This program can be used to filter out a set of  malformed waveforms,
 or to check the correctness of the metadata fields (e.g. Station inventory xml)
@@ -15,9 +15,8 @@ by checking the anomaly score on a set of station recordings.
 
 ## Installation
 
-Always work within a virtual environment.
-Assuming you are on a terminal,
-in the directory where you cloned this repository,
+Always work within a virtual environment. From a terminal, in the directory
+where you cloned this repository (last argument of `git clone`),
 
 1. create a virtual environment (once):
 
@@ -38,12 +37,9 @@ pip install --upgrade pip && pip install "numpy==1.15.4" && pip install -r ./req
 ```
 (-e is optional)
 
-Pros:
-  - safest and always working solution
+This is the safest option, as it installs all dependencies with a specific tested version.
+**However it will override already installed dependencies, if present in the virtual environment**
 
-Cons: 
-  - If the virtual environment has already has stuff installed,
-    then you might override specific versions with this program's versions
 
 #### 2. with setup.py (recommended if you already have stuff installed in your virtual environment)
 
@@ -52,17 +48,13 @@ pip install --upgrade pip && pip install "numpy>=1.15.4" && pip install -e .
 ```
 (-e is optional)
 
-Pros:
-  - If the virtual environment has already has stuff installed,
-    there are less chances of version conflicts (although scikit-learn is installed with a specific
-    version - required to open the saved Isolation Forest model - and thus it might override anyway already
-    installed libraries)
-
-Cons: 
-  - Higher chance of using libraries with newer versions and thus untested/unexpected behaviour (we do our best
-    but we cannot keep up rapidly with all libraries updates, fix the new errors in our code,
-    their deprecation warnings, and so on)
-
+Less safe option as it installs all dependencies with the newest available.
+Consenquently, something which might not work (we do our best but we cannot keep
+up rapidly with all libraries updates, fix the new errors in our code, their
+deprecation warnings, and so on). **However it will NOT necessarily override
+already installed dependencies, if present in the virtual environment**
+(not that scikit is in any case installed with a specific version 0.21.3,
+necessary to load the model trained with that version)
 
 
 ## Usage
@@ -71,24 +63,17 @@ Cons:
 ### As command line application
 
 Activate your virtual environment (see above), and then to use the program
-as command line application, type `sdaas --help` or `python sdaas/run.py --help` (depending
-on the installation above).
+as command line application. You can compute scores from a given station(s), all stations
+from given network(s), a single waveform segment,  You can always type `sdaas --help` for details
 
-Example(s):
 
-```bash
-python sdaas/run.py "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=BKB&cha=BH?&start=2016-01-01&level=response" -c -th 0.7
-```
-
-or:
+Example (compute scores from randomly selected segments of a givens station and channel):
 
 ```bash
-sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=BKB&cha=BH?&start=2016-01-01&level=response" -c -th 0.7
-```
+>>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=BKB&cha=BH?&start=2016-01-01&level=response" -v -c -th 0.7
 
-Example output:
+[███████████████████████████████████████████████████████████████]  100%  0d 00:00:00
 
-```bash
 GE.EIL..BHN    2019-07-26T05:01:45  2019-07-26T05:04:20  0.45  0
 GE.EIL..BHE    2019-07-26T05:01:54  2019-07-26T05:04:10  0.43  0
 GE.EIL..BHZ    2019-07-26T05:01:57  2019-07-26T05:04:10  0.43  0
@@ -105,16 +90,16 @@ with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.h
 **Example 1**: to compute the traces scores in a stream or iterable of traces (e.g. list. tuple):
 
 ```python
->>> from sdaas.core.model import get_traces_scores
->>> get_traces_scores(stream, inventory)
+>>> from sdaas.core import traces_scores
+>>> traces_scores(stream, inventory)
 array([ 0.47279325,  0.46220043,  0.44874805])
 ```
 
 **Example 2**: to compute the traces scores in an iterable of streams (e.g., when reading from files)
 
 ```python
->>> from sdaas.core.model import get_streams_scores
->>> get_streams_scores(streams, inventory)
+>>> from sdaas.core import streams_scores
+>>> streams_scores(streams, inventory)
 array([ 0.47279325,  0.46220043,  0.44874805,  0.51276321,  0.43225043, 0.74856103])
 ```
 
@@ -122,8 +107,8 @@ array([ 0.47279325,  0.46220043,  0.44874805,  0.51276321,  0.43225043, 0.748561
 (ids are tuples of the form (trace_id:str, trace_start:datetime, trace_end:datetime))
 
 ```python
->>> from sdaas.core.model import get_traces_idscores
->>> get_traces_idscores(stream, inventory)
+>>> from sdaas.core import traces_idscores
+>>> traces_idscores(stream, inventory)
 ([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
 ```
 
@@ -131,8 +116,8 @@ array([ 0.47279325,  0.46220043,  0.44874805,  0.51276321,  0.43225043, 0.748561
 (ids are tuples of the form (trace_id:str, trace_start:datetime, trace_end:datetime))
 
 ```python
->>> from sdaas.core.model import get_streams_idscores
->>> get_streams_idscores(streams, inventory)
+>>> from sdaas.core import streams_idscores
+>>> streams_idscores(streams, inventory)
 ([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
 ```
 
