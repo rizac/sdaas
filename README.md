@@ -139,3 +139,5 @@ Same as above, computing the features and the scores separately for more control
 which is used as input of our machine learning IsolationForest algorithm.
 Currently, it consists of a mono-dimensional vector (numpy array of length 1)
 of the waveform power spectral density (PSD) computed at 5 s period.
+`scores` is the low-level function that computes anomaly score from an array
+of feature vectors (Nx1 numpy array)
