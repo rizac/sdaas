@@ -87,109 +87,53 @@ Assuming you have one or more [Stream](https://docs.obspy.org/packages/autogen/o
 or [Trace](https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html),
 with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.html), then
 
-**Example 1**: to compute the traces scores in a stream or iterable of traces (e.g. list. tuple):
-
+Examples: Compute the scores in a stream or iterable of traces (e.g. list. tuple):
 ```python
 >>> from sdaas.core import traces_scores
 >>> traces_scores(stream, inventory)
-array([ 0.47279325,  0.46220043,  0.44874805])
+array([ 0.47900702,  0.46478282,  0.44947399])
 ```
 
-**Example 2**: to compute the traces scores in an iterable of streams (e.g., when reading from files)
-
-```python
->>> from sdaas.core import streams_scores
->>> streams_scores(streams, inventory)
-array([ 0.47279325,  0.46220043,  0.44874805,  0.51276321,  0.43225043, 0.74856103])
-```
-
-**Example 3**: to compute the traces ids and scores in a stream or iterable of traces (e.g. list. tuple):
-(ids are tuples of the form (trace_id:str, trace_start:datetime, trace_end:datetime))
-
+Compute the scores in a stream or iterable of traces, getting also the traces id (seed_id, start, end):
 ```python
 >>> from sdaas.core import traces_idscores
 >>> traces_idscores(stream, inventory)
-([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
+([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 42, 12, 50001)), ('GE.FLT1..HHN', datetime.datetime(2011, 9, 3, 16, 38, 5, 760000), datetime.datetime(2011, 9, 3, 16, 42, 9, 670000)), ('GE.FLT1..HHZ', datetime.datetime(2011, 9, 3, 16, 38, 8, 40000), datetime.datetime(2011, 9, 3, 16, 42, 9, 670000))], array([ 0.47900702,  0.46478282,  0.44947399]))
 ```
 
-**Example 4**: to compute the traces ids and scores on an iterable of streams (e.g., when reading from files)
-(ids are tuples of the form (trace_id:str, trace_start:datetime, trace_end:datetime))
-
+Same as above, with custom id function given as the seed id (`trace.get_id()` in ObsPy):
 ```python
+>>> from sdaas.core import traces_idscores
+>>> traces_idscores(stream, inventory, idfunc=lambda t: t.get_id())
+(['GE.FLT1..HHE', 'GE.FLT1..HHN', 'GE.FLT1..HHZ'], array([ 0.47900702,  0.46478282,  0.44947399]))
+```
+
+You can also compute scores and ids from terable of streams (e.g., when reading from files)...
+```python
+>>> from sdaas.core import streams_scores
 >>> from sdaas.core import streams_idscores
->>> streams_idscores(streams, inventory)
-([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 40, 5, 450001)), ... ], array([ 0.47279325, ... ]))
 ```
 
-*(Note: the last two functions have an optionl argument `idfunc=lambda trace: custom_trace_id` for customizing the returned trace id)*
-
-
-**Example 5** (Performance hint):
-All functions computing the anomaly score from an ObsPy Trace or Stream
-first transform the given object into a feature vector via
-the functions implemented in the `sdaas.core.features` module. The feature computation
-is the time consuming part and can not be further optimized. However, the function computing scores
-from the given features is faster if you can call it once 
-and not in a loop (same principle of many numpy functions).
-
-Example script
-
+... or from a single trace:
 ```python
-import time
-from sdaas.core import trace_features, trace_score, traces_scores, streams_scores,\
-    scores 
-
-
-print(f"Computing scores on {N} Streams")
-
-
-# method 1 (standard)
-t = time.time()
-scores = streams_scores(streams, metadata)
-print(f'1)  `streams_scores`: {(time.time() - t):.2f}s')
-
-
-print('To obtain the same results with more control over the loop,\n'
-      'check these alternative options:')
-
-
-# method 2a (same as method 1, compute scores once avoiding loops)
-t = time.time()
-feats = []
-for stream in streams:
-    for trace in stream:
-        feats.append(trace_features(trace, metadata))
-scores = scores(feats)
-print(f'2a) `trace_features` within loop + `scores`: {(time.time() - t):.2f}s')
-
-
-# method 2b (same as 2a, compute scores in loop. Less performant)
-scores_ = []
-t = time.time()
-for stream in streams:
-    scores_.extend(traces_scores(stream, metadata))
-scores_ = np.array(scores_)
-print(f'2b) `traces_score` within loop: {(time.time() - t):.2f}s')
-
-
-# method 2c (same as 2a, compute scores in loop, even less performant)
-scores_ = []
-t = time.time()
-for stream in streams:
-    for trace in stream:
-        scores_.append(trace_score(trace, metadata))
-scores_ = np.array(scores_)
-print(f'2c) `trace_score` within loop: {(time.time() - t):.2f}s')
+>>> from sdaas.core import trace_score
 ```
 
-Output:
-
+Getting anomaly score from several streams
+```python
+>>> import time
+>>> t = time.time()
+>>> from sdaas.core import streams_scores
+>>> sscores = streams_scores(streams, inventory)
 ```
->>> Computing scores on 10 Streams
-1)  `streams_scores`: 0.43s
-To obtain the same results with more control over the loop,
-check these alternative options:
-2a) `trace_features` within loop + `scores`: 0.43s
-2b) `traces_score` within loop: 1.06s
-2c) `trace_score` within loop: 2.49s
+
+Same as above, computing the features and the scores separately for more control (note that for better performances, scores are computed once on all features and not inside a for loop):
+```python
+>>> from sdaas.core import trace_features, scores
+>>> t = time.time()
+>>> feats = []
+>>> for stream in streams:
+>>>     for trace in stream:
+>>>         feats.append(trace_features(trace, inventory))
+>>> sscores = scores(feats)
 ```

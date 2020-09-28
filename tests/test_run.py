@@ -14,11 +14,11 @@ from sdaas.run import process, is_threshold_set
 from sdaas.cli.utils import ansi_colors_escape_codes
 
 
-def check_output(output, threshold, sep, expected_rows=None):
+def check_output(output, threshold=-1, sep=None, expected_rows=None):
     '''checks the string output of a score calculation from the command line'''
     out = output.strip().split('\n')
     ptr = '\\s+' if not sep else sep
-    out = [re.split(ptr, _) for _ in out]
+    out = [re.split(ptr, (_.strip() if not sep else _)) for _ in out]
     if not sep:
         # datetimes are printed with the space, we have to join
         # four "fake" col into 2 columns:
@@ -109,7 +109,7 @@ class Test(unittest.TestCase):
         self._stderr.seek(0)
         return ret
 
-    def tst_run_from_data_dir(self):  # , mock_ansi_colors_escape_codes_supported):
+    def test_run_from_data_dir(self):  # , mock_ansi_colors_escape_codes_supported):
         '''
         tests scores from several files in directory
         '''
@@ -148,7 +148,7 @@ class Test(unittest.TestCase):
                     captured = self.stdout
                     check_output(captured, th, sep, expected_rows=1)
 
-    def tst_run_from_data_dir_bad_inventory(self):
+    def test_run_from_data_dir_bad_inventory(self):
 
         # wrong metadata:
         with self.assertRaises(Exception) as context:
@@ -171,17 +171,26 @@ class Test(unittest.TestCase):
         url = ('http://geofon.gfz-potsdam.de/fdsnws/station/1/'
                'query?net=GE&sta=E?&cha=BH?&start=2019-06-01')
         process(url, threshold=0.6)
-        
+        capt = self.stdout
+        check_output(capt, threshold=0.6)
+
     def test_run_from_url_several(self):
         url = ("http://geofon.gfz-potsdam.de/fdsnws/station/1/query"
                "?net=GE&sta=A*&cha=BH?&start=2019-06-01")
         process(url, download_count=10, threshold=0.6)
+        capt = self.stdout
+        check_output(capt, threshold=0.6)
 
     def test_run_from_url_several_aggregate(self):
-        url = ("http://geofon.gfz-potsdam.de/fdsnws/station/1/query"
-               "?net=GE&sta=A*&cha=BH?&start=2019-06-01")
+        url = ("http://geofon.gfz-potsdam.de/fdsnws/station/1/"
+               "query?net=CX&sta=PB*&cha=BE?,BH?,BN?"
+               "&start=2020-09-14&end=2020-09-24")
         process(url, aggregate='median',
-                download_count=10, threshold=0.6)
+                download_count=10)
+        capt = self.stdout
+        check_output(capt)
+        # print(capt)
+        assert all(0.39 < float(line.split()[-1]) < 0.5 for line in capt.strip().split('\n'))
 
 if __name__ == "__main__":
     #  import sys;sys.argv = ['', 'Test.testName']
