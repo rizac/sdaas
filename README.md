@@ -121,8 +121,6 @@ You can also compute scores and ids from terable of streams (e.g., when reading 
 
 Getting anomaly score from several streams
 ```python
->>> import time
->>> t = time.time()
 >>> from sdaas.core import streams_scores
 >>> sscores = streams_scores(streams, inventory)
 ```
@@ -130,10 +128,14 @@ Getting anomaly score from several streams
 Same as above, computing the features and the scores separately for more control (note that for better performances, scores are computed once on all features and not inside a for loop):
 ```python
 >>> from sdaas.core import trace_features, scores
->>> t = time.time()
 >>> feats = []
 >>> for stream in streams:
 >>>     for trace in stream:
 >>>         feats.append(trace_features(trace, inventory))
 >>> sscores = scores(feats)
 ```
+
+*Note* `trace_features` returns a vector (numpy array) representing a given trace and
+which is used as input of our machine learning IsolationForest algorithm.
+Currently, it consists of a mono-dimensional vector (numpy array of length 1)
+of the waveform power spectral density (PSD) computed at 5 s period.
