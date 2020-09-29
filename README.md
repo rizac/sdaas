@@ -92,19 +92,45 @@ with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.h
 
 |Function|easy import|source (in the borwser, try to click for details)|
 | --- | --- | --- |
-|aa_scores|`from sdaas.core import aa_scores`|```python sdaas.core.model.aa_scores```|
-|psd_values|`from sdaas.core import psd_values`|```python sdaas.core.psd.psd_values```|
-|streams_features|`from sdaas.core import streams_features`|```python sdaas.core.features.streams_features```|
-|streams_idfeatures|`from sdaas.core import streams_idfeatures`|```python sdaas.core.features.streams_idfeatures```|
-|streams_idscores|`from sdaas.core import streams_idscores`|```python sdaas.core.model.streams_idscores```|
-|streams_scores|`from sdaas.core import streams_scores`|```python sdaas.core.model.streams_scores```|
-|trace_features|`from sdaas.core import trace_features`|```python sdaas.core.features.trace_features```|
-|trace_idfeatures|`from sdaas.core import trace_idfeatures`|```python sdaas.core.features.trace_idfeatures```|
-|trace_score|`from sdaas.core import trace_score`|```python sdaas.core.model.trace_score```|
-|traces_features|`from sdaas.core import traces_features`|```python sdaas.core.features.traces_features```|
-|traces_idfeatures|`from sdaas.core import traces_idfeatures`|```python sdaas.core.features.traces_idfeatures```|
-|traces_idscores|`from sdaas.core import traces_idscores`|```python sdaas.core.model.traces_idscores```|
-|traces_scores|`from sdaas.core import traces_scores`|```python sdaas.core.model.traces_scores```|
+|aa_scores|`from sdaas.core import aa_scores`|```python
+sdaas.core.model.aa_scores
+```|
+|psd_values|`from sdaas.core import psd_values`|```python
+sdaas.core.psd.psd_values
+```|
+|streams_features|`from sdaas.core import streams_features`|```python
+sdaas.core.features.streams_features
+```|
+|streams_idfeatures|`from sdaas.core import streams_idfeatures`|```python
+sdaas.core.features.streams_idfeatures
+```|
+|streams_idscores|`from sdaas.core import streams_idscores`|```python
+sdaas.core.model.streams_idscores
+```|
+|streams_scores|`from sdaas.core import streams_scores`|```python
+sdaas.core.model.streams_scores
+```|
+|trace_features|`from sdaas.core import trace_features`|```python
+sdaas.core.features.trace_features
+```|
+|trace_idfeatures|`from sdaas.core import trace_idfeatures`|```python
+sdaas.core.features.trace_idfeatures
+```|
+|trace_score|`from sdaas.core import trace_score`|```python
+sdaas.core.model.trace_score
+```|
+|traces_features|`from sdaas.core import traces_features`|```python
+sdaas.core.features.traces_features
+```|
+|traces_idfeatures|`from sdaas.core import traces_idfeatures`|```python
+sdaas.core.features.traces_idfeatures
+```|
+|traces_idscores|`from sdaas.core import traces_idscores`|```python
+sdaas.core.model.traces_idscores
+```|
+|traces_scores|`from sdaas.core import traces_scores`|```python
+sdaas.core.model.traces_scores
+```|
 
 **Examples**: Compute the scores in a stream or iterable of traces (e.g. list. tuple):
 ```python
