@@ -166,9 +166,9 @@ def aa_scores(features, model=None, check_nan=True):
         *IMPORTANT*: If `model` is None (the default and recommended, meaning
         that the pre-trained and validated model is used), the features should
         have been calculated with the functions of this package (see
-        :module:`sdaas.core.features` and :sdaas.core.psd`)
-    :param model: a :class:`scikit.ensemble.IsolationForest`, or None. If None (the
-        default), the pre-trained model evaluated on a general dataset of
+        :module:`sdaas.core.features` and :module:`sdaas.core.psd`)
+    :param model: a :class:`scikit.ensemble.IsolationForest`, or None. If None
+        (the default), the pre-trained model evaluated on a general dataset of
         seismic waveforms will be used. See also :func:`create_model`
     :param check_nan: boolean (default: True), checks for NaN in features
         and skip their computation: NaNs (numpy.nan) will be returned for these
@@ -187,7 +187,7 @@ def aa_scores(features, model=None, check_nan=True):
         model_fitted = hasattr(model, "offset_")  # see IsolationForest
         # and check_fitted
 
-    features = _reshape_feature_spaces(features)
+    features = _reshape_feature_space(features)
     num_instances = features.shape[0]
 
     if check_nan:
@@ -205,7 +205,7 @@ def aa_scores(features, model=None, check_nan=True):
     return _get_scores(features, model)
 
 
-def _reshape_feature_spaces(features):
+def _reshape_feature_space(features):
     features = np.asarray(features)
     if len(features.shape) == 1 and len(FEATURES) == 1:
         features = features.reshape((len(features), 1))
