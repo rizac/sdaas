@@ -90,48 +90,35 @@ with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.h
 <!--AUTO GENERATED SNIPPET DO NOT EDIT -->
 <!-- (see tests/test_and_create_readme_snippet.py for details) -->
 
-|Function|easy import|source (in the borwser, try to click for details)|
-| --- | --- | --- |
-|aa_scores|`from sdaas.core import aa_scores`|```python
+<table>
+<tr><td>Function</td><td>easy import</td><td>source (in the borwser, try to click for details)</td></tr><tr><td>aa_scores</td><td>`from sdaas.core import aa_scores`</td><td>```python
 sdaas.core.model.aa_scores
-```|
-|psd_values|`from sdaas.core import psd_values`|```python
+```</td></tr><tr><td>psd_values</td><td>`from sdaas.core import psd_values`</td><td>```python
 sdaas.core.psd.psd_values
-```|
-|streams_features|`from sdaas.core import streams_features`|```python
+```</td></tr><tr><td>streams_features</td><td>`from sdaas.core import streams_features`</td><td>```python
 sdaas.core.features.streams_features
-```|
-|streams_idfeatures|`from sdaas.core import streams_idfeatures`|```python
+```</td></tr><tr><td>streams_idfeatures</td><td>`from sdaas.core import streams_idfeatures`</td><td>```python
 sdaas.core.features.streams_idfeatures
-```|
-|streams_idscores|`from sdaas.core import streams_idscores`|```python
+```</td></tr><tr><td>streams_idscores</td><td>`from sdaas.core import streams_idscores`</td><td>```python
 sdaas.core.model.streams_idscores
-```|
-|streams_scores|`from sdaas.core import streams_scores`|```python
+```</td></tr><tr><td>streams_scores</td><td>`from sdaas.core import streams_scores`</td><td>```python
 sdaas.core.model.streams_scores
-```|
-|trace_features|`from sdaas.core import trace_features`|```python
+```</td></tr><tr><td>trace_features</td><td>`from sdaas.core import trace_features`</td><td>```python
 sdaas.core.features.trace_features
-```|
-|trace_idfeatures|`from sdaas.core import trace_idfeatures`|```python
+```</td></tr><tr><td>trace_idfeatures</td><td>`from sdaas.core import trace_idfeatures`</td><td>```python
 sdaas.core.features.trace_idfeatures
-```|
-|trace_score|`from sdaas.core import trace_score`|```python
+```</td></tr><tr><td>trace_score</td><td>`from sdaas.core import trace_score`</td><td>```python
 sdaas.core.model.trace_score
-```|
-|traces_features|`from sdaas.core import traces_features`|```python
+```</td></tr><tr><td>traces_features</td><td>`from sdaas.core import traces_features`</td><td>```python
 sdaas.core.features.traces_features
-```|
-|traces_idfeatures|`from sdaas.core import traces_idfeatures`|```python
+```</td></tr><tr><td>traces_idfeatures</td><td>`from sdaas.core import traces_idfeatures`</td><td>```python
 sdaas.core.features.traces_idfeatures
-```|
-|traces_idscores|`from sdaas.core import traces_idscores`|```python
+```</td></tr><tr><td>traces_idscores</td><td>`from sdaas.core import traces_idscores`</td><td>```python
 sdaas.core.model.traces_idscores
-```|
-|traces_scores|`from sdaas.core import traces_scores`|```python
+```</td></tr><tr><td>traces_scores</td><td>`from sdaas.core import traces_scores`</td><td>```python
 sdaas.core.model.traces_scores
-```|
-
+```</td></tr>
+</table>
 **Examples**: Compute the scores in a stream or iterable of traces (e.g. list. tuple):
 ```python
 >>> from sdaas.core import traces_scores
