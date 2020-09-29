@@ -108,6 +108,9 @@ with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.h
 
 **Examples**: Compute the scores in a stream or iterable of traces (e.g. list. tuple):
 
+
+https://github.com/rizac/sdaas/blob/72bf71a8e3800b148c2918d08eb5757cb9c4d470/sdaas/core/model.py#L40-L59
+
 ```python
 
 >>> from sdaas.core.model import traces_scores
