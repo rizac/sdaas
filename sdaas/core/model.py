@@ -17,9 +17,9 @@ import numpy as np
 from joblib import load
 # from sklearn.ensemble.iforest import IsolationForest
 
-from sdaas.core.features import (FEATURES, _get_id, get_traces_idfeatures,
-                                 get_traces_features, get_streams_idfeatures,
-                                 get_streams_features, get_trace_features)
+from sdaas.core.features import (FEATURES, _get_id, traces_idfeatures,
+                                 traces_features, streams_idfeatures,
+                                 streams_features, trace_features)
 
 
 # define default model file name inside the 'models' directory.
@@ -37,7 +37,7 @@ DEFAULT_TRAINED_MODEL_NAME = ('clf=IsolationForest&'
                               '.sklmodel')
 
 
-def get_streams_idscores(streams, metadata, idfunc=_get_id):
+def streams_idscores(streams, metadata, idfunc=_get_id):
     '''
     Computes the amplitude anomaly score in [0, 1] from the
     `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
@@ -57,11 +57,11 @@ def get_streams_idscores(streams, metadata, idfunc=_get_id):
 
     .. seealso:: :func:`get_scores`
     '''
-    ids, feats = get_streams_idfeatures(streams, metadata, idfunc)
-    return ids, get_scores(feats, check_nan=True)
+    ids, feats = streams_idfeatures(streams, metadata, idfunc)
+    return ids, aa_scores(feats, check_nan=True)
 
 
-def get_streams_scores(streams, metadata):
+def streams_scores(streams, metadata):
     '''
     Computes the amplitude anomaly score in [0, 1] from the given Streams.
     For details, see :func:`get_scores`
@@ -76,11 +76,11 @@ def get_streams_scores(streams, metadata):
 
     .. seealso:: :func:`get_scores`
     '''
-    feats = get_streams_features(streams, metadata)
-    return get_scores(feats, check_nan=True)
+    feats = streams_features(streams, metadata)
+    return aa_scores(feats, check_nan=True)
 
 
-def get_traces_idscores(traces, metadata, idfunc=_get_id):
+def traces_idscores(traces, metadata, idfunc=_get_id):
     '''
     Computes the amplitude anomaly score in [0, 1] from the given Traces and
     their identifiers. For details on the scores, see :func:`get_scores`
@@ -101,11 +101,11 @@ def get_traces_idscores(traces, metadata, idfunc=_get_id):
 
     .. seealso:: :func:`get_scores`
     '''
-    ids, feats = get_traces_idfeatures(traces, metadata, idfunc)
-    return ids, get_scores(feats, check_nan=True)
+    ids, feats = traces_idfeatures(traces, metadata, idfunc)
+    return ids, aa_scores(feats, check_nan=True)
 
 
-def get_traces_scores(traces, metadata):
+def traces_scores(traces, metadata):
     '''
     Computes the amplitude anomaly score in [0, 1] from the given Traces.
     For details, see :func:`get_scores`
@@ -123,11 +123,11 @@ def get_traces_scores(traces, metadata):
 
     .. seealso:: :func:`get_scores`
     '''
-    feats = get_traces_features(traces, metadata)
-    return get_scores(feats, check_nan=True)
+    feats = traces_features(traces, metadata)
+    return aa_scores(feats, check_nan=True)
 
 
-def get_trace_score(trace, metadata):
+def trace_score(trace, metadata):
     '''
     Computes the amplitude anomaly score in [0, 1] from the given Trace.
     For details, see :func:`get_scores`
@@ -142,11 +142,11 @@ def get_trace_score(trace, metadata):
 
     .. seealso:: :func:`get_scores`
     '''
-    feats = get_trace_features(trace, metadata)
-    return get_scores(feats, check_nan=True)[0]
+    feats = trace_features(trace, metadata)
+    return aa_scores(feats, check_nan=True)[0]
 
 
-def get_scores(features, model=None, check_nan=True):
+def aa_scores(features, model=None, check_nan=True):
     '''
     Computes the amplitude anomaly scores from the given feature vectors,
     element wise. Returns a numpy array of anomaly scores in [0, 1], where

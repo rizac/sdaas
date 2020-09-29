@@ -29,7 +29,7 @@ def _get_id(trace):
             trace.stats.endtime.datetime)
 
 
-def get_streams_features(streams, metadata):
+def streams_features(streams, metadata):
     '''
     Computes the features of all
     `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
@@ -48,11 +48,11 @@ def get_streams_features(streams, metadata):
     values = []
     for stream in streams:
         for trace in stream:
-            values.append(get_trace_features(trace, metadata))
+            values.append(trace_features(trace, metadata))
     return np.array(values)
 
 
-def get_streams_idfeatures(streams, metadata, idfunc=_get_id):
+def streams_idfeatures(streams, metadata, idfunc=_get_id):
     '''
     Computes the features of all
     `Traces<https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
@@ -75,13 +75,13 @@ def get_streams_idfeatures(streams, metadata, idfunc=_get_id):
     values, ids = [], []
     for stream in streams:
         for trace in stream:
-            id_, val = get_trace_idfeatures(trace, metadata, idfunc)
+            id_, val = trace_idfeatures(trace, metadata, idfunc)
             ids.append(id_)
             values.append(val)
     return ids, np.array(values)
 
 
-def get_traces_features(traces, metadata):
+def traces_features(traces, metadata):
     '''
     Computes the features of all traces
 
@@ -99,11 +99,11 @@ def get_traces_features(traces, metadata):
     '''
     values = []
     for trace in traces:
-        values.append(get_trace_features(trace, metadata))
+        values.append(trace_features(trace, metadata))
     return np.array(values)
 
 
-def get_traces_idfeatures(traces, metadata, idfunc=_get_id):
+def traces_idfeatures(traces, metadata, idfunc=_get_id):
     '''
     Computes the features of all traces and their identifiers
 
@@ -125,13 +125,13 @@ def get_traces_idfeatures(traces, metadata, idfunc=_get_id):
     '''
     values, ids = [], []
     for trace in traces:
-        id_, val = get_trace_idfeatures(trace, metadata, idfunc)
+        id_, val = trace_idfeatures(trace, metadata, idfunc)
         ids.append(id_)
         values.append(val)
     return ids, np.array(values)
 
 
-def get_trace_features(trace, metadata):
+def trace_features(trace, metadata):
     '''
     Computes the features of the given trace.
     Note that the outcome of the Feature selection employed for identifying the
@@ -151,7 +151,7 @@ def get_trace_features(trace, metadata):
     return psd_values(FEATURES, trace, metadata)
 
 
-def get_trace_idfeatures(trace, metadata, idfunc=_get_id):
+def trace_idfeatures(trace, metadata, idfunc=_get_id):
     '''
     Computes the features of the given trace and its identifier.
     Note that the outcome of the Feature selection employed for identifying the

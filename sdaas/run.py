@@ -21,8 +21,8 @@ import numpy as np
 from obspy.core.stream import read
 from obspy.core.inventory.inventory import read_inventory
 
-from sdaas.core.features import get_trace_idfeatures
-from sdaas.core.model import get_scores, _load_default_trained_model
+from sdaas.core.features import trace_idfeatures
+from sdaas.core.model import aa_scores, _load_default_trained_model
 from sdaas.cli.utils import ansi_colors_escape_codes, ProgressBar
 from sdaas.cli.fdsn import get_querydict, get_dataselect_url,\
     get_station_url, is_fdsn_dataselect_url, is_fdsn, get_station_urls
@@ -372,8 +372,7 @@ class StreamIterator(dict):
                     for fpath, stream in streamiterator:
                         kount += 1
                         for trace in stream:
-                            (id_, st_, et_), feat = get_trace_idfeatures(trace,
-                                                                         inv)
+                            (id_, st_, et_), feat = trace_idfeatures(trace, inv)
                             feats.append(feat)
                             ids.append((fpath, id_, st_, et_))
 
@@ -392,7 +391,7 @@ class StreamIterator(dict):
                 if not feats:
                     continue
 
-                scores = get_scores(np.asarray(feats))
+                scores = aa_scores(np.asarray(feats))
 
                 iter_ = zip(ids, scores)
                 if aggregate:
