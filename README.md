@@ -30,6 +30,8 @@ source .env/bin/activate
 ```
 (then to deactivate, simply type ... `deactivate` on the terminal). 
 
+Then, you have two options:
+
 #### 1. with requirements.txt (recommended on a new, empty virtual environment where you plan to use this program only)
 
 ```bash
@@ -37,8 +39,8 @@ pip install --upgrade pip && pip install "numpy==1.15.4" && pip install -r ./req
 ```
 (-e is optional)
 
-This is the safest option, as it installs all dependencies with a specific tested version.
-**However it will override already installed dependencies, if present in the virtual environment**
+This installs all dependencies with a specific tested version, meaning that this
+program is certain to work, but already installed programs *might* break
 
 
 #### 2. with setup.py (recommended if you already have stuff installed in your virtual environment)
@@ -48,12 +50,12 @@ pip install --upgrade pip && pip install "numpy>=1.15.4" && pip install -e .
 ```
 (-e is optional)
 
-Less safe option as it installs all dependencies with the newest available.
-Consenquently, something which might not work (we do our best but we cannot keep
+This installs all dependencies with a *minimum required* version,
+meaning that this prgram *might* not work (we do our best but we cannot keep
 up rapidly with all libraries updates, fix the new errors in our code, their
-deprecation warnings, and so on). **However it will NOT necessarily override
-already installed dependencies, if present in the virtual environment**
-(not that scikit is in any case installed with a specific version 0.21.3,
+deprecation warnings, and so on), but already installed programs *are more likely*
+to continue working.
+(note that scikit-learn is in any case installed with a specific version 0.21.3,
 necessary to load the model trained with that version)
 
 
@@ -64,10 +66,11 @@ necessary to load the model trained with that version)
 
 Activate your virtual environment (see above), and then to use the program
 as command line application. You can compute scores from a given station(s), all stations
-from given network(s), a single waveform segment,  You can always type `sdaas --help` for details
+from given network(s), a single waveform segment, either remotely (through FDSN we services)
+or locally stored on your computer. Please type `sdaas --help` for details
 
 
-Example (compute scores from randomly selected segments of a givens station and channel):
+**Example** (compute scores from randomly selected segments of a givens station and channel):
 
 ```bash
 >>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=BKB&cha=BH?&start=2016-01-01&level=response" -v -c -th 0.7
