@@ -90,35 +90,11 @@ with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.h
 <!--AUTO GENERATED SNIPPET DO NOT EDIT -->
 <!-- (see tests/test_and_create_readme_snippet.py for details) -->
 
-```python
->>> from sdaas.core.model import aa_scores  # EASY IMPORT: from from sdaas.core import aa_scores
->>> from sdaas.core.psd import psd_values  # EASY IMPORT: from from sdaas.core import psd_values
->>> from sdaas.core.features import streams_features  # EASY IMPORT: from from sdaas.core import streams_features
->>> from sdaas.core.features import streams_idfeatures  # EASY IMPORT: from from sdaas.core import streams_idfeatures
->>> from sdaas.core.model import streams_idscores  # EASY IMPORT: from from sdaas.core import streams_idscores
->>> from sdaas.core.model import streams_scores  # EASY IMPORT: from from sdaas.core import streams_scores
->>> from sdaas.core.features import trace_features  # EASY IMPORT: from from sdaas.core import trace_features
->>> from sdaas.core.features import trace_idfeatures  # EASY IMPORT: from from sdaas.core import trace_idfeatures
->>> from sdaas.core.model import trace_score  # EASY IMPORT: from from sdaas.core import trace_score
->>> from sdaas.core.features import traces_features  # EASY IMPORT: from from sdaas.core import traces_features
->>> from sdaas.core.features import traces_idfeatures  # EASY IMPORT: from from sdaas.core import traces_idfeatures
->>> from sdaas.core.model import traces_idscores  # EASY IMPORT: from from sdaas.core import traces_idscores
->>> from sdaas.core.model import traces_scores  # EASY IMPORT: from from sdaas.core import traces_scores
-```
-
 **Examples**: Compute the scores in a stream or iterable of traces (e.g. list. tuple):
-
 ```python
-from sdaas.core.model import traces_scores
-traces_scores(stream, inventory)
-```
-
-```python
-
 >>> from sdaas.core.model import traces_scores
 >>> traces_scores(stream, inventory)
 array([ 0.47900702,  0.46478282,  0.44947399])
-
 ```
 
 Compute the scores in a stream or iterable of traces, getting also the traces id (seed_id, start, end):
