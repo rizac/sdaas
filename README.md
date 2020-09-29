@@ -91,7 +91,8 @@ with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.h
 <!-- (see tests/test_and_create_readme_snippet.py for details) -->
 
 |Function|easy import|source (in the borwser, try to click for details)|
-| --- | --- | --- ||aa_scores|`from sdaas.core import aa_scores`|```sdaas.core.model.aa_scores```|
+| --- | --- | --- |
+|aa_scores|`from sdaas.core import aa_scores`|```sdaas.core.model.aa_scores```|
 |psd_values|`from sdaas.core import psd_values`|```sdaas.core.psd.psd_values```|
 |streams_features|`from sdaas.core import streams_features`|```sdaas.core.features.streams_features```|
 |streams_idfeatures|`from sdaas.core import streams_idfeatures`|```sdaas.core.features.streams_idfeatures```|
