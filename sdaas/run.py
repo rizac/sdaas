@@ -1,5 +1,7 @@
-'''cli (command line interface) module for computing
-seismic waveforms anomaly scores'''
+'''cli (command line interface) module of the program
+
+@author: Riccardo Z. <rizac@gfz-potsdam.de>
+'''
 
 import argparse
 from argparse import RawTextHelpFormatter

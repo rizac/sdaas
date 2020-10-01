@@ -1,7 +1,11 @@
 '''
+Test the psd calculation used in the fieatures compuation,
+The PSD compuation in this package is an optimized version of
+ObsPy's counterpart (:class:`obspy.signal.spectral_estimation.PPSD`)
+
 Created on 22 Jun 2020
 
-@author: riccardo
+@author: Riccardo Z. <rizac@gfz-potsdam.de>
 '''
 import unittest
 from os.path import join, dirname
@@ -17,14 +21,11 @@ from sdaas.core.features import traces_features
 
 class Test(unittest.TestCase):
 
-
     def setUp(self):
         pass
 
-
     def tearDown(self):
         pass
-
 
     def test_ppsd(self):
         '''tests that the psd with the algorithm used in this module
@@ -72,7 +73,8 @@ class Test(unittest.TestCase):
                 scores_old = aa_scores(feats_old)
                 self.assertTrue(np.allclose(scores, scores_old, rtol=rtol,
                                             atol=0, equal_nan=True))
-                # use
+                # test that the current version of psd is the same as our
+                # first implementation (copied below in this module):
                 feats_old2 = np.asarray([_old_psd_values([5], _, metadata)
                                         for _ in stream])
                 assert np.allclose(feats, feats_old2, rtol=1.e-8)

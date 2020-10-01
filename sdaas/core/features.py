@@ -7,7 +7,7 @@ anomaly scores
 
 Created on 18 Jun 2020
 
-@author: riccardo
+@author: Riccardo Z. <rizac@gfz-potsdam.de>
 '''
 import numpy as np
 

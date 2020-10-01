@@ -1,7 +1,9 @@
 '''
+Tests runs from the command line
+
 Created on 22 Jun 2020
 
-@author: riccardo
+@author: Riccardo Z. <rizac@gfz-potsdam.de>
 '''
 import unittest
 from datetime import datetime
@@ -199,6 +201,7 @@ class Test(unittest.TestCase):
         check_output(capt)
         # print(capt)
         assert all(0.39 < float(line.split()[-1]) < 0.5 for line in capt.strip().split('\n'))
+
 
 if __name__ == "__main__":
     #  import sys;sys.argv = ['', 'Test.testName']

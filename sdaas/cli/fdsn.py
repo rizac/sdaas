@@ -3,7 +3,7 @@ Fdsn utilities for parsing url passed in the command line and fetching data
 
 Created on 10 Sep 2020
 
-@author: riccardo
+@author: Riccardo Z. <rizac@gfz-potsdam.de>
 '''
 
 import re

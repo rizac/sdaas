@@ -1,8 +1,10 @@
 '''
 Implements an optimized version of the power spectral density (PSD) function
 of the PPSD module of ObsPy. The function is the feature extractor for our
-machine learning model (Ifsolation Forest) for anomaly detection in segments
-amplitudes
+machine learning model (Isolation Forest) for amplitude anomaly detection in
+seismic waveform segments
+
+@author: Riccardo Z. <rizac@gfz-potsdam.de>
 '''
 import math
 

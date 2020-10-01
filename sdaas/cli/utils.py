@@ -3,7 +3,7 @@
 
 Created on 10 Sep 2020
 
-@author: riccardo
+@author: Riccardo Z. <rizac@gfz-potsdam.de>
 '''
 import os
 import sys
