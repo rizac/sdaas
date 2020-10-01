@@ -43,7 +43,7 @@ def streams_features(streams, metadata):
     :return: a N X 1 numpy array of floats representing the N one-dimensional
         feature vectors, where N is the total number of processed traces
 
-    .. seealso:: :func:`get_trace_features`
+    .. seealso:: :func:`trace_features`
     '''
     values = []
     for stream in streams:
@@ -70,7 +70,7 @@ def streams_idfeatures(streams, metadata, idfunc=_get_id):
         number, ids is a list N identifiers and features is a N X 1 numpy array
         of floats representing the N one-dimensional feature vectors
 
-    .. seealso:: :func:`get_trace_idfeatures`
+    .. seealso:: :func:`trace_idfeatures`
     '''
     values, ids = [], []
     for stream in streams:
@@ -95,7 +95,7 @@ def traces_features(traces, metadata):
     :return: a N X 1 numpy array of floats representing the N one-dimensional
         feature vectors, where N is the total number of processed Traces
 
-    .. seealso:: :func:`get_trace_features`
+    .. seealso:: :func:`trace_features`
     '''
     values = []
     for trace in traces:
@@ -121,7 +121,7 @@ def traces_idfeatures(traces, metadata, idfunc=_get_id):
         number, ids is a list N identifiers and features is a N X 1 numpy array
         of floats representing the N one-dimensional feature vectors
 
-    .. seealso:: :func:`get_trace_idfeatures`
+    .. seealso:: :func:`trace_idfeatures`
     '''
     values, ids = [], []
     for trace in traces:
@@ -178,10 +178,10 @@ def featappend(features1, features2):
     '''Calls numpy.append(features1, features2) and works also if one
     inputs Nones or empty arrays.
 
-    .. seealso:: :func:`get_features_from_traces` or :func:`get_features_from_streams`
+    .. seealso:: :func:`traces_features` or :func:`streams_features`
 
     :param features1: a Nx1 array of features, e.g. the output of
-        :func:`get_features_from_traces` or :func:`get_features_from_streams`.
+        :func:`traces_features` or :func:`streams_features`.
         None or the empty list/ tuple / numpy arrays are also valid
     :param features2: another Mx1 array. See `features1` for details
 
