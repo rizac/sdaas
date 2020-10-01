@@ -1,7 +1,8 @@
 # sdaas
 
-(**s**)eismic (**d**)ata (and metadata) (**a**)mplitude (**a**)nomaly (**s**)core
+**s**eismic **d**ata (and metadata) **a**mplitude **a**nomaly **s**core
 
+<img align="right" width="27%" src="outlierspaper-img004.png"><img align="right"  width="29%" src="outlierspaper-img005.png">
 
 Simple program to compute amplitude anomaly scores in seismic data and metadata.
 Given a set of waveforms and their metadata, it removes the waveform response
@@ -9,8 +10,7 @@ and returns the relative anomaly score computed on the waveform amplitudes.
 
 This program can be used to filter out a set of  malformed waveforms,
 or to check the correctness of the metadata fields (e.g. Station inventory xml)
-by checking the anomaly score on a set of station recordings.
-
+by checking the anomaly score on a set of station recordings. 
 
 
 ## Installation
@@ -39,24 +39,23 @@ pip install --upgrade pip && pip install "numpy==1.15.4" && pip install -r ./req
 ```
 (-e is optional)
 
-This installs all dependencies with a specific tested version, meaning that this
-program is certain to work, but already installed programs *might* break
+<!-- This installs all dependencies with a specific tested version, meaning that this
+program is certain to work, but already installed programs *might* break -->
 
 
-#### 2. with setup.py (recommended if you already have stuff installed in your virtual environment)
+#### 2. with setup.py (recommended if this program is needed togehter with other packages in your virtual environment)
 
 ```bash
 pip install --upgrade pip && pip install "numpy>=1.15.4" && pip install -e .
 ```
 (-e is optional)
 
-This installs all dependencies with a *minimum required* version,
-meaning that this prgram *might* not work (we do our best but we cannot keep
+<!-- This installs all dependencies with a *minimum required* version, and thus already
+installed packages *are more likely* to continue working. However, there is a
+slightly higher chance that this program doe not work properly (we do our best but we cannot keep
 up rapidly with all libraries updates, fix the new errors in our code, their
-deprecation warnings, and so on), but already installed programs *are more likely*
-to continue working.
-(note that scikit-learn is in any case installed with a specific version 0.21.3,
-necessary to load the model trained with that version)
+deprecation warnings, and so on. Note that scikit-learn is in any case installed with
+a specific version 0.21.3, necessary to load the model trained with that version) -->
 
 
 ## Usage
