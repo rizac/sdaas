@@ -7,6 +7,8 @@ Liu, F. T., Ting, K., and Zhou, Z.-H. (2008). Isolation forest.
 In 2008 Eighth IEEE Inter- national Conference on Data Mining, pages 413–422.
 ```
 
+.. seealso:: :mod:`sdaas.core.features`
+
 Created on 18 Jun 2020
 
 @author: Riccardo Z. <rizac@gfz-potsdam.de>

@@ -1,9 +1,10 @@
 '''
-Module for computing model features from ObsPy objects (Traces Streams).
-The features will be used as input of our model to compute the traces
-anomaly scores
+Module for computing model features, in the current implementation
+from ObsPy objects only (Traces and Streams).
+The features will be used as input of our model to compute the amplitude
+anomaly score of the waveform segments (ObsPy traces)
 
-.. seealso:: :mod:`module`
+.. seealso:: :mod:`sdaas.core.psd`
 
 Created on 18 Jun 2020
 
