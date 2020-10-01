@@ -153,10 +153,9 @@ def aa_scores(features, model=None, check_nan=True):
     the closer a scores is to 1, the more likely it represents an anomaly.
     Note however that in the default scenario (`model` is None or missing, i.e.
     use the pre-trained model), we observed scores are returned in the range
-    [0.4, 0.8]: scores <=0.5 can be safely considered inliers (with no
-    particular numerical meaning), and - for binary classification -
-    scores > 0.5 need to inspected to determine the onset of the decision
-    threshold.
+    [0.4, 0.8]: scores <=0.5 can be safely considered inliers (i.e., normal
+    observations), and - for binary classification - scores > 0.5 need to be
+    inspected to determine the onset of the decision threshold.
 
     :param features: a numpy array of shape [N, M], where M=1 is the
         single feature denoting the PSD (in decibels) computed at 5 seconds
