@@ -85,6 +85,14 @@ class Test(unittest.TestCase):
         self._stderr = patcher2.start()
         self.addCleanup(patcher2.stop)
 
+        def mockcolorsaresupportedinterminal(*a, **vv):
+            return True
+        patcher3 = patch(('sdaas.cli.utils.ansi_colors_escape_codes.'
+                          'are_supported_on_current_terminal'),
+                          side_effect=mockcolorsaresupportedinterminal)
+        patcher3.start()
+        self.addCleanup(patcher3.stop)
+
     @property
     def stdout(self):
         '''
@@ -172,7 +180,7 @@ class Test(unittest.TestCase):
                'query?net=GE&sta=E?&cha=BH?&start=2019-06-01')
         process(url, threshold=0.6)
         capt = self.stdout
-        check_output(capt, threshold=0.6)
+        assert len(capt) == 0
 
     def test_run_from_url_several(self):
         url = ("http://geofon.gfz-potsdam.de/fdsnws/station/1/query"

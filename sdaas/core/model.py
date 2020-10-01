@@ -41,7 +41,7 @@ def streams_idscores(streams, metadata, idfunc=_get_id):
     '''
     Computes the amplitude anomaly score in [0, 1] from the
     `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
-    in `streams`, and their identifiers. For details, see :func:`get_scores`
+    in `streams`, and their identifiers. For details, see :func:`aa_scores`
 
     :param streams: an iterable of
         `Streams<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
@@ -55,7 +55,7 @@ def streams_idscores(streams, metadata, idfunc=_get_id):
         number, `ids` is a list N identifiers and scores is a numpy array of N
         floats in [0, 1], or numpy.nan (if score could not be computed)
 
-    .. seealso:: :func:`get_scores`
+    .. seealso:: :func:`aa_scores`
     '''
     ids, feats = streams_idfeatures(streams, metadata, idfunc)
     return ids, aa_scores(feats, check_nan=True)
@@ -64,7 +64,7 @@ def streams_idscores(streams, metadata, idfunc=_get_id):
 def streams_scores(streams, metadata):
     '''
     Computes the amplitude anomaly score in [0, 1] from the given Streams.
-    For details, see :func:`get_scores`
+    For details, see :func:`aa_scores`
 
     :param streams: an iterable of
         `Streams<https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html>_`
@@ -74,7 +74,7 @@ def streams_scores(streams, metadata):
     :return: a numpy array of N floats in [0, 1], or numpy.nan (if score could
         not be computed)
 
-    .. seealso:: :func:`get_scores`
+    .. seealso:: :func:`aa_scores`
     '''
     feats = streams_features(streams, metadata)
     return aa_scores(feats, check_nan=True)
@@ -83,7 +83,7 @@ def streams_scores(streams, metadata):
 def traces_idscores(traces, metadata, idfunc=_get_id):
     '''
     Computes the amplitude anomaly score in [0, 1] from the given Traces and
-    their identifiers. For details on the scores, see :func:`get_scores`
+    their identifiers. For details on the scores, see :func:`aa_scores`
 
     :param traces: an iterable of
         `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
@@ -99,7 +99,7 @@ def traces_idscores(traces, metadata, idfunc=_get_id):
         number, `ids` is a list N identifiers and scores is a numpy array of N
         floats in [0, 1], or numpy.nan (if score could not be computed)
 
-    .. seealso:: :func:`get_scores`
+    .. seealso:: :func:`aa_scores`
     '''
     ids, feats = traces_idfeatures(traces, metadata, idfunc)
     return ids, aa_scores(feats, check_nan=True)
@@ -108,7 +108,7 @@ def traces_idscores(traces, metadata, idfunc=_get_id):
 def traces_scores(traces, metadata):
     '''
     Computes the amplitude anomaly score in [0, 1] from the given Traces.
-    For details, see :func:`get_scores`
+    For details, see :func:`aa_scores`
 
     :param traces: an iterable of
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
@@ -121,7 +121,7 @@ def traces_scores(traces, metadata):
         processed Traces.  NaN values might be present (meaning: could not
         compute score)
 
-    .. seealso:: :func:`get_scores`
+    .. seealso:: :func:`aa_scores`
     '''
     feats = traces_features(traces, metadata)
     return aa_scores(feats, check_nan=True)
@@ -130,7 +130,7 @@ def traces_scores(traces, metadata):
 def trace_score(trace, metadata):
     '''
     Computes the amplitude anomaly score in [0, 1] from the given Trace.
-    For details, see :func:`get_scores`
+    For details, see :func:`aa_scores`
 
     :param trace: a
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
@@ -140,7 +140,7 @@ def trace_score(trace, metadata):
     :return: a numpy float in [0, 1], or numpy.nan  (if score could not be
         computed)
 
-    .. seealso:: :func:`get_scores`
+    .. seealso:: :func:`aa_scores`
     '''
     feats = trace_features(trace, metadata)
     return aa_scores(feats, check_nan=True)[0]
@@ -197,11 +197,11 @@ def aa_scores(features, model=None, check_nan=True):
             if num_finite > 0:
                 if not model_fitted:
                     model.fit(features[finite])
-                ret[finite] = _get_scores(features[finite], model)
+                ret[finite] = _aa_scores(features[finite], model)
             return ret
     if not model_fitted:
         model.fit(features)
-    return _get_scores(features, model)
+    return _aa_scores(features, model)
 
 
 def _reshape_feature_space(features):
@@ -211,7 +211,7 @@ def _reshape_feature_space(features):
     return features
 
 
-def _get_scores(features, model):
+def _aa_scores(features, model):
     '''Computes the anomaly scores of the Isolation Forest model for the given
     `features` (a numpy matrix of Nx1 elements), element wise. Features must
     NOT be NaN (this is not checked for)
