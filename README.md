@@ -18,7 +18,7 @@ by checking the anomaly score on a set of station recordings.
 Always work within a virtual environment. From a terminal, in the directory
 where you cloned this repository (last argument of `git clone`),
 
-1. create a virtual environment (once). **Be sure you use Python>=3.7. Check it with `python3 --version`)**:
+1. create a virtual environment (once). **Be sure you use Python>=3.7 (Type `python3 --version` to check)**:
 
 ```bash
 python3 -m venv .env
