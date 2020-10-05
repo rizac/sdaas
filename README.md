@@ -151,10 +151,10 @@ array([ 0.47900702,  0.46478282,  0.44947399,  0.47900702,  0.46478282,
         0.46478282,  0.44947399,  0.47900702,  0.46478282,  0.44947399])
 ```
 
-*Note* `trace_features` returns a vector (numpy array) representing
-a given trace and which is used as input of our machine learning Isolation Forest algorithm.
-Currently, it consists of a mono-dimensional vector (numpy array of length 1)
-of the waveform power spectral density (PSD) computed at 5 s period.
+*Note* `trace_features` returns a vector (numpy array) of numeric features representing
+a given trace and which is used as input of our machine learning model using the Isolation Forest algorithm.
+Currently, it consists of mono-dimensional vector (numpy array of length 1) calculating as
+only feature the waveform power spectral density (PSD) in dB computed at 5s period.
 `aa_scores` is the low-level function that computes amplitude anomaly score from an array
 of N feature vectors (Nx1 numpy array)
 
