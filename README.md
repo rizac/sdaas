@@ -127,7 +127,7 @@ You can also compute scores and ids from terable of streams (e.g., when reading 
 >>> from sdaas.core import trace_score
 ```
 
-Getting anomaly score from several streams
+For instance, to compute the anomaly score of several streams
 ```python
 >>> from sdaas.core import streams_scores
 >>> streams_scores(streams, inventory)
