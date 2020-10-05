@@ -117,7 +117,7 @@ Same as above, with custom traces id (their SEED identifier only):
 (['GE.FLT1..HHE', 'GE.FLT1..HHN', 'GE.FLT1..HHZ'], array([ 0.47900702,  0.46478282,  0.44947399]))
 ```
 
-You can also compute scores and ids from terable of streams (e.g., when reading from files)...
+You can also compute scores and ids from iterables of streams (e.g., when reading from files)...
 ```python
 >>> from sdaas.core import streams_scores
 >>> from sdaas.core import streams_idscores
@@ -129,6 +129,7 @@ You can also compute scores and ids from terable of streams (e.g., when reading 
 ```
 
 For instance, to compute the anomaly score of several streams
+(returning each all trace scores, in the order they are read from the streams):
 ```python
 >>> from sdaas.core import streams_scores
 >>> streams_scores(streams, inventory)
