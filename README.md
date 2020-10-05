@@ -102,7 +102,7 @@ with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.h
 array([ 0.47900702,  0.46478282,  0.44947399])
 ```
 
-Compute the scores in a stream or iterable of traces, getting also the traces id (seed_id, start, end):
+Compute the scores in a stream or iterable of traces, getting also the traces id (i.e., by default the tuple `(seed_id, start, end)`):
 ```python
 >>> from sdaas.core import traces_idscores
 >>> traces_idscores(stream, inventory)
