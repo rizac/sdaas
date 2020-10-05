@@ -15,7 +15,7 @@ r=random_state, aps=average_precision_score, best_th_pr=best threshold maximizin
 Precision/Recall curve, auc=Area unde ROC curve):
 
 ```
-clf				   feats	  t	 psi	 r	     aps	best_th_pr	     auc	log_loss	relative_filepath
+clf             feats	        t	 psi	 r	     aps	best_th_pr	     auc	log_loss	relative_filepath
 IsolationForest	psd@5sec	100	1024	11	0.970564	0.739007	0.975348	0.577372	clf=IsolationForest&tr_set=uniform_train.hdf&feats=psd@5sec&behaviour=new&contamination=auto&max_samples=1024&n_estimators=100&random_state=11/uniform_test.hdf
 IsolationForest	psd@5sec	100	 512	11	0.970490	0.743559	0.975866	0.604658	clf=IsolationForest&tr_set=uniform_train.hdf&feats=psd@5sec&behaviour=new&contamination=auto&max_samples=512&n_estimators=100&random_state=11/uniform_test.hdf
 IsolationForest	psd@5sec	 50	2048	11	0.970213	0.737760	0.975100	0.559445	clf=IsolationForest&tr_set=uniform_train.hdf&feats=psd@5sec&behaviour=new&contamination=auto&max_samples=2048&n_estimators=50&random_state=11/uniform_test.hdf
