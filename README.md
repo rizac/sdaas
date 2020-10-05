@@ -102,14 +102,15 @@ with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.h
 array([ 0.47900702,  0.46478282,  0.44947399])
 ```
 
-Compute the scores in a stream or iterable of traces, getting also the traces id (i.e., by default the tuple `(seed_id, start, end)`):
+Compute the scores in a stream or iterable of traces, getting also the traces id (by default the tuple `(seed_id, start, end)`, where
+seed_id is [the Trace SEED identifier](https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.get_id.html)):
 ```python
 >>> from sdaas.core import traces_idscores
 >>> traces_idscores(stream, inventory)
 ([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 42, 12, 50001)), ('GE.FLT1..HHN', datetime.datetime(2011, 9, 3, 16, 38, 5, 760000), datetime.datetime(2011, 9, 3, 16, 42, 9, 670000)), ('GE.FLT1..HHZ', datetime.datetime(2011, 9, 3, 16, 38, 8, 40000), datetime.datetime(2011, 9, 3, 16, 42, 9, 670000))], array([ 0.47900702,  0.46478282,  0.44947399]))
 ```
 
-Same as above, returning `seed_id` only (see [trace.get_id()](https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.get_id.html) for details):
+Same as above, with custom traces id (their SEED identifier only):
 ```python
 >>> from sdaas.core import traces_idscores
 >>> traces_idscores(stream, inventory, idfunc=lambda t: t.get_id())
