@@ -1,6 +1,6 @@
 # sdaas
 
-**s**eismic **d**ata (and metadata) **a**mplitude **a**nomaly **s**core
+**S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core
 
 <img align="right" width="27%" src="outlierspaper-img004.png"><img align="right"  width="29%" src="outlierspaper-img005.png">
 
