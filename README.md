@@ -87,9 +87,8 @@ GE.EIL..BHZ    2019-11-23T17:49:59  2019-11-23T17:52:16  0.66  1
 ### As library in your Python code
 
 This software can be also used as library in Python code (e.g. Jupyter Notebook)
-working with [ObsPy](https://docs.obspy.org/) Objects (ObsPy is already included in the installation).
-
-Assuming you have one or more [Stream](https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html)
+to work with [ObsPy](https://docs.obspy.org/) objects (ObsPy is already included in the installation):
+assuming you have one or more [Stream](https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html)
 or [Trace](https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html),
 with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.html), then
 
