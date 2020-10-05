@@ -15,18 +15,21 @@ fdsn_re = '[a-zA-Z_]+://.+?/fdsnws/(?:station|dataselect)/\\d/query?.*'
 
 
 def is_fdsn_dataselect_url(url):
+    '''Returns True if `url` is a valid FDSN dataselect url'''
     if not is_fdsn(url):
         raise ValueError('Invalid FDSN URL: %s' % url)
     return '/dataselect/' in url
 
 
 def is_fdsn_station_url(url):
+    '''Returns True if `url` is a valid FDSN station url'''
     if not is_fdsn(url):
         raise ValueError('Invalid FDSN URL: %s' % url)
     return '/station/' in url
 
 
 def is_fdsn(url):
+    '''Returns True if `url` is a valid FDSN url'''
     return re.match(fdsn_re, url)
 
 
