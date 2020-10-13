@@ -64,7 +64,7 @@ a specific version 0.21.3, necessary to load the model trained with that version
 ### As command line application
 
 After activating your virtual environment (see above) you can access the program as
-command line application by typing `sdaas`. The application
+command line application in your terminal by typing `sdaas`. The application
 can compute the score(s) of a single miniSEED file, a directory of miniSEED files, or 
 a FDSN url ([dataselect or station](https://www.fdsn.org/webservices/) url). **Type `sdaas --help` for details**
 
