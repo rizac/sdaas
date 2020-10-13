@@ -63,10 +63,10 @@ a specific version 0.21.3, necessary to load the model trained with that version
 
 ### As command line application
 
-Activate your virtual environment (see above), and then to use the program
-as command line application. You can compute scores from a given station(s), all stations
-from given network(s), a single waveform segment, either remotely (through FDSN we services)
-or locally stored on your computer. Please type `sdaas --help` for details
+After activating your virtual environment (see above) you can access the program as
+command line application by typing `sdaas`. The application
+can compute the score(s) of a single miniSEED file, a directory of miniSEED files, or 
+a FDSN url ([dataselect or station](https://www.fdsn.org/webservices/) url). **Type `sdaas --help` for details**
 
 
 **Example** (compute scores from randomly selected segments of a givens station and channel):
