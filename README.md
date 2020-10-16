@@ -68,7 +68,7 @@ command line application in your terminal by typing `sdaas`. The application
 can compute the score(s) of a single miniSEED file, a directory of miniSEED files, or 
 a FDSN url ([dataselect or station](https://www.fdsn.org/webservices/) url).
 
-**Type `sdaas --help` for details**
+**Please type `sdaas --help` for details and usages not covered in the examples below**
 
 
 **Examples**
