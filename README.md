@@ -72,56 +72,56 @@ a FDSN url ([dataselect or station](https://www.fdsn.org/webservices/) url).
 
 **Examples**
 
-1. Compute scores from randomly selected segments of a givens station and channel
-   (`-v` verbose)
+Compute scores from randomly selected segments of a givens station and channel
+(`-v` verbose)
 
-   ```bash
-   >>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v
-   [███████████████████████████████████████████████████████████████]  100%  0d 00:00:00
-   Output columns: | waveform_id | waveform_start | waveform_end | anomaly_score |
-   GE.EIL..BHN    2019-07-26T05:01:45  2019-07-26T05:04:20  0.45
-   GE.EIL..BHE    2019-07-26T05:01:54  2019-07-26T05:04:10  0.43
-   GE.EIL..BHZ    2019-07-26T05:01:57  2019-07-26T05:04:10  0.43
-   GE.EIL..BHN    2019-11-23T17:49:44  2019-11-23T17:52:00  0.83
-   GE.EIL..BHE    2019-11-23T17:49:36  2019-11-23T17:52:28  0.83
-   GE.EIL..BHZ    2019-11-23T17:49:59  2019-11-23T17:52:16  0.66
-   ```
-   *(note: when providing a station url, as in the example above, the only required URL argument is `net`/`network`)*
+```bash
+>>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v
+[███████████████████████████████████████████████████████████████]  100%  0d 00:00:00
+Output columns: | waveform_id | waveform_start | waveform_end | anomaly_score |
+GE.EIL..BHN    2019-07-26T05:01:45  2019-07-26T05:04:20  0.45
+GE.EIL..BHE    2019-07-26T05:01:54  2019-07-26T05:04:10  0.43
+GE.EIL..BHZ    2019-07-26T05:01:57  2019-07-26T05:04:10  0.43
+GE.EIL..BHN    2019-11-23T17:49:44  2019-11-23T17:52:00  0.83
+GE.EIL..BHE    2019-11-23T17:49:36  2019-11-23T17:52:28  0.83
+GE.EIL..BHZ    2019-11-23T17:49:59  2019-11-23T17:52:16  0.66
+```
+*(note: when providing a station url, as in the example above, the only required query argument is `net`/`network`)*
 
-2. Same as above, but provide also a user-defined threshold (parameter `-th`),
-   which will also add an additional last column  (1:outlier, 0:inlier)
+Same as above, but provide also a user-defined threshold (parameter `-th`),
+which will also add an additional last column  (1:outlier, 0:inlier)
 
-   ```bash
-   >>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v -th 0.7
-   [███████████████████████████████████████████████████████████████]  100%  0d 00:00:00
-   Output columns: | waveform_id | waveform_start | waveform_end | anomaly_score | anomaly |
-   GE.EIL..BHN    2019-07-26T05:01:45  2019-07-26T05:04:20  0.45  0
-   GE.EIL..BHE    2019-07-26T05:01:54  2019-07-26T05:04:10  0.43  0
-   GE.EIL..BHZ    2019-07-26T05:01:57  2019-07-26T05:04:10  0.43  0
-   GE.EIL..BHN    2019-11-23T17:49:44  2019-11-23T17:52:00  0.83  1
-   GE.EIL..BHE    2019-11-23T17:49:36  2019-11-23T17:52:28  0.83  1
-   GE.EIL..BHZ    2019-11-23T17:49:59  2019-11-23T17:52:16  0.66  1
-   ```
+```bash
+>>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v -th 0.7
+[███████████████████████████████████████████████████████████████]  100%  0d 00:00:00
+Output columns: | waveform_id | waveform_start | waveform_end | anomaly_score | anomaly |
+GE.EIL..BHN    2019-07-26T05:01:45  2019-07-26T05:04:20  0.45  0
+GE.EIL..BHE    2019-07-26T05:01:54  2019-07-26T05:04:10  0.43  0
+GE.EIL..BHZ    2019-07-26T05:01:57  2019-07-26T05:04:10  0.43  0
+GE.EIL..BHN    2019-11-23T17:49:44  2019-11-23T17:52:00  0.83  1
+GE.EIL..BHE    2019-11-23T17:49:36  2019-11-23T17:52:28  0.83  1
+GE.EIL..BHZ    2019-11-23T17:49:59  2019-11-23T17:52:16  0.66  1
+```
 
-3. Same as the first example, but compute and return the score median (on a channel base):
+Same as the first example, but compute and return the score median (on a channel base):
 
-   ```bash
-   >>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v -agg median
-   [███████████████████████████████████████████████████████████████]  100%  0d 00:00:00
-   Output columns: | waveform_id | waveform_start | waveform_end | anomaly_score |
-   GE.EIL..BHN    2019-07-26T05:01:45  2019-11-23T17:52:00  0.62
-   GE.EIL..BHE    2019-07-26T05:01:54  2019-11-23T17:52:28  0.63
-   GE.EIL..BHZ    2019-07-26T05:01:57  2019-11-23T17:52:16  0.44
-   ```
+```bash
+>>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v -agg median
+[███████████████████████████████████████████████████████████████]  100%  0d 00:00:00
+Output columns: | waveform_id | waveform_start | waveform_end | anomaly_score |
+GE.EIL..BHN    2019-07-26T05:01:45  2019-11-23T17:52:00  0.62
+GE.EIL..BHE    2019-07-26T05:01:54  2019-11-23T17:52:28  0.63
+GE.EIL..BHZ    2019-07-26T05:01:57  2019-11-23T17:52:16  0.44
+```
 
-4. Same as above, but save the scores table to CSV via `>` (classical `stdout` redirection to file) and `-sep`
+Same as above, but save the scores table to CSV via `>` (classical `stdout` redirection to file) and `-sep`
 
-   ```bash
-   >>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v -sep "," > /path/to/myfile.csv
-   [███████████████████████████████████████████████████████████████]  100%  0d 00:00:00
-   Output columns: | waveform_id | waveform_start | waveform_end | anomaly_score |
-   ```
-   *(note: what is not scores table is printed to `stderr` and thus should still be visible on the terminal, as in the example above)*
+```bash
+>>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v -sep "," > /path/to/myfile.csv
+[███████████████████████████████████████████████████████████████]  100%  0d 00:00:00
+Output columns: | waveform_id | waveform_start | waveform_end | anomaly_score |
+```
+*(note: what is not scores table is printed to `stderr` and thus should still be visible on the terminal, as in the example above)*
 
 ### As library in your Python code
 
