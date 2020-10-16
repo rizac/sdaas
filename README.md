@@ -43,7 +43,7 @@ pip install --upgrade pip && pip install "numpy==1.15.4" && pip install -r ./req
 program is certain to work, but already installed programs *might* break -->
 
 
-#### 2. with setup.py (recommended if this program is needed togehter with other packages in your virtual environment)
+#### 2. with setup.py (recommended if this program is needed together with other packages in your virtual environment)
 
 ```bash
 pip install --upgrade pip && pip install "numpy>=1.15.4" && pip install -e .
@@ -67,13 +67,13 @@ After activating your virtual environment (see above) you can access the program
 command line application in your terminal by typing `sdaas`. The application
 can compute the score(s) of a single miniSEED file, a directory of miniSEED files, or 
 a FDSN url ([dataselect or station](https://www.fdsn.org/webservices/) url).
+
 **Type `sdaas --help` for details**
 
 
 **Examples**
 
-Compute scores from randomly selected segments of a givens station and channel
-(`-v` verbose)
+Compute scores from randomly selected segments of a given station and channel
 
 ```bash
 >>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v
@@ -86,10 +86,11 @@ GE.EIL..BHN    2019-11-23T17:49:44  2019-11-23T17:52:00  0.83
 GE.EIL..BHE    2019-11-23T17:49:36  2019-11-23T17:52:28  0.83
 GE.EIL..BHZ    2019-11-23T17:49:59  2019-11-23T17:52:16  0.66
 ```
-*(note: when providing a station url, as in the example above, the only required query argument is `net`/`network`)*
+*(notes: when providing a station url, as in the example above, the only required query argument is `net`/`network`.
+The paremeter `-v` / verbose prints additional info before the scores table)*
 
 Same as above, but provide also a user-defined threshold (parameter `-th`),
-which will also add an additional last column  (1:outlier, 0:inlier)
+which will also add an additional last column "anomaly" denoting the class label (1:outlier, 0:inlier)
 
 ```bash
 >>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v -th 0.7
@@ -114,14 +115,15 @@ GE.EIL..BHE    2019-07-26T05:01:54  2019-11-23T17:52:28  0.63
 GE.EIL..BHZ    2019-07-26T05:01:57  2019-11-23T17:52:16  0.44
 ```
 
-Same as above, but save the scores table to CSV via `>` (classical `stdout` redirection to file) and `-sep`
+Same as above, but save the scores table to CSV via the parameter `-sep` and
+`>` (normal redirection of the standard output `stdout` to file)
 
 ```bash
 >>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v -sep "," > /path/to/myfile.csv
 [███████████████████████████████████████████████████████████████]  100%  0d 00:00:00
 Output columns: | waveform_id | waveform_start | waveform_end | anomaly_score |
 ```
-*(note: what is not scores table is printed to `stderr` and thus should still be visible on the terminal, as in the example above)*
+*(note: only the scores table is output to `stdout`. Everything else is printed to `stderr` and thus should still be visible on the terminal, as in the example above)*
 
 ### As library in your Python code
 
