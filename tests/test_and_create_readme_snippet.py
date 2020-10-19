@@ -121,7 +121,9 @@ a given trace and which is used as input of our machine learning Isolation Fores
 Currently, it consists of a mono-dimensional vector (numpy array of length 1)
 of the waveform power spectral density (PSD) computed at 5 s period.
 `aa_scores` is the low-level function that computes amplitude anomaly score from an array
-of feature vectors (Nx1 numpy array)'''
+of feature vectors (Nx1 numpy array). Note that for better performances, `aa_scores`
+should be called once on all feature vectors and not inside a for loop (see example above)
+'''
 
     return content
 
