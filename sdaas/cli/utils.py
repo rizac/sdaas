@@ -1,10 +1,10 @@
-'''
+"""
 (C)ommand (L)ine (I)nterface utilities
 
 Created on 10 Sep 2020
 
 @author: Riccardo Z. <rizac@gfz-potsdam.de>
-'''
+"""
 import os
 import sys
 from datetime import datetime
@@ -15,10 +15,9 @@ from typing import TextIO
 
 
 def isatty(stream):
-    '''
-    returns true if the given stream (e.g. sys.stdout, sys.stderr)
+    """Return true if the given stream (e.g. sys.stdout, sys.stderr)
     is interactive
-    '''
+    """
     # isatty is not always implemented, #6223 (<- of which project???)
     try:
         return stream.isatty()
@@ -27,10 +26,9 @@ def isatty(stream):
 
 
 class ansi_colors_escape_codes:
-    '''
-    Ansi colors escape codes. For info see:
+    """Ansi colors escape codes. For info see:
     https://stackoverflow.com/a/287944
-    '''
+    """
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[32m'  # '\033[92m'
@@ -42,8 +40,7 @@ class ansi_colors_escape_codes:
 
     @staticmethod
     def are_supported_on_current_terminal():
-        """
-        Return True if the running system's terminal supports color,
+        """Return True if the running system's terminal supports color,
         and False otherwise. Copied from:
         https://github.com/django/django/blob/master/django/core/management/color.py#L12
         """
@@ -53,8 +50,7 @@ class ansi_colors_escape_codes:
 
 @contextmanager
 def redirect(src=None, dst=os.devnull):
-    '''
-    This method prevents Python AND external C shared library to print to
+    """Prevent Python AND external C shared library to print to
     stdout/stderr in python, preventing also leaking file descriptors.
     If the first argument is None or any object not having a fileno() argument,
     this context manager is simply no-op and will yield and then return
@@ -69,7 +65,7 @@ def redirect(src=None, dst=os.devnull):
 
     :param src: file-like object with a fileno() method. Usually is either
         `sys.stdout` or `sys.stderr`
-    '''
+    """
 
     # some tools (e.g., pytest) change sys.stderr. In that case, we do want
     # this function to yield and return without changing anything
@@ -117,9 +113,8 @@ def redirect(src=None, dst=os.devnull):
 
 
 class ProgressBar:
-    """
-    Produce progress bar with ANSI code output.
-    """
+    """Produce progress bar with ANSI code output"""
+
     # Code modified from:
     # https://mike42.me/blog/2018-06-make-better-cli-progress-bars-with-unicode-block-characters
 

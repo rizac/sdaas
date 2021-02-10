@@ -12,7 +12,7 @@ cp $PATH/sod/sod/evaluations/results/clf\=IsolationForest\&tr_set\=uniform_train
 As reference, here some evaluation results obtained in 'sod':
 (clf=classifier, feats=features, t=n_estimators, psi=max_samples,
 r=random_state, aps=average_precision_score, best_th_pr=best threshold maximizing
-Precision/Recall curve, auc=Area unde ROC curve):
+Precision/Recall curve, auc=Area under ROC curve):
 
 ```
 clf             feats	        t	 psi	 r	     aps	best_th_pr	     auc	log_loss	relative_filepath
