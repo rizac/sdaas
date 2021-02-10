@@ -109,6 +109,11 @@ pip install --upgrade pip && pip install "numpy==1.15.4" && pip install -r ./req
 (-e is optional)
  -->
 
+#### Run tests
+
+```bash
+python -m unittest         
+```
 
 ## Usage
 
