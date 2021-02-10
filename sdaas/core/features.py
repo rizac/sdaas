@@ -1,4 +1,4 @@
-'''
+"""
 Module for computing model features, in the current implementation
 from ObsPy objects only (Traces and Streams).
 The features will be used as input of our model to compute the amplitude
@@ -9,7 +9,7 @@ anomaly score of the waveform segments (ObsPy traces)
 Created on 18 Jun 2020
 
 @author: Riccardo Z. <rizac@gfz-potsdam.de>
-'''
+"""
 import numpy as np
 
 from sdaas.core.psd import psd_values
@@ -20,7 +20,7 @@ FEATURES = tuple(PSD_PERIODS_SEC)
 
 
 def _get_id(trace):
-    '''Returns the default id from a given trace'''
+    """Returns the default id from a given trace"""
     # this id uniquely identfies a trace. Note that we could return
     # trace.stats.starttime and trace.stats.endtime (UTCDateTimes)
     # we choose here to provide standard Python classes (potentially loosing
@@ -31,8 +31,7 @@ def _get_id(trace):
 
 
 def streams_features(streams, metadata):
-    '''
-    Computes the features of all
+    """Compute the features of all
     `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
      in `streams`
 
@@ -45,7 +44,7 @@ def streams_features(streams, metadata):
         feature vectors, where N is the total number of processed traces
 
     .. seealso:: :func:`trace_features`
-    '''
+    """
     values = []
     for stream in streams:
         for trace in stream:
@@ -54,8 +53,7 @@ def streams_features(streams, metadata):
 
 
 def streams_idfeatures(streams, metadata, idfunc=_get_id):
-    '''
-    Computes the features of all
+    """Compute the features of all
     `Traces<https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
     in `streams` returning also the traces identifiers
 
@@ -72,7 +70,7 @@ def streams_idfeatures(streams, metadata, idfunc=_get_id):
         of floats representing the N one-dimensional feature vectors
 
     .. seealso:: :func:`trace_idfeatures`
-    '''
+    """
     values, ids = [], []
     for stream in streams:
         for trace in stream:
@@ -83,8 +81,7 @@ def streams_idfeatures(streams, metadata, idfunc=_get_id):
 
 
 def traces_features(traces, metadata):
-    '''
-    Computes the features of all traces
+    """Compute the features of all traces
 
     :param traces: an iterable of
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
@@ -97,7 +94,7 @@ def traces_features(traces, metadata):
         feature vectors, where N is the total number of processed Traces
 
     .. seealso:: :func:`trace_features`
-    '''
+    """
     values = []
     for trace in traces:
         values.append(trace_features(trace, metadata))
@@ -105,8 +102,7 @@ def traces_features(traces, metadata):
 
 
 def traces_idfeatures(traces, metadata, idfunc=_get_id):
-    '''
-    Computes the features of all traces and their identifiers
+    """Compute the features of all traces and their identifiers
 
     :param traces: an iterable of
         `Trace <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
@@ -123,7 +119,7 @@ def traces_idfeatures(traces, metadata, idfunc=_get_id):
         of floats representing the N one-dimensional feature vectors
 
     .. seealso:: :func:`trace_idfeatures`
-    '''
+    """
     values, ids = [], []
     for trace in traces:
         id_, val = trace_idfeatures(trace, metadata, idfunc)
@@ -133,8 +129,7 @@ def traces_idfeatures(traces, metadata, idfunc=_get_id):
 
 
 def trace_features(trace, metadata):
-    '''
-    Computes the features of the given trace.
+    """Compute the features of the given trace.
     Note that the outcome of the Feature selection employed for identifying the
     best combination of features resulted in a single feature among all PSD
     periods inspected (PSD computed at 5s period). Consequently, our feature
@@ -148,13 +143,12 @@ def trace_features(trace, metadata):
 
     :return: a 1-length numpy float array of shape (1,) representing the trace
         features vector
-    '''
+    """
     return psd_values(FEATURES, trace, metadata)
 
 
 def trace_idfeatures(trace, metadata, idfunc=_get_id):
-    '''
-    Computes the features of the given trace and its identifier.
+    """Compute the features of the given trace and its identifier.
     Note that the outcome of the Feature selection employed for identifying the
     best combination of features resulted in a single feature among all PSD
     periods inspected (PSD computed at 5s period). Consequently, our feature
@@ -171,13 +165,13 @@ def trace_idfeatures(trace, metadata, idfunc=_get_id):
 
     :return: the tuple `(id, features)` where id is the trace id and features
         is a numpy array of length 1 representing the trace features vector
-    '''
+    """
     return idfunc(trace), psd_values(FEATURES, trace, metadata)
 
 
 def featappend(features1, features2):
-    '''Calls numpy.append(features1, features2) and works also if one
-    inputs Nones or empty arrays.
+    """Call `numpy.append(features1, features2)`. This method works also if one
+    inputs Nones or empty array.
 
     .. seealso:: :func:`traces_features` or :func:`streams_features`
 
@@ -187,7 +181,7 @@ def featappend(features1, features2):
     :param features2: another Mx1 array. See `features1` for details
 
     :return features1 + features2 in a single (N + M) x 1 array
-    '''
+    """
     flen = len(FEATURES)
 
     if features1 is None or not len(features1):

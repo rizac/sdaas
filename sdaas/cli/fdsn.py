@@ -1,10 +1,10 @@
-'''
+"""
 Fdsn utilities for parsing url passed in the command line and fetching data
 
 Created on 10 Sep 2020
 
 @author: Riccardo Z. <rizac@gfz-potsdam.de>
-'''
+"""
 
 import re
 from urllib import parse, request
@@ -15,27 +15,26 @@ fdsn_re = '[a-zA-Z_]+://.+?/fdsnws/(?:station|dataselect)/\\d/query?.*'
 
 
 def is_fdsn_dataselect_url(url):
-    '''Returns True if `url` is a valid FDSN dataselect url'''
+    """Return True if `url` is a valid FDSN dataselect URL"""
     if not is_fdsn(url):
         raise ValueError('Invalid FDSN URL: %s' % url)
     return '/dataselect/' in url
 
 
 def is_fdsn_station_url(url):
-    '''Returns True if `url` is a valid FDSN station url'''
+    """Return True if `url` is a valid FDSN station URL"""
     if not is_fdsn(url):
         raise ValueError('Invalid FDSN URL: %s' % url)
     return '/station/' in url
 
 
 def is_fdsn(url):
-    '''Returns True if `url` is a valid FDSN url'''
+    """Return True if `url` is a valid FDSN URL"""
     return re.match(fdsn_re, url)
 
 
 def get_querydict(url):
-    '''
-    Returns the query string of `url` in form of a dict with keys
+    """Return the query string of `url` in form of a dict with keys
     'net' (mandatory), 'sta', 'cha' 'loc' 'start' 'end' (all optional)
     All dict values (query parameter values) are `str` (i.e., not casted).
     An additional 'URL' key is added to the dict, with the query string
@@ -44,7 +43,7 @@ def get_querydict(url):
 
     Raises if the url does not contain at least the parameters 'net' 'sta'
         'start' (or alternatively 'network', 'station', 'starttime')
-    '''
+    """
     url_splitted = parse.urlsplit(url)
     # object above is of the form:
     # ParseResult(scheme='http', netloc='www.example.org',
@@ -88,8 +87,7 @@ def get_querydict(url):
 
 
 def _get_query_entry(parse_qs_result, *keys):
-    '''
-    Returns the tuple (param, value) from the given `parse_qs_result` (dict
+    """Returns the tuple (param, value) from the given `parse_qs_result` (dict
     resulting from :func:`parse.parse_qs`.
     'param' is the parameter name found (searched in the provided `key`(s))
     and `value` is the parameter value.
@@ -102,7 +100,7 @@ def _get_query_entry(parse_qs_result, *keys):
         dict
 
     :return: the tuple (param, value)
-    '''
+    """
     params = [k for k in keys if k in parse_qs_result]
     if len(params) > 1:
         raise ValueError(f'Conflicting parameters "{"/".join(params)}"')
@@ -116,8 +114,7 @@ def _get_query_entry(parse_qs_result, *keys):
 
 
 def get_dataselect_url(querydict, **queryargs):
-    '''
-    Converts the given `querydict` to the relative dataselect url
+    """Convert the given `querydict` to the relative dataselect url
     for downloading data in the command line interface
 
     :param: querydict: a `dict` as returned from :func:`get_querydict`
@@ -127,14 +124,13 @@ def get_dataselect_url(querydict, **queryargs):
         will be used instead). None values means: remove the parameter
 
     :return: a string denoting a valid FDSN dataselect url
-    '''
+    """
     return get_url(querydict, **queryargs).\
         replace('/station/', '/dataselect/')
 
 
 def get_station_url(querydict, **queryargs):
-    '''
-    Converts the given `querydict` to the relative station url
+    """Convert the given `querydict` to the relative station url
     for downloading metadata in the command line interface. The parameter
     'level' in the returned url will be set to 'response'
 
@@ -146,18 +142,17 @@ def get_station_url(querydict, **queryargs):
         will be used instead). None values means: remove the parameter
 
     :return: a string denoting a valid FDSN dataselect url
-    '''
+    """
     return get_url(querydict, **queryargs).\
         replace('/dataselect/', '/station/')
 
 
 def get_station_urls(fdsn_query_url, timeout=None):
-    '''
-    Gets all station urls from the given fdsn_query_url
+    """Get all station urls from the given fdsn_query_url
 
     :return: a list of station urls. Each url will have the query arguments
         net, sta, start and end
-    '''
+    """
     qdic = get_querydict(fdsn_query_url.replace('/dataselect/',
                                                 '/station/'))
     url = get_url(qdic, level='station', format='text')
@@ -186,8 +181,7 @@ def get_station_urls(fdsn_query_url, timeout=None):
 
 
 def get_url(querydict, **queryargs):
-    '''
-    Converts the given `querydict` to the relative url
+    """Convert the given `querydict` to the relative url
 
     :param: querydict: a `dict` as returned from :func:`get_querydict`
     :param queryargs: additional query arguments which will override
@@ -196,7 +190,7 @@ def get_url(querydict, **queryargs):
         will be used instead). None values means: remove the parameter
 
     :return a string denoting the url build from the given querydict
-    '''
+    """
     args = dict(querydict)
     # args['start'] = (start or args['start']).isoformat()
     # args['end'] = (end or args['end']).isoformat()

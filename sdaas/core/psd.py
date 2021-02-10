@@ -1,11 +1,11 @@
-'''
-Implements an optimized version of the power spectral density (PSD) function
+"""
+Implement an optimized version of the power spectral density (PSD) function
 of the PPSD module of ObsPy. The function is the feature extractor for our
 machine learning model (Isolation Forest) for amplitude anomaly detection in
 seismic waveform segments
 
 @author: Riccardo Z. <rizac@gfz-potsdam.de>
-'''
+"""
 import math
 
 import numpy as np
@@ -17,8 +17,7 @@ from obspy.core.inventory.inventory import Inventory
 def psd_values(psd_periods, tr, metadata, special_handling=None,
                period_smoothing_width_octaves=1.0,
                period_step_octaves=0.125, smooth_on_all_periods=False):
-    """
-    Calculates the power spectral density (PSD) of the given
+    """Calculate the power spectral density (PSD) of the given
     trace `tr`, and returns the values in dB at the given `psd_periods`.
 
     Note: If used to compute features for the Isolation Forest algorithm,
@@ -201,8 +200,7 @@ def psd_values(psd_periods, tr, metadata, special_handling=None,
 
 
 def fft_taper(data):
-    """
-    Cosine taper, 10 percent at each end (like done by [McNamara2004]).
+    """Cosine taper, 10 percent at each end (like done by [McNamara2004]).
     Re-implements obspy.signal.spectral_estimation.fft_taper to avoid inplace
     operations (not necessary here)
     """
@@ -210,12 +208,12 @@ def fft_taper(data):
 
 
 def _get_response(tr, metadata, nfft):
-    '''Returns the response from the given trace and the given metadata
+    """Return the response from the given trace and the given metadata
     Simplified version of:
     :meth:`~obspy.signal.spectral_estimation.PPSD._get_response`
     (rationale: to optimize the PSD computation, we need to re-implement
     some methods of :class:`~obspy.signal.spectral_estimation.PPSD`)
-    '''
+    """
     # This function is the same as _get_response_from_inventory
     # but we keep the original PPSd skeleton to show how it
     # might be integrated with new metadata object. For the
@@ -236,11 +234,11 @@ def _get_response(tr, metadata, nfft):
 
 
 def _get_response_from_inventory(tr, metadata, nfft):
-    '''Replaces
+    """Alias of
     :meth:`~obspy.signal.spectral_estimation.PPSD._get_response_from_inventory`
     (rationale: to optimize the PSD computation, we need to re-implement
     some methods of :class:`~obspy.signal.spectral_estimation.PPSD`)
-    '''
+    """
     inventory = metadata
     delta = 1.0 / tr.stats.sampling_rate
     id_ = "%(network)s.%(station)s.%(location)s.%(channel)s" % tr.stats
@@ -259,13 +257,13 @@ def _get_response_from_inventory(tr, metadata, nfft):
 
 def get_evalresp_response(response, t_samp, nfft, output="VEL",
                           start_stage=None, end_stage=None):
-    '''Replaces
+    """Alias of
     :meth:`~obspy.core.inventory.response.Response.get_evalresp_response`
     (rationale: suppress annoying warning issued from external libraries.
     See :func:`get_evalresp_response_for_frequencies` for details. Note that
     in new ObsPy versions we will be able to remove this function. See
     comments in :func:`_get_response_from_inventory`)
-    '''
+    """
     # Calculate the output frequencies.
     fy = 1 / (t_samp * 2.0)
     # start at zero to get zero for offset/ DC of fft
@@ -280,13 +278,13 @@ def get_evalresp_response(response, t_samp, nfft, output="VEL",
 
 def get_evalresp_response_for_frequencies(response, frequencies, output="VEL",
                                           start_stage=None, end_stage=None):
-    '''Replaces
+    """Alias of
     :meth:`~obspy.core.inventory.response.Response.get_evalresp_response_for_frequencies`
     (rationale: suppress annoying warning issued from external libraries
     by setting explicitly `hide_sensitivity_mismatch_warning=True`. Note that
     in new ObsPy versions we will be able to remove this function. See
     comments in :func:`_get_response_from_inventory`)
-    '''
+    """
     output, chan = response._call_eval_resp_for_frequencies(
         frequencies, output=output, start_stage=start_stage,
         end_stage=end_stage, hide_sensitivity_mismatch_warning=True)
@@ -316,8 +314,7 @@ def _yield_period_binning(psd_periods, period_smoothing_width_octaves):
 
 def _setup_yield_period_binning(psd_periods, period_smoothing_width_octaves,
                                 period_step_octaves, period_limits):
-    """
-    Set up period binning, i.e. tuples/lists [Pleft, Pcenter, Pright], from
+    """Set up period binning, i.e. tuples/lists [Pleft, Pcenter, Pright], from
     `period_limits[0]` up to `period_limits[1]`. Then, for any period P
     in psd_periods, yields the binnings [Pleft1, Pcenter1, Pright1] and
     [Pleft2, Pcenter2, Pright2] such as Pcenter1 <= P <= Pcenter2, and so on.

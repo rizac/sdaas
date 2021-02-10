@@ -1,4 +1,4 @@
-'''
+"""
 Module for computing amplitude anomaly scores using by default
 our trained machine learning model based on the
 Isolation Forest algorithm:
@@ -12,7 +12,7 @@ In 2008 Eighth IEEE Inter- national Conference on Data Mining, pages 413–422.
 Created on 18 Jun 2020
 
 @author: Riccardo Z. <rizac@gfz-potsdam.de>
-'''
+"""
 from os.path import join, dirname
 
 import numpy as np
@@ -40,8 +40,7 @@ DEFAULT_TRAINED_MODEL_NAME = ('clf=IsolationForest&'
 
 
 def streams_idscores(streams, metadata, idfunc=_get_id):
-    '''
-    Computes the amplitude anomaly score in [0, 1] from the
+    """Compute the amplitude anomaly score in [0, 1] from the
     `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
     in `streams`, and their identifiers. For details, see :func:`aa_scores`
 
@@ -58,14 +57,13 @@ def streams_idscores(streams, metadata, idfunc=_get_id):
         floats in [0, 1], or numpy.nan (if score could not be computed)
 
     .. seealso:: :func:`aa_scores`
-    '''
+    """
     ids, feats = streams_idfeatures(streams, metadata, idfunc)
     return ids, aa_scores(feats, check_nan=True)
 
 
 def streams_scores(streams, metadata):
-    '''
-    Computes the amplitude anomaly score in [0, 1] from the given Streams.
+    """Compute the amplitude anomaly score in [0, 1] from the given Streams.
     For details, see :func:`aa_scores`
 
     :param streams: an iterable of
@@ -77,14 +75,13 @@ def streams_scores(streams, metadata):
         not be computed)
 
     .. seealso:: :func:`aa_scores`
-    '''
+    """
     feats = streams_features(streams, metadata)
     return aa_scores(feats, check_nan=True)
 
 
 def traces_idscores(traces, metadata, idfunc=_get_id):
-    '''
-    Computes the amplitude anomaly score in [0, 1] from the given Traces and
+    """Compute the amplitude anomaly score in [0, 1] from the given Traces and
     their identifiers. For details on the scores, see :func:`aa_scores`
 
     :param traces: an iterable of
@@ -102,14 +99,13 @@ def traces_idscores(traces, metadata, idfunc=_get_id):
         floats in [0, 1], or numpy.nan (if score could not be computed)
 
     .. seealso:: :func:`aa_scores`
-    '''
+    """
     ids, feats = traces_idfeatures(traces, metadata, idfunc)
     return ids, aa_scores(feats, check_nan=True)
 
 
 def traces_scores(traces, metadata):
-    '''
-    Computes the amplitude anomaly score in [0, 1] from the given Traces.
+    """Compute the amplitude anomaly score in [0, 1] from the given Traces.
     For details, see :func:`aa_scores`
 
     :param traces: an iterable of
@@ -124,14 +120,13 @@ def traces_scores(traces, metadata):
         compute score)
 
     .. seealso:: :func:`aa_scores`
-    '''
+    """
     feats = traces_features(traces, metadata)
     return aa_scores(feats, check_nan=True)
 
 
 def trace_score(trace, metadata):
-    '''
-    Computes the amplitude anomaly score in [0, 1] from the given Trace.
+    """Compute the amplitude anomaly score in [0, 1] from the given Trace.
     For details, see :func:`aa_scores`
 
     :param trace: a
@@ -143,14 +138,13 @@ def trace_score(trace, metadata):
         computed)
 
     .. seealso:: :func:`aa_scores`
-    '''
+    """
     feats = trace_features(trace, metadata)
     return aa_scores(feats, check_nan=True)[0]
 
 
 def aa_scores(features, model=None, check_nan=True):
-    '''
-    Computes the amplitude anomaly scores from the given feature vectors,
+    """Compute the amplitude anomaly scores from the given feature vectors,
     element wise. Returns a numpy array of anomaly scores in [0, 1], where
     the closer a scores is to 1, the more likely it represents an anomaly.
     Note however that in the default scenario (`model` is None or missing, i.e.
@@ -178,7 +172,7 @@ def aa_scores(features, model=None, check_nan=True):
     :return: a numpy array of N scores in [0, 1] or NaNs (when the
         feature was NaN. Isolation Forest models do not handle NaNs in the
         feature space)
-    '''
+    """
     if model is None:
         model = DEFAULT_TRAINED_MODEL
         if model is None:
@@ -214,10 +208,10 @@ def _reshape_feature_space(features):
 
 
 def _aa_scores(features, model):
-    '''Computes the anomaly scores of the Isolation Forest model for the given
+    """Compute the anomaly scores of the Isolation Forest model for the given
     `features` (a numpy matrix of Nx1 elements), element wise. Features must
     NOT be NaN (this is not checked for)
-    '''
+    """
     return -model.score_samples(features)
 
 
@@ -234,7 +228,7 @@ def _load_default_trained_model():
 
 def create_model(n_estimators=100, max_samples=1024, contamination='auto',
                  behaviour='new', **kwargs):
-    # IsolationForest might be realtively long to load, import it here
+    # IsolationForest might be relatively long to load, import it here
     # only when needed:
     from sklearn.ensemble.iforest import IsolationForest
     return IsolationForest(n_estimators, max_samples,

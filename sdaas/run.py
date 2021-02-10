@@ -1,7 +1,7 @@
-'''cli (command line interface) module of the program
+"""cli (command line interface) module of the program
 
 @author: Riccardo Z. <rizac@gfz-potsdam.de>
-'''
+"""
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -34,8 +34,7 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
             waveform_length=120,  # in sec
             download_count=5, download_timeout=30,  # in sec
             sep='', verbose=False):
-    '''
-    Computes and prints the amplitude anomaly scores of each waveform segment
+    """Compute and prints the amplitude anomaly scores of each waveform segment
     in 'data'. Anomalies are typically due to artifacts in the data (e.g.
     spikes, zero-amplitude signals) or in the metadata (e.g. stage gain errors).
 
@@ -123,7 +122,7 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
         in metadata (see 'data'), ignored otherwise. Default: 30
 
     :param verbose: (boolean flag) increase verbosity
-    '''
+    """
     separator = sep
     sort_by_time = True
 
@@ -180,7 +179,7 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
 def print_result(src: str, trace_id: str, trace_start: datetime,
                  trace_end: datetime, score: float, threshold: float = None,
                  separator: str = None, file: TextIO = sys.stdout):
-    '''prints a classification result form a single trace'''
+    """Print a classification result form a single trace"""
     is_file = src and isfile(src)
     if is_file:
         trace_id = join(basename(src), trace_id)
@@ -247,20 +246,18 @@ def read_data(path_or_url, format='MSEED', headonly=False, **kwargs):  # @Reserv
 
 
 class StreamIterator(dict):
-    '''
-    Class for iterating over given data and metadata arguments, either
+    """Class for iterating over given data and metadata arguments, either
     given as files / directory or URLs
-    '''
+    """
     def __init__(self):
         self._data = []
 
     def add_url(self, url, metadata_path,
                 waveform_length, download_count, download_timeout):
-        '''
-        adds a new FDSN URL, either station or dataselect. In the former
+        """Add a new FDSN URL, either station or dataselect. In the former
         case, the last three parameters control what segment waveform to
         download, and how
-        '''
+        """
         if is_fdsn_dataselect_url(url):
             metadata_path = get_station_url(get_querydict(url),
                                             level='response')
@@ -286,12 +283,11 @@ class StreamIterator(dict):
                            download_count)
 
     def add_dir(self, path, metadata_path=None):
-        '''
-        adds a new directory, populated with miniSEED (*.mseed) files
+        """Add a new directory, populated with miniSEED (*.mseed) files
 
         :param metadata_path: the optional metadata file path  (*.xml). If None
             (the default) the function tries to search it on the given path
-        '''
+        """
         filepaths = [abspath(join(path, _)) for _ in listdir(path)
                      if splitext(_)[1].lower() == '.mseed']
         if not filepaths:
@@ -306,9 +302,8 @@ class StreamIterator(dict):
         self._add_files(path, filepaths, metadata_path)
 
     def add_file(self, filepath, metadata_path):
-        '''
-        Adds a miniSEED file with relative metadata path (StationXML)
-        '''
+        """Add a miniSEED file with relative metadata path (StationXML)
+        """
         if not metadata_path:
             raise ValueError('"metadata" argument required')
         if not isfile(metadata_path):
@@ -316,9 +311,7 @@ class StreamIterator(dict):
         self._add_files(filepath, [filepath], metadata_path)
 
     def add_files(self, key, filepaths, metadata_path):
-        '''
-        Adds miniSEED files with relative metadata path (StationXML)
-        '''
+        """Add miniSEED files with relative metadata path (StationXML)"""
         if not filepaths:
             raise FileNotFoundError('No miniseed file provided')
         if not metadata_path:
@@ -333,16 +326,14 @@ class StreamIterator(dict):
                        metadata_path, len(filepaths))
 
     def _add_item(self, key, streamiterator, metadata_path, length):
-        '''streamiterator: an iterator of key, Stream tuples'''
+        """streamiterator: an iterator of key, Stream tuples"""
         self._data.append((key, streamiterator, metadata_path, length))
 
     def process(self, sort_by_time=False,
                 aggregate: str or None = None,
                 progress: TextIO or None = sys.stderr,
                 info: TextIO or None = None):
-        '''
-        Processes all added files/URLs and yields the results
-        '''
+        """Processes all added files/URLs and yields the results"""
         if aggregate:
             aggregates = ('min', 'max', 'median', 'mean')
             if aggregate not in aggregates:
@@ -504,11 +495,10 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
 
 
 def getdoc(param=None):
-    '''
-    Parses the doc of the `process` function and returns the doc for the
+    """Parse the doc of the `process` function and returns the doc for the
     given param. If the latter is None, returns the doc for the whole
     function (portion of text from start until first occurrence of ":param "
-    '''
+    """
     flags = re.DOTALL  # @UndefinedVariable
     pattern = "^(.*?)\\n\\s*\\:param " if not param else \
         f"\\:param {param}: (.*?)(?:$|\\:param)"
