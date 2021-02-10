@@ -20,17 +20,78 @@ where you cloned this repository (last argument of `git clone`),
 
 1. create a virtual environment (once). **Be sure you use Python>=3.7 (Type `python3 --version` to check)**:
 
-```bash
-python3 -m venv .env
-```
+    ```bash
+    python3 -m venv .env
+    ```
 
 2. activate it (to be done also every time you use this program):
-```bash
-source .env/bin/activate
-```
+    ```bash
+    source .env/bin/activate
+    ```
 (then to deactivate, simply type ... `deactivate` on the terminal). 
 
-Then, you have two options:
+Install the program (You could simply run:
+`pip install --upgrade pip && pip install "numpy>=1.15.4" && pip install -e .`,
+but we suggest to run commands separately because installation
+problems are easier to track down).
+
+pip (python package installer, just upgrade)
+```
+pip install --upgrade pip setuptools 
+```
+
+numpy (scientific computing library) :
+```
+pip install "numpy>=1.15.4" "obspy>=1.1.1'"
+```
+
+obspy (seismological library):
+```
+pip install "obspy>=1.1.1'"
+```
+
+scikit (machine learning library):
+```
+pip install "scikit-learn==0.21.3"
+```
+**Important: scikit might have problems installing, especially on MacOS.
+For instance, in some cases we had to "cython" (`pip install cython`), in other
+cases, we needed to `brew install libomp` and then (re)install scikit with several 
+flags exported beforehand:
+```
+export CC=/usr/bin/clang;export CXX=/usr/bin/clang++;export CPPFLAGS="$CPPFLAGS -Xpreprocessor -fopenmp";export CFLAGS="$CFLAGS -I/usr/local/opt/libomp/include";export CXXFLAGS="$CXXFLAGS -I/usr/local/opt/libomp/include";export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/local/opt/libomp/lib -L/usr/local/opt/libomp/lib -lomp";pip install --verbose --no-build-isolation "scikit-learn==0.21.3"
+```
+
+**In any case, for scikit installation problems consult
+[this page](https://scikit-learn.org/dev/developers/advanced_installation.html)**
+
+
+And finally, install this package
+```
+pip install -e .
+```
+ (-e is optional. With -e, you just need a `git pull` to update
+to the last release. Without it, you need to pull and re-install `pip install --force .`)
+
+<!-- IMOPORTANT NOTE: IT IS NOT TRUE THAT REQUIREMENTS.TXT IS ALWAYS SAFER, 
+AS THERE COULD BE NEWER OS VERSION FOR WHICH YOU NEED TO UPGRADE SOME PACKAGES
+BECAUSE THE SPECIFIED  ONE DO NOT WORK ANYMORE. IT WAS THE CASE WITH opsy
+1.15.4 MacOs Big Sur and Python 3.9.1 -->
+
+<!-- Then, you have two options:
+
+#### 1. with setup.py (recommended if this program is needed together with other packages in your virtual environment)
+
+```bash
+pip install --upgrade pip && pip install "numpy>=1.15.4" && pip install -e .
+```
+(-e is optional)
+
+Troubleshooting:
+
+Note in case of scikit-learn errors, you might
+
+
 
 #### 1. with requirements.txt (recommended on a new, empty virtual environment where you plan to use this program only)
 
@@ -38,24 +99,7 @@ Then, you have two options:
 pip install --upgrade pip && pip install "numpy==1.15.4" && pip install -r ./requirements.txt && pip install -e .
 ```
 (-e is optional)
-
-<!-- This installs all dependencies with a specific tested version, meaning that this
-program is certain to work, but already installed programs *might* break -->
-
-
-#### 2. with setup.py (recommended if this program is needed together with other packages in your virtual environment)
-
-```bash
-pip install --upgrade pip && pip install "numpy>=1.15.4" && pip install -e .
-```
-(-e is optional)
-
-<!-- This installs all dependencies with a *minimum required* version, and thus already
-installed packages *are more likely* to continue working. However, there is a
-slightly higher chance that this program doe not work properly (we do our best but we cannot keep
-up rapidly with all libraries updates, fix the new errors in our code, their
-deprecation warnings, and so on. Note that scikit-learn is in any case installed with
-a specific version 0.21.3, necessary to load the model trained with that version) -->
+ -->
 
 
 ## Usage
