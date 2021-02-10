@@ -50,20 +50,28 @@ obspy (seismological library):
 pip install "obspy>=1.1.1'"
 ```
 
-scikit (machine learning library):
+scikit (machine learning library. Note the exact version because of
+[model persistence](https://scikit-learn.org/stable/modules/model_persistence.html)):
 ```
 pip install "scikit-learn==0.21.3"
 ```
-**Important: scikit might have problems installing, especially on MacOS.
-For instance, in some cases we had to "cython" (`pip install cython`), in other
-cases, we needed to `brew install libomp` and then (re)install scikit with several 
-flags exported beforehand:
-```
-export CC=/usr/bin/clang;export CXX=/usr/bin/clang++;export CPPFLAGS="$CPPFLAGS -Xpreprocessor -fopenmp";export CFLAGS="$CFLAGS -I/usr/local/opt/libomp/include";export CXXFLAGS="$CXXFLAGS -I/usr/local/opt/libomp/include";export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/local/opt/libomp/lib -L/usr/local/opt/libomp/lib -lomp";pip install --verbose --no-build-isolation "scikit-learn==0.21.3"
-```
 
-**In any case, for scikit installation problems consult
-[this page](https://scikit-learn.org/dev/developers/advanced_installation.html)**
+**Important**: Due to the specific version to be installed,
+scikit might have problems installing, especially on MacOS. 
+
+Few hints here:
+- you might need to preinstall `cython` (`pip install cython`)
+- you might need to `brew install libomp`, set the follwing env variables:
+  ```
+  export CC=/usr/bin/clang;export CXX=/usr/bin/clang++;export CPPFLAGS="$CPPFLAGS -Xpreprocessor -fopenmp";export CFLAGS="$CFLAGS -I/usr/local/opt/libomp/include";export CXXFLAGS="$CXXFLAGS -I/usr/local/opt/libomp/include";export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/local/opt/libomp/lib -L/usr/local/opt/libomp/lib -lomp"
+  ```
+- and then install with the following flags:
+  ```
+  pip install --verbose --no-build-isolation "scikit-learn==0.21.3"
+  ```
+
+**(For any further detail, see
+[scikit-learn installation page](https://scikit-learn.org/dev/developers/advanced_installation.html))**
 
 
 And finally, install this package
