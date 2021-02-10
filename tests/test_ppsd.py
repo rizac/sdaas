@@ -81,11 +81,11 @@ class Test(unittest.TestCase):
 
 
 class obspyPSD:
-    '''container for the old functions used in the paper
+    """container for the old functions used in the paper
     whereby we created the model used in thius package
     The code here is basically the same: call obspy functions directly (
     without optimizations)
-    '''
+    """
 
     @staticmethod
     def psd_values(periods, raw_trace, inventory):
