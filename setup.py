@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 _README = """
-Python program/library to compute amplitude anomaly score on one or more seismic
+Python program to compute amplitude anomaly score on one or more seismic
 waveforms (data and metadata)
 """
 
@@ -9,7 +9,7 @@ setup(
     name='sdaas',
     version='1.1.0',
     description=_README,
-    url='https://github.com/rizac/swaas',
+    url='https://github.com/rizac/sdaas',
     packages=find_packages(exclude=['tests', 'tests.*']),
     python_requires='>=3.7.3',
     # Minimal requirements, for a complete list see requirements-*.txt
