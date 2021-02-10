@@ -1,4 +1,4 @@
-'''
+"""
 Tests the snippets providede in the README to assure that they work. Also,
 MODIFIES the README SO A COMMIT MIGHT BE NECESSARY AFTER THIS RUN (a message
 is printed in case, if no message is shown, then the readme was not changed)
@@ -6,7 +6,7 @@ is printed in case, if no message is shown, then the readme was not changed)
 Created on 28 Sep 2020
 
 @author: Riccardo Z. <rizac@gfz-potsdam.de>
-'''
+"""
 import unittest
 from os.path import join, dirname, relpath, abspath, basename
 

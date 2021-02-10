@@ -1,4 +1,4 @@
-'''
+"""
 Test the psd calculation used in the fieatures compuation,
 The PSD compuation in this package is an optimized version of
 ObsPy's counterpart (:class:`obspy.signal.spectral_estimation.PPSD`)
@@ -6,7 +6,7 @@ ObsPy's counterpart (:class:`obspy.signal.spectral_estimation.PPSD`)
 Created on 22 Jun 2020
 
 @author: Riccardo Z. <rizac@gfz-potsdam.de>
-'''
+"""
 import unittest
 from os.path import join, dirname
 

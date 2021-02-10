@@ -1,8 +1,8 @@
-'''
+"""
 Created on 8 Sep 2020
 
 @author: riccardo
-'''
+"""
 from obspy.core.stream import read
 import time
 
@@ -19,8 +19,8 @@ from sdaas.cli.utils import redirect
 
 
 def testperf_mseed():
-    '''With 100 miniseeds it takes
-    around 10 seconds with method 1, 3 and a half seconds with method two'''
+    """With 100 miniseeds it takes
+    around 10 seconds with method 1, 3 and a half seconds with method two"""
     N = 100
     print(f'Loading {N} traces')
     path = '/Users/riccardo/work/gfz/projects/sources/python/sdaas/tests/data/GE.FLT1..HH?.mseed'

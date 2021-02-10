@@ -1,10 +1,10 @@
-'''
+"""
 Tests runs from the command line
 
 Created on 22 Jun 2020
 
 @author: Riccardo Z. <rizac@gfz-potsdam.de>
-'''
+"""
 import unittest
 from datetime import datetime
 import re
