@@ -17,7 +17,7 @@ python-dateutil==2.8.1
 requests==2.25.1
 scikit-learn==0.24.2
 scipy==1.6.3
--e git+https://github.com/rizac/sdaas.git@420b2ca413b25d472dd55020cdfa215a5e0df8d2#egg=sdaas
+# -e git+https://github.com/rizac/sdaas.git@7916835e9be01b53823238cc0cb0873021f2439f#egg=sdaas
 six==1.16.0
 SQLAlchemy==1.4.15
 threadpoolctl==2.1.0
