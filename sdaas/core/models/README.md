@@ -70,9 +70,9 @@ sampled at specific features point, in order to test that any new model is consi
 previous ones (in principle, one could also use the score file as model file, using e.g. 
 linear interpolation or grid search, but it is unfeasible with a lot of features).
 
-To create a scores CSV file (as of 2021, with a single feature
-`psd@5sec` is used, and scores are sampled at regular intervals in [-250, 0] seconds),
-execute the snippet below after changing `MODEL_PATH`:
+For instance, this snippet has been used to create the CSV files sampling scores
+at regular `psd@5sec` intervals (every 0.1 seconds in the range [-250, 0]).
+To execute it, copy paste it in your code after changing `MODEL_PATH`:
 
 ```python
 MODEL_PATH = 'path/to/mymodel.sklmodel'
