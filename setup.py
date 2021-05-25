@@ -7,7 +7,7 @@ waveforms (data and metadata)
 
 setup(
     name='sdaas',
-    version='1.1.0',
+    version='1.2.0',
     description=_README,
     url='https://github.com/rizac/sdaas',
     packages=find_packages(exclude=['tests', 'tests.*']),
@@ -16,7 +16,7 @@ setup(
     install_requires=[
         'numpy>=1.15.4',
         'obspy>=1.1.1',
-        'scikit-learn==0.21.3'
+        'scikit-learn>=0.21.3'
     ],
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,

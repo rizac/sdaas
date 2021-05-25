@@ -24,7 +24,7 @@ from obspy.core.stream import read
 from obspy.core.inventory.inventory import read_inventory
 
 from sdaas.core.features import trace_idfeatures
-from sdaas.core.model import aa_scores, _load_default_trained_model
+from sdaas.core.model import aa_scores, load_default_trained_model
 from sdaas.cli.utils import ansi_colors_escape_codes, ProgressBar
 from sdaas.cli.fdsn import get_querydict, get_dataselect_url,\
     get_station_url, is_fdsn_dataselect_url, is_fdsn, get_station_urls
@@ -345,7 +345,7 @@ class StreamIterator(dict):
         # load model now: it takes ~=1 second and is usually lazy loaded,
         # but this means that the progressbar would show misleading results
         # at the beginning
-        _load_default_trained_model()
+        load_default_trained_model()
         with ProgressBar(progress) as pbar:
             # self._data has generally only one element in the current
             # implementation (see module function `process`), however, it

@@ -24,21 +24,6 @@ from sdaas.core.features import (FEATURES, _get_id, traces_idfeatures,
                                  streams_features, trace_features)
 
 
-# define default model file name inside the 'models' directory.
-# (see `_load_default_trained_model` below for details)
-DEFAULT_TRAINED_MODEL_NAME = ('clf=IsolationForest&'
-                              'tr_set=uniform_train.hdf&'
-                              'feats=psd@5sec&'
-                              'behaviour=new&'
-                              'contamination=auto&'
-                              'max_samples=4096&'
-                              'n_estimators=50&'
-                              # 'max_samples=1024&'
-                              # 'n_estimators=100&'
-                              'random_state=11'
-                              '.sklmodel')
-
-
 def streams_idscores(streams, metadata, idfunc=_get_id):
     """Compute the amplitude anomaly score in [0, 1] from the
     `Traces <https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html>_`
@@ -176,7 +161,7 @@ def aa_scores(features, model=None, check_nan=True):
     if model is None:
         model = DEFAULT_TRAINED_MODEL
         if model is None:
-            model = _load_default_trained_model()
+            model = load_default_trained_model()
         model_fitted = True
     else:
         model_fitted = hasattr(model, "offset_")  # see IsolationForest
@@ -215,23 +200,60 @@ def _aa_scores(features, model):
     return -model.score_samples(features)
 
 
+# def create_model(n_estimators=100, max_samples=1024, contamination='auto',
+#                  behaviour='new', **kwargs):
+#     # IsolationForest might be relatively long to load, import it here
+#     # only when needed:
+#     from sklearn.ensemble.iforest import IsolationForest
+#     return IsolationForest(n_estimators, max_samples,
+#                            contamination=contamination,
+#                            behaviour=behaviour,
+#                            **kwargs)
+
+
 DEFAULT_TRAINED_MODEL = None
 
 
 # lazy load DEFAULT_TRAINED_MODEL
-def _load_default_trained_model():    
+def load_default_trained_model():
     global DEFAULT_TRAINED_MODEL
-    DEFAULT_TRAINED_MODEL = load(join(dirname(__file__), 'models',
-                                      DEFAULT_TRAINED_MODEL_NAME))
+    DEFAULT_TRAINED_MODEL = load(get_model_file_path())
     return DEFAULT_TRAINED_MODEL
 
 
-def create_model(n_estimators=100, max_samples=1024, contamination='auto',
-                 behaviour='new', **kwargs):
-    # IsolationForest might be relatively long to load, import it here
-    # only when needed:
-    from sklearn.ensemble.iforest import IsolationForest
-    return IsolationForest(n_estimators, max_samples,
-                           contamination=contamination,
-                           behaviour=behaviour,
-                           **kwargs)
+def get_model_file_path():
+    root_dir = join(dirname(__file__), 'models')
+    file_name = ('clf=IsolationForest&'
+                 'tr_set=uniform_train.hdf&'
+                 'feats=psd@5sec&'
+                 'contamination=auto&'
+                 'max_samples=4096&'
+                 'n_estimators=50&'
+                 'random_state=11'
+                 '.sklmodel')
+    # modify root_dir or file_name according to sklearn version:
+    version = _get_sklearn_version_tuple()
+    if version is not None:
+        if version < (0, 22):
+            root_dir = join(root_dir, 'sklearn<0.22.0')
+            file_name = ('clf=IsolationForest&' \
+                         'tr_set=uniform_train.hdf&'
+                         'feats=psd@5sec&'
+                         'behaviour=new&'
+                         'contamination=auto&'
+                         'max_samples=4096&'
+                         'n_estimators=50&'
+                         'random_state=11'
+                         '.sklmodel')
+        elif version < (0, 24, 2):
+            root_dir = join(root_dir, 'sklearn<0.24.2')
+
+    return join(root_dir, file_name)
+
+
+def _get_sklearn_version_tuple():
+    try:
+        from sklearn import __version__
+        return tuple(int(_) for _ in __version__.split('.'))
+    except (ImportError, ValueError, TypeError):
+        return None
