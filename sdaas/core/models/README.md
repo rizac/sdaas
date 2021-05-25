@@ -69,9 +69,9 @@ When you add a new model, it is good practice to also create a score
 CSV file in the same directory of the model, replacing its extension
 (usually 'sklmodel') with '.scores.csv'.
 The score file should contain scores sampled at some features in order to 
-compare any new model scores with the model scores and preserve consistency.
-(In principle, one could also use the score file as model, using linear interpolation or
-or grid search, but it is unfeasible with a lot of features)
+compare any new model with the one just created, and preserve consistency
+(in principle, one could also use the score file as model file, using e.g. 
+linear interpolation or grid search, but it is unfeasible with a lot of features).
 
 To create a score CSVfile (as of 2021, with a single feature
 `psd@5sec`), execute the snippet below after changing `MODEL_PATH`:
