@@ -5,14 +5,14 @@ This is the folder where the scikit models (IsolationForest) are stored as files
 
 ## Backward incompatibility
 
-It might happen that **dumped models are backward incompatible**. You should
-regularly install the latest version of `sklearn` and then run tests to see if 
+It might happen that [saved models](https://scikit-learn.org/stable/modules/model_persistence.html) 
+**are backward incompatible**.
+
+You should regularly install the latest version of `sklearn` and then run tests to see if 
 everything is ok. If not, create a new model (see below) and move the current 
-outdated one into its folder with the version compatibility, 
-e.g. `sklearn<=0.22.1`
+outdated one into its folder with the version compatibility, e.g. `sklearn<=0.22.1`
 
 ### Changelog
-
 
 - `sklearn=0.22`: Refactored private modules, backward incompatible: dumped models with v<0.22 can not be loaded: https://scikit-learn.org/stable/whats_new/v0.22.html#clear-definition-of-the-public-api |
 - `sklearn=0.24.2`: Changed `ExtraTreeRegressor`, dumped models are loaded but with `UserWarning: Trying to unpickle estimator ExtraTreeRegressor from version 0.24.1 when using version 0.24.2. This might lead to breaking code or invalid results. Use at your own risk.`
@@ -20,18 +20,23 @@ e.g. `sklearn<=0.22.1`
 ## Create models
 
 <details>
+
 <summary> Using `sod` package (outdated)</summary>
+
 Models are usually those created with the 'sod' or 'sdaas_eval' Python package
 and copied here:
+
 ```bash
 cp $PATH/sod/sod/evaluations/results/clf\=IsolationForest\&tr_set\=uniform_train.hdf\&feats\=psd\@5sec\&behaviour\=new\&contamination\=auto\&max_samples\=2048\&n_estimators\=50\&random_state\=11.sklmodel ./sdaas/core/models/
 ```
+
 (this is still valid but as of 2021 not the recommended way, it's extremely
 overcomplicated and there is a new package, `sdaas-eval` currently in construction)
+
 </details>
 
 You can execute this snippet of code to create and fit your IsolationForest
-(but you need `pandas` additionally installed):
+from a training set (but you need `pandas` additionally installed):
 
 ```python
 import sklearn
@@ -58,21 +63,18 @@ clf.fit(dataset.values)
 dump(clf, CLF_PATH)
 ```
 
-### Inspect different sklearn versions models (for maintenance/debug only) 
+### Add score file
 
-If the model is single feature, you can also keep track of the scores for running
-tests and compare different sklearn version models
-(This is easy when the feature is only one  - as it currently is -, maybe 
-in the future for several features it will not be possible).
-The idea is to write a csv file of `feature1, feature2, ..., featureN, score` rows.
-(this might also be exploited to compute scores from the grid
-with scipy.gridsearch. It could be useful to get rid sklearn but it is unfeasible
-with a lot of features).
+When you add a new model, it is good practice to also create a score
+CSV file in the same directory of the model, replacing its extension
+(usually 'sklmodel') with '.scores.csv'.
+The score file should contain scores sampled at some features in order to 
+compare any new model scores with the model scores and preserve consistency.
+(In principle, one could also use the score file as model, using linear interpolation or
+or grid search, but it is unfeasible with a lot of features)
 
-To create such a csv of scores with a given model (as of 2021, with a single feature
-`psd@5sec`), execute the snippet below after changing `MODEL_PATH`.
-This will create a CSV file in the same directory of the model, replacing its extension
-(usually 'sklmodel') with '.scores.csv'
+To create a score CSVfile (as of 2021, with a single feature
+`psd@5sec`), execute the snippet below after changing `MODEL_PATH`:
 
 ```python
 MODEL_PATH = 'path/to/mymodel.sklmodel'

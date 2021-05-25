@@ -25,53 +25,29 @@ where you cloned this repository (last argument of `git clone`),
     python3 -m venv .env
     ```
 
-2. activate it (to be done also every time you use this program):
+2. activate it (**to be done also every time you use this program**):
     ```bash
     source .env/bin/activate
     ```
-(then to deactivate, simply type ... `deactivate` on the terminal). 
+   (then to deactivate, simply type ... `deactivate` on the terminal). 
 
-To install the program, run:
+3. Install the program (one line command):
 
-```
-pip install --upgrade pip setuptools && pip install "numpy>=1.15.4" && pip install -e .
-```
-
-(-e is optional. With -e, you just need a `git pull` to update
-to the last release. Without it, you need to pull and re-install 
-`pip install --force .` If you want to install the specific exact versions from
-[requirements file](https://pip.pypa.io/en/stable/user_guide/#requirements-files)
-then extract numpy from it and then run `pip install -r ./requirements.txt`)
+    ```
+    pip install --upgrade pip setuptools && pip install "numpy>=1.15.4" && pip install -e .
+    ```
+    
+    -e is optional. With -e, you can update the installed program to the latest release
+     by simply issuing a `git pull`. Without `-e`, you need to pull and re-install: 
+    `pip install --force .` An alternative installation is to use the
+    [requirements file](https://pip.pypa.io/en/stable/user_guide/#requirements-files)
+    then extract numpy from it and then run `pip install -r ./requirements.txt`
 
 <details>
-<summary>You can also run commands separately because installation
-problems are easier to track down (click for details)
-</summary> 
-pip (python package installer, just upgrade)
-```
-pip install --upgrade pip setuptools 
-```
+<summary>Reported scikit learn installation problems (click for details)</summary>
 
-numpy (scientific computing library) :
-```
-pip install "numpy>=1.15.4"
-```
-
-obspy (seismological library):
-```
-pip install "obspy>=1.1.1'"
-```
-
-scikit (machine learning library. Here we will be strict about the version because of
-[model persistence](https://scikit-learn.org/stable/modules/model_persistence.html)):
-```
-pip install "scikit-learn>=0.21.3"
-```
-
-</details>
-
-**Important**: Due to the specific version to be installed,
-scikit might have problems installing, especially on MacOS (experienced with BigSur, start 2021). 
+Due to the specific version to be installed,
+scikit might have problems installing. 
 
 Few hints here:
 - you might need to preinstall `cython` (`pip install cython`)
@@ -87,8 +63,9 @@ Few hints here:
 **(For any further detail, see
 [scikit-learn installation page](https://scikit-learn.org/dev/developers/advanced_installation.html))**
 
+</details>
 
-#### Run tests
+#### Run tests (optional)
 
 ```bash
 python -m unittest         
