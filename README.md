@@ -37,8 +37,14 @@ To install the program, run:
 pip install --upgrade pip setuptools && pip install "numpy>=1.15.4" && pip install -e .
 ```
 
+(-e is optional. With -e, you just need a `git pull` to update
+to the last release. Without it, you need to pull and re-install 
+`pip install --force .` If you want to install the specific exact versions from
+[requirements file](https://pip.pypa.io/en/stable/user_guide/#requirements-files)
+then extract numpy from it and then run `pip install -r ./requirements.txt`)
+
 <details>
-<summary>Or you can run commands separately because installation
+<summary>You can also run commands separately because installation
 problems are easier to track down (click for details)
 </summary> 
 pip (python package installer, just upgrade)
@@ -81,41 +87,6 @@ Few hints here:
 **(For any further detail, see
 [scikit-learn installation page](https://scikit-learn.org/dev/developers/advanced_installation.html))**
 
-
-And finally, install this package
-```
-pip install -e .
-```
- (-e is optional. With -e, you just need a `git pull` to update
-to the last release. Without it, you need to pull and re-install `pip install --force .`)
-
-<!-- IMOPORTANT NOTE: IT IS NOT TRUE THAT REQUIREMENTS.TXT IS ALWAYS SAFER, 
-AS THERE COULD BE NEWER OS VERSION FOR WHICH YOU NEED TO UPGRADE SOME PACKAGES
-BECAUSE THE SPECIFIED  ONE DO NOT WORK ANYMORE. IT WAS THE CASE WITH opsy
-1.15.4 MacOs Big Sur and Python 3.9.1 -->
-
-<!-- Then, you have two options:
-
-#### 1. with setup.py (recommended if this program is needed together with other packages in your virtual environment)
-
-```bash
-pip install --upgrade pip && pip install "numpy>=1.15.4" && pip install -e .
-```
-(-e is optional)
-
-Troubleshooting:
-
-Note in case of scikit-learn errors, you might
-
-
-
-#### 1. with requirements.txt (recommended on a new, empty virtual environment where you plan to use this program only)
-
-```bash
-pip install --upgrade pip && pip install "numpy==1.15.4" && pip install -r ./requirements.txt && pip install -e .
-```
-(-e is optional)
- -->
 
 #### Run tests
 
