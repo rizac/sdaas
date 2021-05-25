@@ -65,16 +65,14 @@ dump(clf, CLF_PATH)
 
 ### Add score file
 
-When you add a new model, it is good practice to also create a score
-CSV file in the same directory of the model, replacing its extension
-(usually 'sklmodel') with '.scores.csv'.
-The score file should contain scores sampled at some features in order to 
-compare any new model with the one just created, and preserve consistency
-(in principle, one could also use the score file as model file, using e.g. 
+When you add a new model, it is good practice to also create a CSV file with scores 
+sampled at specific features point, in order to test that any new model is consistent with
+previous ones (in principle, one could also use the score file as model file, using e.g. 
 linear interpolation or grid search, but it is unfeasible with a lot of features).
 
-To create a score CSVfile (as of 2021, with a single feature
-`psd@5sec`), execute the snippet below after changing `MODEL_PATH`:
+To create a scores CSV file (as of 2021, with a single feature
+`psd@5sec` is used, and scores are sampled at regular intervals in [-250, 0] seconds),
+execute the snippet below after changing `MODEL_PATH`:
 
 ```python
 MODEL_PATH = 'path/to/mymodel.sklmodel'
@@ -94,7 +92,8 @@ with open(outname,  'w') as fp:
         fp.write('%s,%s\n' % (str(psd), str(score)))
 ```
 
-To visualize the currently loaded models, execute this script after changing `REPO_PATH`:
+If you want to visualize the currently loaded models in a plot,
+execute this script after changing `REPO_PATH`:
 
 ```python
 REPO_PATH = 'here the full absolute path of your sdaas repository (no ending slash)'
