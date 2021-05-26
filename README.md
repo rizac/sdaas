@@ -177,6 +177,7 @@ print(traces_scores(stream, inventory))
 ```
 [ 0.45729656  0.45199387  0.45113142]
 ```
+
 Compute the scores in a stream or iterable of traces, getting also the traces id (by 
 default the tuple `(seed_id, start, end)`, where seed_id is the 
 [Trace SEED identifier](https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.get_id.html)):
@@ -199,6 +200,7 @@ print(traces_idscores(stream, inventory))
 ```
 ([('GE.FLT1..HHE', datetime.datetime(2011, 9, 3, 16, 38, 5, 550001), datetime.datetime(2011, 9, 3, 16, 42, 12, 50001)), ('GE.FLT1..HHN', datetime.datetime(2011, 9, 3, 16, 38, 5, 760000), datetime.datetime(2011, 9, 3, 16, 42, 9, 670000)), ('GE.FLT1..HHZ', datetime.datetime(2011, 9, 3, 16, 38, 8, 40000), datetime.datetime(2011, 9, 3, 16, 42, 9, 670000))], array([ 0.45729656,  0.45199387,  0.45113142]))
 ```
+
 Same as above, with custom traces id (their SEED identifier only):
 
 ```python
@@ -219,17 +221,20 @@ print(traces_idscores(stream, inventory, idfunc=lambda t: t.get_id()))
 ```
 (['GE.FLT1..HHE', 'GE.FLT1..HHN', 'GE.FLT1..HHZ'], array([ 0.45729656,  0.45199387,  0.45113142]))
 ```
+
 You can also compute scores and ids from iterables of streams (e.g., when reading from files)...
 
 ```python
 from sdaas.core import streams_scores
 from sdaas.core import streams_idscores
 ```
+
 ... or from a single trace:
 
 ```python
 from sdaas.core import trace_score
 ```
+
 For instance, to compute the anomaly score of several streams
 (for each stream and for each trace therein, return the trace anomaly score):
 
@@ -253,6 +258,7 @@ print(streams_scores(streams, inventory))
 ```
 [ 0.45729656  0.45199387  0.45113142  0.45729656  0.45199387  0.45113142]
 ```
+
 Same as above, computing the features and the scores separately for more control:
 
 ```python

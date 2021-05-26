@@ -83,6 +83,8 @@ def create_readme_snippet(readmefile_content):
             yield TAG
             yield "```\n%s\n```" % (str(output).strip())
 
+        yield ""
+
     if last_end < len(readmefile_content):
         out = readmefile_content[last_end:].strip()
         if out:
