@@ -10,7 +10,10 @@ It might happen that [saved models](https://scikit-learn.org/stable/modules/mode
 
 You should regularly install the latest version of `sklearn` and then run tests to see if 
 everything is ok. If not, create a new model (see below) and move the current 
-outdated one into its folder with the version compatibility, e.g. `sklearn<=0.22.1`
+outdated one into its folder with the 3 digits version compatibility, e.g. `sklearn<0.22.1`.
+After that, check `model.py` to load that model
+only if the spcific scikit version is installed (you will probably need to add an `elif` to the already implemented `if` branches)
+
 
 ### Changelog
 
