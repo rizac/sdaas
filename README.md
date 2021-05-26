@@ -279,3 +279,7 @@ print(aa_scores(feats))
 ```
 [ 0.45729656  0.45199387  0.45113142  0.45729656  0.45199387  0.45113142]
 ```
+
+### For developers
+
+Please consult the [README](./sdaas/core/models) explaining how to manage create new scikit-learn models
