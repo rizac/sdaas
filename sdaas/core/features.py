@@ -12,7 +12,7 @@ Created on 18 Jun 2020
 """
 import numpy as np
 
-from sdaas.core.psd import psd_values
+from sdaas.core.psd import trace_psd
 
 
 PSD_PERIODS_SEC = (5.,)  # use floats for safety (numpy cast errors?)
@@ -144,7 +144,7 @@ def trace_features(trace, metadata):
     :return: a 1-length numpy float array of shape (1,) representing the trace
         features vector
     """
-    return psd_values(FEATURES, trace, metadata)
+    return trace_psd(trace, metadata, FEATURES)[0]
 
 
 def trace_idfeatures(trace, metadata, idfunc=_get_id):
@@ -166,7 +166,7 @@ def trace_idfeatures(trace, metadata, idfunc=_get_id):
     :return: the tuple `(id, features)` where id is the trace id and features
         is a numpy array of length 1 representing the trace features vector
     """
-    return idfunc(trace), psd_values(FEATURES, trace, metadata)
+    return idfunc(trace), trace_psd(trace, metadata, FEATURES)[0]
 
 
 def featappend(features1, features2):

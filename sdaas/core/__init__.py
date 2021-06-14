@@ -4,7 +4,7 @@ from .model import (aa_scores,
                     traces_idscores,
                     streams_scores,
                     streams_idscores)
-from .psd import psd_values
+from .psd import psd, trace_psd
 from .features import (trace_features,
                        trace_idfeatures,
                        traces_features,
