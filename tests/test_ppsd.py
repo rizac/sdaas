@@ -15,6 +15,7 @@ from obspy.core.stream import read, Stream
 from obspy.core.inventory.inventory import read_inventory
 from obspy.signal.spectral_estimation import PPSD
 
+from sdaas.core import trace_psd
 from sdaas.core.model import aa_scores
 from sdaas.core.features import traces_features
 
@@ -32,6 +33,8 @@ class Test(unittest.TestCase):
         and the original evaluation algorithm (see _old class) produce the same
         results with scores that do not differ by more than 0.01 (roughly)
         """
+        psd_periods_to_test = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10,
+                               15, 20]
         feats_rtol = 0.01  # 1e-2
         scores_rtol = 0.013  # 1.2e-2  #
         dataroot = join(dirname(__file__), 'data')
@@ -79,6 +82,14 @@ class Test(unittest.TestCase):
                 feats_old2 = np.asarray([_old_psd_values([5], _, metadata)
                                         for _ in stream])
                 assert np.allclose(feats, feats_old2, rtol=1.e-8)
+
+                # test actually that more PSDs are the same (not only at the
+                # feature(s) computed above)
+                for _ in stream:
+                    _psds_old = _old_psd_values(psd_periods_to_test, _,
+                                                metadata)
+                    _psds_new = trace_psd(_, metadata, psd_periods_to_test)[0]
+                    assert np.allclose(_psds_old, _psds_new, equal_nan=True)
 
 
 class obspyPSD:
