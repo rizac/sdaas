@@ -27,7 +27,8 @@ from sdaas.core.features import trace_idfeatures
 from sdaas.core.model import aa_scores, load_default_trained_model
 from sdaas.cli.utils import ansi_colors_escape_codes, ProgressBar
 from sdaas.cli.fdsn import get_querydict, get_dataselect_url,\
-    get_station_url, is_fdsn_dataselect_url, is_fdsn, get_station_urls
+    get_station_url, is_fdsn_dataselect_url, is_fdsn, get_station_urls, \
+    datetime_fromisoformat
 
 
 def process(data, metadata='', threshold=-1.0, aggregate='',
@@ -428,8 +429,8 @@ def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
     args = get_querydict(station_url)
     yielded = 0
     total_time = 0
-    start, end = datetime.fromisoformat(args['start']), \
-        datetime.fromisoformat(args['end'])
+    start, end = datetime_fromisoformat(args['start']), \
+        datetime_fromisoformat(args['end'])
     total_period = end - start
     wcount = int(total_period.total_seconds() / float(wlen_sec))
     if wcount < 1:

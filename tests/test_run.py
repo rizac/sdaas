@@ -14,6 +14,7 @@ from io import StringIO
 
 from sdaas.run import process, is_threshold_set
 from sdaas.cli.utils import ansi_colors_escape_codes
+from sdaas.cli.fdsn import datetime_fromisoformat
 
 
 def check_output(output, threshold=-1, sep=None, expected_rows=None):
@@ -60,8 +61,8 @@ def check_output(output, threshold=-1, sep=None, expected_rows=None):
     assert all(len(row) == numcols for row in out)
     # check datetimes:
     for row in out:
-        datetime.fromisoformat(row[1])
-        datetime.fromisoformat(row[2])
+        datetime_fromisoformat(row[1])
+        datetime_fromisoformat(row[2])
     # check colors are printed:
     if colors:
         for row in out:

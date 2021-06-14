@@ -68,8 +68,10 @@ Few hints here:
 #### Run tests (optional)
 
 ```bash
-python -m unittest         
+python -m unittest -f
 ```
+
+(`-f` is optional and means: stop at first failure)
 
 ## Usage
 

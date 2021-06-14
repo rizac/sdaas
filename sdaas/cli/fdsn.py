@@ -11,6 +11,35 @@ from urllib import parse, request
 from datetime import datetime
 
 
+# Backward compatibility with Python 3.6.9:
+try:
+    datetime.fromisoformat
+
+    # Nothing raised, define datetime_fromisoformat as simple wrapper around
+    # datetime.fromisoformat:
+    def datetime_fromisoformat(iso_formatted_dtime):
+        """Same as datetime.fromisoformat"""
+        return datetime.fromisoformat(iso_formatted_dtime)
+
+except AttributeError:  # Python 3.6.9:
+    def datetime_fromisoformat(iso_formatted_dtime):
+        """Return a datetime from the given ISO formatted string.
+        For backward compatibility with Python<3.7
+        """
+        sep = 'T' if 'T' in iso_formatted_dtime else ' '
+        for frmt in ["%Y-%m-%d{0}%H:%M:%S".format(sep),
+                     "%Y-%m-%d{0}%H:%M:%S.%f".format(sep),
+                     "%Y-%m-%d"]:
+            # to make this method fully compatible with Py3.7, we should allow
+            # either 3 or 6 digits after the seconds. Unfortunately, this was
+            # not supported and we have only the "%f" option (1 to 6 digits)
+            try:
+                return datetime.strptime(iso_formatted_dtime, frmt)
+            except Exception:
+                pass
+        raise ValueError("Invalid isoformat string: '%s'" % iso_formatted_dtime)
+
+
 fdsn_re = '[a-zA-Z_]+://.+?/fdsnws/(?:station|dataselect)/\\d/query?.*'
 
 
@@ -66,7 +95,7 @@ def get_querydict(url):
                 if params[0] in ('start', 'end'):
                     # check datetime (just a check, keep str as value)
                     try:
-                        datetime.fromisoformat(ret[params[0]])
+                        datetime_fromisoformat(ret[params[0]])
                     except Exception:
                         raise ValueError(f'Invalid date-time in "{params[0]}"')
             except KeyError:
@@ -75,8 +104,8 @@ def get_querydict(url):
         # little check:
         if 'start' in ret:
             now = datetime.utcnow().isoformat()
-            if datetime.fromisoformat(ret['start']) >= \
-                    datetime.fromisoformat(ret.get('end', now)):
+            if datetime_fromisoformat(ret['start']) >= \
+                    datetime_fromisoformat(ret.get('end', now)):
                 raise ValueError(f'Invalid time range, check (start, end) in {url}')
     except (KeyError, ValueError) as exc:
         raise ValueError(f'{str(exc)}. URL: {url}')
