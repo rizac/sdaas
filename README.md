@@ -39,15 +39,20 @@ where you cloned this repository (last argument of `git clone`),
 
 3. Install the program (one line command):
 
+    with [requirements file](https://pip.pypa.io/en/stable/user_guide/#requirements-files):
+    ```
+    pip install --upgrade pip setuptools && pip install -r ./requirements.txt && pip install -e .
+    ```
+    
+    or standard (note: use this mainly if you have an existing virtualenv and you want to
+    limit conflicts by avoid overwriting libraries already matching the required version) :
+    
     ```
     pip install --upgrade pip setuptools && pip install "numpy>=1.15.4" && pip install -e .
     ```
     
     -e is optional. With -e, you can update the installed program to the latest release
-     by simply issuing a `git pull`. Without `-e`, you need to pull and re-install: 
-    `pip install --force .` An alternative installation is to use the
-    [requirements file](https://pip.pypa.io/en/stable/user_guide/#requirements-files)
-    then extract numpy from it and then run `pip install -r ./requirements.txt`
+     by simply issuing a `git pull`
 
 <details>
 <summary>Reported scikit learn installation problems (click for details)</summary>
