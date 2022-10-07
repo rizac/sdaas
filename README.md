@@ -14,6 +14,12 @@ or to check the correctness of the metadata fields (e.g. Station inventory xml)
 by checking the anomaly score on a set of station recordings. 
 
 
+** Citation
+
+Riccardo Zaccarelli, Dino Bindi, Angelo Strollo; Anomaly Detection in Seismic Data–Metadata Using Simple Machine‐Learning Models. Seismological Research Letters 2021;; 92 (4): 2627–2639. doi: https://doi.org/10.1785/0220200339
+
+
+
 ## Installation
 
 Always work within a virtual environment. From a terminal, in the directory
