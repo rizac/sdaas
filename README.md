@@ -44,8 +44,9 @@ where you cloned this repository (last argument of `git clone`),
     pip install --upgrade pip setuptools && pip install -r ./requirements.txt && pip install -e .
     ```
     
-    or standard (note: use this mainly if you have an existing virtualenv and you want to
-    limit conflicts by avoid overwriting libraries already matching the required version) :
+    or standard (note: use it mainly if you install sdaas with existing software 
+    on an already existing virtualenv. This install checks the `setup.py` file 
+    and avoids overwriting libraries already matching the required version) :
     
     ```
     pip install --upgrade pip setuptools && pip install "numpy>=1.15.4" && pip install -e .
