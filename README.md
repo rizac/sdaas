@@ -44,16 +44,21 @@ where you cloned this repository (last argument of `git clone`),
     pip install --upgrade pip setuptools && pip install -r ./requirements.txt && pip install -e .
     ```
     
-    or standard (note: use it mainly if you install sdaas with existing software 
-    on an already existing virtualenv. This install checks the `setup.py` file 
-    and avoids overwriting libraries already matching the required version) :
+    or standard (use this mainly if you install sdaas on an already existing virtualenv
+    and you are concerned about breaking existing code):
     
     ```
     pip install --upgrade pip setuptools && pip install "numpy>=1.15.4" && pip install -e .
     ```
     
-    -e is optional. With -e, you can update the installed program to the latest release
-     by simply issuing a `git pull`
+    Notes:
+    
+    - The "standard" install actually checks the `setup.py` file 
+      and avoids overwriting libraries already matching the required version. The downside is
+      that you might use library version that were not tested
+    
+    - `-e` is optional. With -e, you can update the installed program to the latest release
+      by simply issuing a `git pull`
 
 <details>
 <summary>Reported scikit learn installation problems (click for details)</summary>
