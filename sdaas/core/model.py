@@ -214,7 +214,7 @@ FILE_NAME = ('clf=IsolationForest&'
 try:
     import sklearn
     import joblib
-    sklearn_imported = False
+    sklearn_imported = True
 except ImportError:
     sklearn_imported = False
 
