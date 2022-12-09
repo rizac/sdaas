@@ -21,4 +21,4 @@ scipy==1.6.3
 six==1.16.0
 SQLAlchemy==1.4.15
 threadpoolctl==2.1.0
-urllib3==1.26.4
+urllib3==1.26.5
