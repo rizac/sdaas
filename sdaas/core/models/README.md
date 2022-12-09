@@ -7,9 +7,12 @@
 [maintainability issues](https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations):
   - avoided increase considerably this repo size (model files are relatively big)
 
-The only problem of this new approach is that multi feature(s) models in the future
-might be virtually impossible. For this reason, we leave this document as remainder
-to describe how to create new model(s) in the future
+Note that this new approach has the drawback of making the serialization
+of multi feature(s) models non trivial, if needed. 
+
+<details>
+<summary>Sklearn backward incompatibility and Changelog (not maintained anymore)</summary>
+
 
 ## Backward incompatibility
 
@@ -27,6 +30,8 @@ only if the spcific scikit version is installed (you will probably need to add a
 
 - `sklearn=0.22`: Refactored private modules, backward incompatible: dumped models with v<0.22 can not be loaded: https://scikit-learn.org/stable/whats_new/v0.22.html#clear-definition-of-the-public-api |
 - `sklearn=0.24.2`: Changed `ExtraTreeRegressor`, dumped models are loaded but with `UserWarning: Trying to unpickle estimator ExtraTreeRegressor from version 0.24.1 when using version 0.24.2. This might lead to breaking code or invalid results. Use at your own risk.`
+
+</details>
 
 ## Create models
 
