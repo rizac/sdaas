@@ -1,0 +1,24 @@
+certifi==2020.12.5
+chardet==4.0.0
+cycler==0.10.0
+decorator==5.0.9
+future==0.18.2
+greenlet==1.1.0
+idna==2.10
+joblib==1.0.1
+kiwisolver==1.3.1
+lxml==4.6.3
+matplotlib==3.4.2
+numpy==1.20.3
+obspy==1.2.2
+Pillow==8.2.0
+pyparsing==2.4.7
+python-dateutil==2.8.1
+requests==2.25.1
+scikit-learn==0.24.2
+scipy==1.6.3
+# -e git+https://github.com/rizac/sdaas.git@7916835e9be01b53823238cc0cb0873021f2439f#egg=sdaas
+six==1.16.0
+SQLAlchemy==1.4.15
+threadpoolctl==2.1.0
+urllib3==1.26.4
