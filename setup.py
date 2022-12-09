@@ -15,8 +15,7 @@ setup(
     # Minimal requirements, for a complete list see requirements-*.txt
     install_requires=[
         'numpy>=1.15.4',
-        'obspy>=1.1.1',
-        'scikit-learn>=0.21.3'
+        'obspy>=1.1.1'
     ],
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
@@ -26,7 +25,9 @@ setup(
         # 'jupyter': [
         #     'jupyter>=1.1.0'
         # ],
-        'test': []
+        'dev': [
+            'scikit-learn>=0.21.3'
+        ]
     },
     author='riccardo zaccarelli',
     author_email='',  # FIXME: what to provide?

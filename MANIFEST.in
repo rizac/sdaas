@@ -1,1 +1,1 @@
-include sdaas/core/models/*.sklmodel
+include sdaas/core/models/*.csv

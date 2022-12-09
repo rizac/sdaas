@@ -16,7 +16,6 @@ Created on 18 Jun 2020
 from os.path import join, dirname
 
 import numpy as np
-from joblib import load
 # from sklearn.ensemble.iforest import IsolationForest
 
 from sdaas.core.features import (FEATURES, _get_id, traces_idfeatures,
@@ -191,15 +190,6 @@ def _reshape_feature_space(features):
         features = features.reshape((len(features), 1))
     return features
 
-
-def _aa_scores(features, model):
-    """Compute the anomaly scores of the Isolation Forest model for the given
-    `features` (a numpy matrix of Nx1 elements), element wise. Features must
-    NOT be NaN (this is not checked for)
-    """
-    return -model.score_samples(features)
-
-
 # def create_model(n_estimators=100, max_samples=1024, contamination='auto',
 #                  behaviour='new', **kwargs):
 #     # IsolationForest might be relatively long to load, import it here
@@ -214,11 +204,58 @@ def _aa_scores(features, model):
 DEFAULT_TRAINED_MODEL = None
 
 
-# lazy load DEFAULT_TRAINED_MODEL
-def load_default_trained_model():
-    global DEFAULT_TRAINED_MODEL
-    DEFAULT_TRAINED_MODEL = load(get_model_file_path())
-    return DEFAULT_TRAINED_MODEL
+try:
+    from sklearn import __version__ as skl_version
+    from joblib import load
+    sklearn_imported = True
+except ImportError:
+    sklearn_imported = False
+
+
+if not sklearn_imported:
+    def load_default_trained_model():
+        x, y = [], []
+        import csv
+        with open(get_model_file_path() + '.csv', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                x.append(float(row['psd@5sec']))
+                y.append(float(row['psd@amplitude_anomaly_score']))
+        global DEFAULT_TRAINED_MODEL
+        DEFAULT_TRAINED_MODEL = {
+            'psd@5sec': np.asarray(x),
+            'amplitude_anomaly_score': np.asarray(y)
+        }
+        return DEFAULT_TRAINED_MODEL
+
+    def _aa_scores(features, model):
+        """Compute the anomaly scores by interpolating the values of a single feature
+        Isolation Forest for the given `features` (a numpy matrix of Nx1 elements),
+        element wise. Features must NOT be NaN (this is not checked for)
+        """
+        return np.interp(np.flatten(features), model['psd@5sec'],
+                         model['amplitude_anomaly_score'])
+
+else:
+    try:
+        _sklearn_version_tuple = tuple(int(_) for _ in skl_version.split('.'))
+    except (ValueError, TypeError):
+        _sklearn_version_tuple = None
+
+    DEFAULT_TRAINED_MODEL = None
+
+    # lazy load DEFAULT_TRAINED_MODEL
+    def load_default_trained_model():
+        global DEFAULT_TRAINED_MODEL
+        DEFAULT_TRAINED_MODEL = load(get_model_file_path() + '.sklmodel')
+        return DEFAULT_TRAINED_MODEL
+
+    def _aa_scores(features, model):
+        """Compute the anomaly scores of the Isolation Forest model for the given
+        `features` (a numpy matrix of Nx1 elements), element wise. Features must
+        NOT be NaN (this is not checked for)
+        """
+        return -model.score_samples(features)
 
 
 def get_model_file_path():
@@ -229,10 +266,9 @@ def get_model_file_path():
                  'contamination=auto&'
                  'max_samples=4096&'
                  'n_estimators=50&'
-                 'random_state=11'
-                 '.sklmodel')
+                 'random_state=11')
     # modify root_dir or file_name according to sklearn version:
-    version = _get_sklearn_version_tuple()
+    version = _sklearn_version_tuple
     if version is not None:
         if version < (0, 22):
             root_dir = join(root_dir, 'sklearn<0.22.0')
@@ -243,17 +279,9 @@ def get_model_file_path():
                          'contamination=auto&'
                          'max_samples=4096&'
                          'n_estimators=50&'
-                         'random_state=11'
-                         '.sklmodel')
+                         'random_state=11')
         elif version < (0, 24, 2):
             root_dir = join(root_dir, 'sklearn<0.24.2')
 
     return join(root_dir, file_name)
 
-
-def _get_sklearn_version_tuple():
-    try:
-        from sklearn import __version__
-        return tuple(int(_) for _ in __version__.split('.'))
-    except (ImportError, ValueError, TypeError):
-        return None

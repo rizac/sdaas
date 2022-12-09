@@ -1,7 +1,15 @@
 # Sdaas models
 
-This is the folder where the scikit models (IsolationForest) are stored as files.
-**WARNING**: git add and commit only used models, as they might be heavy in size!
+~~This is the folder where the scikit models (IsolationForest) are stored as files.~~
+**WARNING** As of 2023, models are stored as CSV. This approach has several pros:
+  - removed scikit as dependency 
+  - avoided several 
+[maintainability issues](https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations):
+  - avoided increase considerably this repo size (model files are relatively big)
+
+The only problem of this new approach is that multi feature(s) models in the future
+might be virtually impossible. For this reason, we leave this document as remainder
+to describe how to create new model(s) in the future
 
 ## Backward incompatibility
 
