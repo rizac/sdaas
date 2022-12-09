@@ -57,9 +57,9 @@ from joblib import dump
 # print(sklearn.__version__)  # e.g., '0.24.2'
 
 # path of training set (pandas DataFrame: one row per sample, one column per feature):
-TRSET_PATH = '.../sdaas_eval/sdaas_eval/_datasets/uniform_train.hdf'
+TRSET_PATH = '[nextcloud_directory]/rizac/sod_datasets_..etal_2021/uniform_train.hdf'
 # Path of trained classifier (serialized sklearn object)
-CLF_PATH = '.../core/models/clf=IsolationForest&tr_set=uniform_train.hdf&feats=psd@5sec&contamination=auto&max_samples=4096&n_estimators=50&random_state=11.sklmodel'
+CLF_PATH = '../core/models/clf=IsolationForest&tr_set=uniform_train.hdf&feats=psd@5sec&contamination=auto&max_samples=4096&n_estimators=50&random_state=11.sklmodel'
 
 # Load dataframe (The classifier requires only 1 feature and no label column, so load
 # only 1 column 'psd@5sec'):

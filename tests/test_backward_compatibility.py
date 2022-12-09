@@ -7,7 +7,7 @@ import numpy as np, csv
 
 
 from sdaas.core import aa_scores
-from sdaas.core.model import load_default_trained_model, get_model_file_path
+from sdaas.core.model import load_default_trained_model
 
 
 @unittest.skip("dropped sklearn dependency")
@@ -21,6 +21,7 @@ class Test(unittest.TestCase):
 
     @patch('sdaas.core.model._get_sklearn_version_tuple')
     def test_load_model(self, mock_sklearn_version):
+        from sdaas.core.model import get_model_file_path
         previos_model_path = None
         for skverison in [(0, 21, 3),
                           (0, 22),

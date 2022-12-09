@@ -202,25 +202,34 @@ def _reshape_feature_space(features):
 
 
 DEFAULT_TRAINED_MODEL = None
-
+ROOT_DIR = join(dirname(__file__), 'models')
+FILE_NAME = ('clf=IsolationForest&'
+             'tr_set=uniform_train.hdf&'
+             'feats=psd@5sec&'
+             'contamination=auto&'
+             'max_samples=4096&'
+             'n_estimators=50&'
+             'random_state=11')
 
 try:
-    from sklearn import __version__ as skl_version
-    from joblib import load
-    sklearn_imported = True
+    import sklearn
+    import joblib
+    sklearn_imported = False
 except ImportError:
     sklearn_imported = False
 
 
 if not sklearn_imported:
+
     def load_default_trained_model():
         x, y = [], []
         import csv
-        with open(get_model_file_path() + '.csv', newline='') as csvfile:
+        model_file_path = join(ROOT_DIR, FILE_NAME) + ".scores.csv"
+        with open(model_file_path, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 x.append(float(row['psd@5sec']))
-                y.append(float(row['psd@amplitude_anomaly_score']))
+                y.append(float(row['amplitude_anomaly_score']))
         global DEFAULT_TRAINED_MODEL
         DEFAULT_TRAINED_MODEL = {
             'psd@5sec': np.asarray(x),
@@ -233,22 +242,17 @@ if not sklearn_imported:
         Isolation Forest for the given `features` (a numpy matrix of Nx1 elements),
         element wise. Features must NOT be NaN (this is not checked for)
         """
-        return np.interp(np.flatten(features), model['psd@5sec'],
+        return np.interp(features.flatten(), model['psd@5sec'],
                          model['amplitude_anomaly_score'])
 
 else:
-    try:
-        _sklearn_version_tuple = tuple(int(_) for _ in skl_version.split('.'))
-    except (ValueError, TypeError):
-        _sklearn_version_tuple = None
-
-    DEFAULT_TRAINED_MODEL = None
 
     # lazy load DEFAULT_TRAINED_MODEL
     def load_default_trained_model():
         global DEFAULT_TRAINED_MODEL
-        DEFAULT_TRAINED_MODEL = load(get_model_file_path() + '.sklmodel')
+        DEFAULT_TRAINED_MODEL = joblib.load(get_model_file_path() + '.sklmodel')
         return DEFAULT_TRAINED_MODEL
+
 
     def _aa_scores(features, model):
         """Compute the anomaly scores of the Isolation Forest model for the given
@@ -258,30 +262,27 @@ else:
         return -model.score_samples(features)
 
 
-def get_model_file_path():
-    root_dir = join(dirname(__file__), 'models')
-    file_name = ('clf=IsolationForest&'
-                 'tr_set=uniform_train.hdf&'
-                 'feats=psd@5sec&'
-                 'contamination=auto&'
-                 'max_samples=4096&'
-                 'n_estimators=50&'
-                 'random_state=11')
-    # modify root_dir or file_name according to sklearn version:
-    version = _sklearn_version_tuple
-    if version is not None:
-        if version < (0, 22):
-            root_dir = join(root_dir, 'sklearn<0.22.0')
-            file_name = ('clf=IsolationForest&' \
-                         'tr_set=uniform_train.hdf&'
-                         'feats=psd@5sec&'
-                         'behaviour=new&'
-                         'contamination=auto&'
-                         'max_samples=4096&'
-                         'n_estimators=50&'
-                         'random_state=11')
-        elif version < (0, 24, 2):
-            root_dir = join(root_dir, 'sklearn<0.24.2')
+    def get_model_file_path():
+        root_dir = ROOT_DIR
+        file_name = FILE_NAME
+        # modify root_dir or file_name according to sklearn version:
+        try:
+            _sklearn_version_tuple = tuple(int(_) for _ in sklearn.__version__.split('.'))
+        except (ImportError, ValueError, TypeError):
+            _sklearn_version_tuple = None
+        if _sklearn_version_tuple is not None:
+            if _sklearn_version_tuple < (0, 22):
+                root_dir = join(root_dir, 'sklearn<0.22.0')
+                file_name = ('clf=IsolationForest&' \
+                             'tr_set=uniform_train.hdf&'
+                             'feats=psd@5sec&'
+                             'behaviour=new&'
+                             'contamination=auto&'
+                             'max_samples=4096&'
+                             'n_estimators=50&'
+                             'random_state=11')
+            elif _sklearn_version_tuple < (0, 24, 2):
+                root_dir = join(root_dir, 'sklearn<0.24.2')
 
-    return join(root_dir, file_name)
+        return join(root_dir, file_name)
 

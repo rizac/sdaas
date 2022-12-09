@@ -59,6 +59,13 @@ where you cloned this repository (last argument of `git clone`),
     
     - `-e` is optional. With -e, you can update the installed program to the latest release
       by simply issuing a `git pull`
+      
+    - although used to train, test and generate the underlying model,
+      `scikit learn` is not required for Security & maintainability 
+      limitations. If you want to install it, type 
+      `pip install scikit-learn>=0.21.3` or, in the
+      standard installation you can include scikit learn
+      with `pip install .[dev]` instead of `pip install .`
 
 <details>
 <summary>Reported scikit learn installation problems (click for details)</summary>
@@ -85,10 +92,10 @@ Few hints here:
 #### Run tests (optional)
 
 ```bash
-python -m unittest -f
+python -m unittest -fv
 ```
 
-(`-f` is optional and means: stop at first failure)
+(`-f` is optional and means: stop at first failure, `-v`: verbose)
 
 ## Usage
 
@@ -301,6 +308,9 @@ Then `output` is:
 [0.45729656, 0.45199387, 0.45113142, 0.45729656, 0.45199387, 0.45113142]
 ```
 
-## For developers
+## For maintainers
 
-Please consult the [README](./sdaas/core/models) explaining how to manage create new scikit-learn models
+Although scikit learn is not used anymore for
+[maintainability limitations](https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations), 
+you can always consult the [README](./sdaas/core/models) 
+explaining how to manage create new scikit-learn models.

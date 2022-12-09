@@ -36,7 +36,7 @@ class Test(unittest.TestCase):
         psd_periods_to_test = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10,
                                15, 20]
         feats_rtol = 0.01  # 1e-2
-        scores_rtol = 0.013  # 1.2e-2  #
+        scores_rtol = 0.015  # 1.2e-2  #
         dataroot = join(dirname(__file__), 'data')
         for file, inv in (
             [
