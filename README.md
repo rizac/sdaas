@@ -17,8 +17,8 @@ This program can be used:
  - in any processing pipeline to
    - pre-filter out a set of malformed waveforms
    - assign robustness weights
- - as station installation / metadata checker, by computing several 
-   waveforms scores and observing their temporal trends (see figure)
+ - as station installation / metadata checker, by analyzing several 
+   waveforms and observing their temporal trends (see figure)
 
 
 
