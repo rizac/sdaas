@@ -8,13 +8,15 @@ seismic waveform amplitude, e.g.:
  - broken sensor (e.g. digitizer noise)
  - metadata field errors (e.g. wrong stage gain in StationXML)
 
+<img align="right" width="50%" src="outlierspaper-img008.png">
+
 This program can be used to:
  - filter out a set of malformed waveforms,
  - assign robustness weights
  - check the correctness of a station installation by checking the anomaly 
    score on a set of station recordings (See next below) 
 
-<img align="right" width="27%" src="outlierspaper-img008.png">
+
 
 For any waveform analyzed, **the resulting anomaly score in [0, 1] represents 
 the degree of belief of a waveform to be an outlier**. 
