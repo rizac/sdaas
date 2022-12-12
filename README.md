@@ -2,9 +2,37 @@
 
 **S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core
 
+Simple, general and flexible tool for the identification of anomalies in 
+seismic waveform amplitude, e.g.:
+ - recording artifacts (e.g., anomalous peaks, gaps, spikes)
+ - broken sensor (e.g. digitizer noise)
+ - metadata field errors (e.g. wrong stage gain in StationXML)
+
+This program can be used to:
+ - filter out a set of malformed waveforms,
+ - assign robustness weights
+ - check the correctness of a station installation by checking the anomaly 
+   score on a set of station recordings (See next below) 
+
+<img align="right" width="27%" src="outlierspaper-img008.png">
+
+For any waveform analyzed, **the resulting anomaly score in [0, 1] represents 
+the degree of belief of a waveform to be an outlier**. 
+
+Scores interpretation: 
+  - scores <= 0.5 can be safely interpreted in all 
+    applications as denoting "no significant anomaly"
+  - in the practice, scores most likely span the range [0.4, 0.8]. This is not 
+    an artifact, but a well known behaviour of underlying machine learning 
+    algorithm (Isolation Forest). As such, if scores are computed to discard 
+    malformed waveforms, the threshold to be set is application dependent 
+    (experimentally, we often found it to be between 0.7 and 0.75)
+
+<!--
 <img align="right" width="27%" src="outlierspaper-img004.png"><img align="right"  width="29%" src="outlierspaper-img005.png">
 
-Simple program to compute amplitude anomaly scores (in [0, 1]) of seismic data and metadata.
+Simple program to compute amplitude anomaly scores (in [0, 1]) of seismic 
+data and metadata.
 Given a set of waveforms and their metadata, it removes the waveform response
 and returns the anomaly score of the waveforms amplitudes.
 
@@ -12,7 +40,7 @@ This program can be used to filter out a set of malformed waveforms,
 assign robustness weights
 or to check the correctness of the metadata fields (e.g. Station inventory xml)
 by checking the anomaly score on a set of station recordings. 
-
+-->
 
 ** Citation
 
