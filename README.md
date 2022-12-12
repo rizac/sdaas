@@ -13,25 +13,28 @@ seismic waveform amplitude, e.g.:
  - sensor problems (e.g. digitizer noise)
  - metadata field errors (e.g. wrong stage gain in StationXML)
 
-This program can be used:
+**For any waveform analyzed, the program computes an amplitude anomaly 
+score in [0, 1] representing 
+the degree of belief of a waveform to be an outlier**. The score
+can be used:
  - in any processing pipeline to
-   - pre-filter out a set of malformed waveforms
+   - pre-filter malformed data via a user-defined threshold
    - assign robustness weights
- - as station installation / metadata checker, by analyzing several 
-   waveforms and observing their temporal trends (see figure)
+ - as station installation / metadata checker, leveraging the scores
+   temporal trends (see e.g., figure 1st row)
 
+Notes:
 
-
-For any waveform analyzed, **the resulting anomaly score in [0, 1] represents 
-the degree of belief of a waveform to be an outlier**:
+This program uses a machine learning algorithm specifically designed
+for outlier detection (Isolation forest) where
 
   - scores <= 0.5 can be safely interpreted in all 
-    applications as denoting "no significant anomaly"
-  - in the practice, scores most likely span the range [0.4, 0.8]. This is not 
-    an artifact, but a well known behaviour of underlying machine learning 
-    algorithm (Isolation Forest). As such, if scores are computed to discard 
-    malformed waveforms, the threshold to be set is application dependent 
-    (experimentally, we often found it to be between 0.7 and 0.75)
+    applications as "no significant anomaly", with no distinction
+    on the actual score value.
+  - extreme score values are virtually impossible [by design](https://scikit-learn.org/stable/modules/calibration.html).
+    This has to be considered when setting
+    a user defined threshold T to discard malformed waveforms. In many application, setting T between 0.7 and 0.75 has proven
+    to be a good compromise between [precision and recall (F1 score)](https://scikit-learn.org/stable/modules/model_evaluation.html#precision-recall-f-measure-metrics).
 
 <!--
 <img align="right" width="27%" src="outlierspaper-img004.png"><img align="right"  width="29%" src="outlierspaper-img005.png">
