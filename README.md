@@ -1,5 +1,8 @@
 # sdaas
 
+|Jump to: | [Citation](#citation) | [Installation](#installation) | [Usage](#usage) |
+| - | - | - |
+
 <!-- **S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core -->
 
 <img align="right" width="55%" src="outlierspaper-img008.png">
@@ -43,7 +46,7 @@ or to check the correctness of the metadata fields (e.g. Station inventory xml)
 by checking the anomaly score on a set of station recordings. 
 -->
 
-** Citation
+## Citation
 
 Riccardo Zaccarelli, Dino Bindi, Angelo Strollo; Anomaly Detection in Seismic Data–Metadata Using Simple Machine‐Learning Models. Seismological Research Letters 2021;; 92 (4): 2627–2639. doi: https://doi.org/10.1785/0220200339
 
@@ -126,8 +129,8 @@ python -m unittest -fv
 
 (`-f` is optional and means: stop at first failure, `-v`: verbose)
 
-## Usage
 
+## Usage
 
 ### As command line application
 
