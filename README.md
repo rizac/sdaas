@@ -5,7 +5,7 @@
 
 <!-- **S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core -->
 
-<img align="right" width="55%" src="outlierspaper-img008.png">
+<img align="right" width="50%" src="outlierspaper-img008.png">
 
 Simple, general and flexible tool for the identification of anomalies in 
 seismic waveform amplitude, e.g.:
