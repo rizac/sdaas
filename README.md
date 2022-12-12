@@ -1,14 +1,14 @@
 # sdaas
 
-**S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core
+<!-- **S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core -->
+
+<img align="right" width="50%" src="outlierspaper-img008.png">
 
 Simple, general and flexible tool for the identification of anomalies in 
 seismic waveform amplitude, e.g.:
  - recording artifacts (e.g., anomalous peaks, gaps, spikes)
  - broken sensor (e.g. digitizer noise)
  - metadata field errors (e.g. wrong stage gain in StationXML)
-
-<img align="right" width="50%" src="outlierspaper-img008.png">
 
 This program can be used to:
  - filter out a set of malformed waveforms,
