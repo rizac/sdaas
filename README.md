@@ -10,10 +10,8 @@
 Simple, general and flexible tool for the identification of anomalies in 
 seismic waveform amplitude, e.g.:
  - recording artifacts (e.g., anomalous peaks, gaps, spikes)
- - broken sensor (e.g. digitizer noise)
+ - sensor problems (e.g. digitizer noise)
  - metadata field errors (e.g. wrong stage gain in StationXML)
-
-  or as 
 
 This program can be used:
  - in any processing pipeline to
