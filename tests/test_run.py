@@ -22,14 +22,14 @@ def check_output(output, threshold=-1, sep=None, expected_rows=None):
     out = output.strip().split('\n')
     ptr = '\\s+' if not sep else sep
     out = [re.split(ptr, (_.strip() if not sep else _)) for _ in out]
-    if not sep:
-        # datetimes are printed with the space, we have to join
-        # four "fake" col into 2 columns:
-        out2 = []
-        for _ in out:
-            line = [_[0], _[1] + ' ' + _[2], _[3] + ' ' + _[4]] + _[5:]
-            out2.append(line)
-        out = out2
+    # if not sep:  # NOT ANYMORE:
+    #     # datetimes are printed with the space, we have to join
+    #     # four "fake" col into 2 columns:
+    #     out2 = []
+    #     for _ in out:
+    #         line = [_[0], _[1] + ' ' + _[2], _[3] + ' ' + _[4]] + _[5:]
+    #         out2.append(line)
+    #     out = out2
     if expected_rows is not None:  # check num of rows (if given)
         assert len(out) == expected_rows
     is_th_set = is_threshold_set(threshold)
@@ -98,10 +98,10 @@ class Test(unittest.TestCase):
 
     @property
     def stdout(self):
-        '''
+        """
         return the captured stdout and resets it so that calling again
         this method  will only return new captured output
-        '''
+        """
         ret = self._stdout.getvalue()
         # Truncate and reset (https://stackoverflow.com/a/4330829):
         self._stdout.truncate(0)
@@ -110,10 +110,10 @@ class Test(unittest.TestCase):
 
     @property
     def stderr(self):
-        '''
+        """
         return the captured stdout and resets it so that calling again
         this method will only return new captured output
-        '''
+        """
         ret = self._stderr.getvalue()
         # Truncate and reset (https://stackoverflow.com/a/4330829):
         self._stderr.truncate(0)
@@ -121,9 +121,9 @@ class Test(unittest.TestCase):
         return ret
 
     def test_run_from_data_dir(self):  # , mock_ansi_colors_escape_codes_supported):
-        '''
+        """
         tests scores from several files in directory
-        '''
+        """
         with patch('sdaas.run.ansi_colors_escape_codes.are_supported_on_current_terminal',
                    side_effect=lambda *a, **kw: True):
             for th in [0.5, 0]:
@@ -135,10 +135,10 @@ class Test(unittest.TestCase):
                     check_output(captured, th, sep, expected_rows=6)
 
     def test_run_from_data_file(self):
-        '''
+        """
         tests a particular case of station download from geofon.
         Needs internet connection
-        '''
+        """
         with patch('sdaas.run.ansi_colors_escape_codes.are_supported_on_current_terminal',
                    side_effect=lambda *a, **kw: True):
             for th in [0.5, 0]:
