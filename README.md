@@ -2,7 +2,7 @@
 
 <!-- **S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core -->
 
-<img align="right" width="50%" src="outlierspaper-img008.png">
+<img align="right" width="55%" src="outlierspaper-img008.png">
 
 Simple, general and flexible tool for the identification of anomalies in 
 seismic waveform amplitude, e.g.:
@@ -14,14 +14,13 @@ This program can be used to:
  - filter out a set of malformed waveforms,
  - assign robustness weights
  - check the correctness of a station installation by checking the anomaly 
-   score on a set of station recordings (See next below) 
+   score on a set of station recordings (See figure) 
 
 
 
 For any waveform analyzed, **the resulting anomaly score in [0, 1] represents 
-the degree of belief of a waveform to be an outlier**. 
+the degree of belief of a waveform to be an outlier**:
 
-Scores interpretation: 
   - scores <= 0.5 can be safely interpreted in all 
     applications as denoting "no significant anomaly"
   - in the practice, scores most likely span the range [0.4, 0.8]. This is not 
