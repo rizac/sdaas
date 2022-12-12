@@ -13,11 +13,14 @@ seismic waveform amplitude, e.g.:
  - broken sensor (e.g. digitizer noise)
  - metadata field errors (e.g. wrong stage gain in StationXML)
 
-This program can be used to:
- - filter out a set of malformed waveforms,
- - assign robustness weights
- - check the correctness of a station installation by checking the anomaly 
-   score on a set of station recordings (See figure) 
+  or as 
+
+This program can be used:
+ - in any processing pipeline to
+   - pre-filter out a set of malformed waveforms
+   - assign robustness weights
+ - as station installation / metadata checker, by computing several 
+   waveforms scores and observing their temporal trends (see figure)
 
 
 
@@ -99,27 +102,27 @@ where you cloned this repository (last argument of `git clone`),
       standard installation you can include scikit learn
       with `pip install .[dev]` instead of `pip install .`
 
-<details>
-<summary>Reported scikit learn installation problems (click for details)</summary>
-
-Due to the specific version to be installed,
-scikit might have problems installing. 
-
-Few hints here:
-- you might need to preinstall `cython` (`pip install cython`)
-- you might need to `brew install libomp`, set the follwing env variables:
-  ```
-  export CC=/usr/bin/clang;export CXX=/usr/bin/clang++;export CPPFLAGS="$CPPFLAGS -Xpreprocessor -fopenmp";export CFLAGS="$CFLAGS -I/usr/local/opt/libomp/include";export CXXFLAGS="$CXXFLAGS -I/usr/local/opt/libomp/include";export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/local/opt/libomp/lib -L/usr/local/opt/libomp/lib -lomp"
-  ```
-- and then install with the following flags:
-  ```
-  pip install --verbose --no-build-isolation "scikit-learn==0.21.3"
-  ```
-
-**(For any further detail, see
-[scikit-learn installation page](https://scikit-learn.org/dev/developers/advanced_installation.html))**
-
-</details>
+      <details>
+      <summary>Reported scikit learn installation problems (click for details)</summary>
+      
+      Due to the specific version to be installed,
+      scikit might have problems installing. 
+      
+      Few hints here:
+      - you might need to preinstall `cython` (`pip install cython`)
+      - you might need to `brew install libomp`, set the follwing env variables:
+        ```
+        export CC=/usr/bin/clang;export CXX=/usr/bin/clang++;export CPPFLAGS="$CPPFLAGS -Xpreprocessor -fopenmp";export CFLAGS="$CFLAGS -I/usr/local/opt/libomp/include";export CXXFLAGS="$CXXFLAGS -I/usr/local/opt/libomp/include";export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/local/opt/libomp/lib -L/usr/local/opt/libomp/lib -lomp"
+        ```
+      - and then install with the following flags:
+        ```
+        pip install --verbose --no-build-isolation "scikit-learn==0.21.3"
+        ```
+      
+      **(For any further detail, see
+      [scikit-learn installation page](https://scikit-learn.org/dev/developers/advanced_installation.html))**
+      
+      </details>
 
 #### Run tests (optional)
 

@@ -167,11 +167,11 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
     if not kount:
         echo('Nothing to process found')
     else:
-        echo('Output columns: | waveform_id | waveform_start | '
-             'waveform_end | anomaly_score'
-             f"{' | anomaly' if is_threshold_set(threshold) else ''}"
-             ' |')
-    out = sio.getvalue().strip()  # remove last newline
+        sep = separator or ' '
+        echo(f'waveform_id{sep}waveform_start{sep}'
+             f'waveform_end{sep}anomaly_score'
+             f"{sep + 'anomaly' if is_threshold_set(threshold) else ''}")
+    out = sio.getvalue().rstrip()  # remove last newline
     if out:
         print(out, file=sys.stdout)
     echo('Done')
@@ -210,14 +210,14 @@ def print_result(src: str, trace_id: str, trace_start: datetime,
 
     if not separator:
         # format for readability:
-        trace_start = f'{trace_start.isoformat(" "):<26}'
-        trace_end = f'{trace_end.isoformat(" "):<26}'
+        trace_start = f'{trace_start.isoformat():<26}'
+        trace_end = f'{trace_end.isoformat():<26}'
     else:
         # format for CSV
         trace_start = f'{trace_start.isoformat()}'
         trace_end = f'{trace_end.isoformat()}'
 
-    sep = separator or '  '
+    sep = separator or ' '
 
     print(
         f'{trace_id}{sep}{trace_start}{sep}{trace_end}{sep}{score_str}'
