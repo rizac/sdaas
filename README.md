@@ -1,7 +1,7 @@
 # sdaas
 
 |Jump to: | [Citation](#citation) | [Installation](#installation) | [Usage](#usage) |
-| - | - | - |
+| - | - | - | - |
 
 <!-- **S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core -->
 
