@@ -9,16 +9,11 @@ Created on 28 Sep 2020
 @author: Riccardo Z. <rizac@gfz-potsdam.de>
 """
 import os
-import re
 import sys
 import numpy as np
 import unittest
 from io import StringIO
 from os.path import join, dirname, relpath, abspath, basename
-import json
-
-from obspy.core.stream import read
-from obspy.core.inventory.inventory import read_inventory
 
 
 class Test(unittest.TestCase):
