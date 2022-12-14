@@ -46,10 +46,10 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
     Each waveform will be printed to stdout as a row of a tabular output with
     columns
     "waveform_id" "waveform_start" "waveform_end" "anomaly_score"
-    and optionally "threshold_exceeded" (see 'threshold' argument). The output
-    can be redirected to produce e.g, CSV files (see 'sep' argument). In this
+    and optionally "threshold_exceeded" (see 'threshold' option). The output
+    can be redirected to produce e.g, CSV files (see 'sep' option). In this
     case, note that the progress bar and all additional messages (if 'verbose'
-    is on) are printed to stderr and thus not written to file.
+    option is set) are printed to stderr and thus not written to file.
 
     :param data: the data to be tested. In conjunction with 'metadata', the
         following combinations of options are valid (note that urls below must
@@ -61,10 +61,10 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
                   directory (scan and test all .mseed files therein), or
                   url (e.g. http://service.iris.edu/fdsnws/dataselect/1/...)
         metadata: file (.xml), or
-                  url (e.g. http://service.iris.edu/fdsnws/station/1/...), or
-                  missing/not provided (in this case, 'data' must be an url, or
+                  url (e.g. http://service.iris.edu/fdsnws/station/1/...).
+                  If missing, then `data` must be a url or
                   a directory containing also a StationXML file with extension
-                  .xml. In any other case an error is raised)
+                  .xml. In any other case an error is raised
 
         To test anomalies in metadata:
         ------------------------------
@@ -77,24 +77,25 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
                   "good" or "bad" metadata, respectively
         metadata: ignored (if provided, a conflict error is raised)
 
-    :param metadata: the metadata, as path to a file (Station XML), or url. See
-        the 'data' argument
+    :param metadata: the metadata, as path to a file (Station XML), or url. Not
+        required in those cases where it can be inferred (see the 'data' argument
+        for details)
 
     :param threshold: decision threshold T. When 0 < T < 1, then scores > T
         will be classified as anomaly (and thus scores<=T as regular data), and
         an additional column 'threshold_exceeded' with values 0 (False) or 1 (True)
         will be shown. See notes above about the anomaly score for details. This
         parameter defaults to -1 (do not set the decision threshold). Otherwise,
-        when a threshold is given, if the 'sep' argument is not provided and the
+        when a threshold is given, if the 'sep' option is not provided and the
         terminal is interactive, then scores will be colored according to the derived
         class (0 or 1)
 
     :param aggregate: the aggregate function to use (median, mean, min, max).
-        If given, each output row will denote a channel (identified by its
-        <net.sta.loc.cha> code) and its anomaly score will be the given
-        aggregate function computed on all channel's waveforms. The default
-        when missing (empty string) means: no aggregation (display one waveform
-        per row). If given, the output column "anomaly_score" will be renamed as
+        Defaults to "" (no aggregation) meaning that each output row represents
+        the score of a single waveform. Otherwise, if given, each output row
+        will denote a channel (identified by its <net.sta.loc.cha> code) and its
+        anomaly score will be the given aggregate function computed on all
+        channel's waveforms. The column "anomaly_score" will also be renamed as
         "{aggregate}_anomaly_score" (e.g. "min_anomaly_score")
 
     :param sep: the column separator, particularly useful if the output must be
@@ -116,10 +117,10 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
         controls the download execution time. Used only when testing anomalies
         in metadata (see `data` argument), ignored otherwise. Default: 30
 
-    :param verbose: (boolean flag) increase verbosity. When given, errors (e.g.
-        while reading data) will be printed to stderr. Also in this case, the
-        tabular output header will be printed to stdout instead of stderr
-        (this is useful to create CSV files with headers)
+    :param verbose: (boolean flag) increase verbosity. When given, additional
+        info and errors will be printed to stderr. Also in this case, the
+        tabular output header will be printed to stdout instead of stderr,
+        which is useful to create CSV files with headers
     """
     separator = sep
     sort_by_time = True
