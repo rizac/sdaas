@@ -32,9 +32,10 @@ for outlier detection (Isolation forest) where
     applications as "no significant anomaly", with no distinction
     on the actual score value.
   - extreme score values are virtually impossible [by design](https://scikit-learn.org/stable/modules/calibration.html).
-    This has to be considered when setting
-    a user defined threshold T to discard malformed waveforms. In many application, setting T between 0.7 and 0.75 has proven
-    to be a good compromise between [precision and recall (F1 score)](https://scikit-learn.org/stable/modules/model_evaluation.html#precision-recall-f-measure-metrics).
+    This has to be considered when setting a user defined threshold T to 
+    discard malformed waveforms. In many application, setting T between 0.7 and 
+    0.75 has proven to be a good compromise between 
+    [precision and recall (F1 score)](https://scikit-learn.org/stable/modules/model_evaluation.html#precision-recall-f-measure-metrics).
 
 <!--
 <img align="right" width="27%" src="outlierspaper-img004.png"><img align="right"  width="29%" src="outlierspaper-img005.png">
@@ -96,11 +97,11 @@ where you cloned this repository (last argument of `git clone`),
     Notes:
     
     - The "standard" install actually checks the `setup.py` file 
-      and avoids overwriting libraries already matching the required version. The downside is
-      that you might use library version that were not tested
+      and avoids overwriting libraries already matching the required version. 
+      The downside is that you might use library version that were not tested
     
-    - `-e` is optional. With -e, you can update the installed program to the latest release
-      by simply issuing a `git pull`
+    - `-e` is optional. With -e, you can update the installed program to the 
+      latest release by simply issuing a `git pull`
       
     - although used to train, test and generate the underlying model,
       `scikit learn` is not required for Security & maintainability 
@@ -170,7 +171,7 @@ prints additional info before the scores table)*
 
 Compute scores from randomly selected segments of a given station and channel,
 and provide also a user-defined threshold (parameter `-th`) which will also 
-add an additional last column "class_label" (1 = outlier - assigned to scores 
+append a column "class_label" (1 = outlier - assigned to the scores 
 greater than the threshold and 0 = inlier)
 
 ```bash
@@ -214,21 +215,24 @@ Same as above, but save the scores table to CSV via the parameter `-sep` and
 [████████████████████████████████████████████████████████████]100%  0d 00:00:00
 ```
 *in this case, providing `-v` / verbose will also redirect the header row to
-CSV. Note that only the scores table is output to `stdout`, everything else is printed to 
-`stderr` and thus should still be visible on the terminal, as in the example above*
+CSV. Note that only the scores table is output to `stdout`, everything else is 
+printed to `stderr` and thus should still be visible on the terminal, as in the 
+example above*
 
 ### As library in your Python code
 
 This software can also be used as library in Python code (e.g. Jupyter Notebook)
-to work with [ObsPy](https://docs.obspy.org/) objects (ObsPy is already included in the installation):
-assuming you have one or more [Stream](https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html)
+to work with [ObsPy](https://docs.obspy.org/) objects (ObsPy is already included 
+in the installation): assuming you have one or more 
+[Stream](https://docs.obspy.org/packages/autogen/obspy.core.stream.Stream.html)
 or [Trace](https://docs.obspy.org/packages/autogen/obspy.core.trace.Trace.html),
-with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.html), then
+with relative [Inventory](https://docs.obspy.org/packages/obspy.core.inventory.html), 
+then
 
 <!-- IMPORTANT: -->
-<!-- EACH "```python...```" code snippet is executed also in `test_and_create_code_snippet`
-to check that it works. If you implement new snippets here, add them in the test file as wll
--->
+<!-- EACH "```python...```" code snippet is executed also in 
+`test_and_create_code_snippet` to check that it works. If you implement new 
+snippets here, add them in the test file as well -->
 
 Compute the scores in a stream or iterable of traces (e.g. list. tuple, generator),
 returning the score of each Trace:
@@ -296,7 +300,8 @@ Then `output` is:
 (['GE.FLT1..HHE', 'GE.FLT1..HHN', 'GE.FLT1..HHZ'], array([ 0.45729656,  0.45199387,  0.45113142]))
 ```
 
-You can also compute scores and ids from iterables of streams (e.g., when reading from files)...
+You can also compute scores and ids from iterables of streams (e.g., when 
+reading from files)...
 
 ```python
 from sdaas.core import streams_scores
@@ -333,7 +338,8 @@ Then `output` is:
 [ 0.45729656  0.45199387  0.45113142  0.45729656  0.45199387  0.45113142]
 ```
 
-Same as above, computing the features and the scores separately for more control:
+Same as above, computing the features and the scores separately for more 
+control:
 
 ```python
 from obspy.core.inventory.inventory import read_inventory
