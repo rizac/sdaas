@@ -99,25 +99,27 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
 
     :param sep: the column separator, particularly useful if the output must be
         redirected to file. E.g., for CSV-formatted output set 'sep' to comma
-        "," or  semicolon ";". Default is the empty string, meaning that 'sep'
-        is computed each time to align columns and provide a more readable
-        output). If this argument is set, nothing will be printed in colors
+        "," or  semicolon ";". Default is " ". If this argument is explicitly
+        set, nothing will be printed in colors
 
     :param waveform_length: length (in seconds) of the waveforms to download
-        and test. Used only when testing anomalies in metadata (see 'data'),
-        ignored otherwise. Default: 120
+        and test. Used only when testing anomalies in metadata (see `data`
+        argument), ignored otherwise. Default: 120
 
     :param download_count: maximum number of downloads to attempt while
         fetching waveforms to test. In conjunction with 'download_timeout',
         controls the download execution time. Used only when testing anomalies
-        in metadata (see 'data'), ignored otherwise. Default: 5
+        in metadata (see `data` argument), ignored otherwise. Default: 5
 
     :param download_timeout: maximum time (in seconds) to spend when
         downloading waveforms to test. In conjunction with 'waveform_count',
         controls the download execution time. Used only when testing anomalies
-        in metadata (see 'data'), ignored otherwise. Default: 30
+        in metadata (see `data` argument), ignored otherwise. Default: 30
 
-    :param verbose: (boolean flag) increase verbosity
+    :param verbose: (boolean flag) increase verbosity. When given, errors (e.g.
+        while reading data) will be printed to stderr. Also in this case, the
+        tabular output header will be printed to stdout instead of stderr
+        (this is useful to create CSV files with headers)
     """
     separator = sep
     sort_by_time = True
@@ -148,7 +150,7 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
     if verbose:
         print(f'Data    : "{data}"', file=sys.stderr)
         print(f'Metadata: "{metadata}"'
-              f'{" will be inferred when possible" if not metadata else ""}',
+              f'{" (will be inferred when possible)" if not metadata else ""}',
               file=sys.stderr)
 
     rows = streamiterator.process(sort_by_time=sort_by_time and not aggregate,
@@ -161,17 +163,14 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
         score_caption = 'anomaly_score'
         if aggregate:
             score_caption = f'{aggregate}_{score_caption}'
-        if verbose:
-            th_set = is_threshold_set(threshold)
-            print(f'waveform_id{sep}waveform_start{sep}'
-                  f'waveform_end{sep}{score_caption}'
-                  f"{sep + 'threshold_exceeded' if th_set else ''}",
-                  file=sys.stderr)
+        th_set = is_threshold_set(threshold)
+        print(f'waveform_id{sep}waveform_start{sep}'
+              f'waveform_end{sep}{score_caption}'
+              f"{sep + 'threshold_exceeded' if th_set else ''}",
+              file=sys.stderr if not verbose else sys.stdout)
         for row in rows:
             print_result(row['id'], row['start'], row['end'], row[aggregate or 'score'],
                          threshold, separator, file=sys.stdout)
-    if verbose:
-        print('Done', file=sys.stderr)
 
 
 def is_remote_url(path_or_url):
@@ -200,8 +199,8 @@ def print_result(trace_id: str, trace_start: datetime,
 
     print(
         f'{trace_id}{sep}'
-        f'{trace_start.isoformat()}{sep}'
-        f'{trace_end.isoformat()}{sep}'
+        f'{trace_start.isoformat(timespec="milliseconds")}{sep}'
+        f'{trace_end.isoformat(timespec="milliseconds")}{sep}'
         f'{score_str}{sep if outlier_str else ""}'
         f'{outlier_str}',
         file=file
