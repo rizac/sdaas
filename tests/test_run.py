@@ -14,11 +14,10 @@ from io import StringIO
 
 from sdaas.run import process, is_threshold_set
 from sdaas.cli.utils import ansi_colors_escape_codes
-from sdaas.cli.fdsn import datetime_fromisoformat
 
 
-def check_output(output, threshold=-1, sep=None, expected_rows=None):
-    '''checks the string output of a score calculation from the command line'''
+def check_output(output, threshold=-1., sep=None, expected_rows=None):
+    """check the string output of a score calculation from the command line"""
     out = output.strip().split('\n')
     ptr = '\\s+' if not sep else sep
     out = [re.split(ptr, (_.strip() if not sep else _)) for _ in out]
@@ -42,7 +41,7 @@ def check_output(output, threshold=-1, sep=None, expected_rows=None):
                 replace(ansi_colors_escape_codes.OKGREEN, '').\
                 replace(ansi_colors_escape_codes.WARNING, '')
         _ = float(score_str)  # check score is a float
-        assert _ > 0.3 and _ < 0.9  # check score is meaningful (heuristically)
+        assert 0.3 < _ < 0.9  # check score is meaningful (heuristically)
     numcols = 4
     if is_th_set:
         for row in out:
@@ -61,8 +60,8 @@ def check_output(output, threshold=-1, sep=None, expected_rows=None):
     assert all(len(row) == numcols for row in out)
     # check datetimes:
     for row in out:
-        datetime_fromisoformat(row[1])
-        datetime_fromisoformat(row[2])
+        datetime.fromisoformat(row[1])
+        datetime.fromisoformat(row[2])
     # check colors are printed:
     if colors:
         for row in out:
@@ -122,7 +121,7 @@ class Test(unittest.TestCase):
 
     def test_run_from_data_dir(self):  # , mock_ansi_colors_escape_codes_supported):
         """
-        tests scores from several files in directory
+        test scores from several files in directory
         """
         with patch('sdaas.run.ansi_colors_escape_codes.are_supported_on_current_terminal',
                    side_effect=lambda *a, **kw: True):
@@ -136,7 +135,7 @@ class Test(unittest.TestCase):
 
     def test_run_from_data_file(self):
         """
-        tests a particular case of station download from geofon.
+        test a particular case of station download from geofon.
         Needs internet connection
         """
         with patch('sdaas.run.ansi_colors_escape_codes.are_supported_on_current_terminal',
@@ -162,16 +161,13 @@ class Test(unittest.TestCase):
     def test_run_from_data_dir_bad_inventory(self):
 
         # wrong metadata:
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(ValueError) as context:
             process(join(self.datadir, 'testdir1'),
-                    metadata=join(self.datadir, 'inventory_GE.APE.xml'),
-                    capture_stderr=False)
+                    metadata=join(self.datadir, 'inventory_GE.APE.xml'))
 
         # no metadata found in directory
-        with self.assertRaises(Exception) as context:
-            process(join(self.datadir, 'testdir2'),
-                    # metadata=join(self.datadir, 'inventory_GE.APE.xml'),
-                    capture_stderr=False)
+        with self.assertRaises(ValueError) as context:
+            process(join(self.datadir, 'testdir2'))
 
     def test_run_from_http(self):
         url = ('http://geofon.gfz-potsdam.de/fdsnws/station/1/'
@@ -196,8 +192,7 @@ class Test(unittest.TestCase):
         url = ("http://geofon.gfz-potsdam.de/fdsnws/station/1/"
                "query?net=CX&sta=PB*&cha=BE?,BH?,BN?"
                "&start=2020-09-14&end=2020-09-24")
-        process(url, aggregate='median',
-                download_count=10)
+        process(url, aggregate='median', download_count=4)
         capt = self.stdout
         check_output(capt)
         # print(capt)

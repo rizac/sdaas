@@ -8,36 +8,33 @@ from argparse import RawTextHelpFormatter
 from collections import defaultdict
 import sys
 import re
-import time
 import inspect
 from typing import TextIO
-from io import StringIO
+from io import BytesIO
 import warnings
 from datetime import timedelta, datetime
 from os.path import isdir, splitext, isfile, join, abspath, basename
 from os import listdir
-from urllib.error import HTTPError
-from requests.exceptions import HTTPError as RequestsHTTPError
+from urllib import request
 
 import numpy as np
 from obspy.core.stream import read
 from obspy.core.inventory.inventory import read_inventory
 
-from sdaas.core.features import trace_idfeatures
-from sdaas.core.model import aa_scores, load_default_trained_model
+from sdaas.core import traces_scores
+from sdaas.core.model import load_default_trained_model
 from sdaas.cli.utils import ansi_colors_escape_codes, ProgressBar
-from sdaas.cli.fdsn import get_querydict, get_dataselect_url,\
-    get_station_url, is_fdsn_dataselect_url, is_fdsn, get_station_urls, \
-    datetime_fromisoformat
+from sdaas.cli import fdsn
 
 
 def process(data, metadata='', threshold=-1.0, aggregate='',
             waveform_length=120,  # in sec
             download_count=5, download_timeout=30,  # in sec
             sep='', verbose=False):
-    """Compute and prints the amplitude anomaly scores of each waveform segment
-    in 'data'. Anomalies are typically due to artifacts in the data (e.g.
-    spikes, zero-amplitude signals) or in the metadata (e.g. stage gain errors).
+    """Compute and print the amplitude anomaly scores of each waveform segment
+    in 'data'. Anomalies are typically due to broken sensor, artifacts in the data
+    (e.g. spikes, zero-amplitude signals, unusual noise) or in the metadata (e.g.,
+    stage gain errors).
 
     The anomaly score is a number in [0, 1] (0: regular waveform or inlier,
     1: anomaly, or outlier) where 0.5 represents the theoretical decision
@@ -49,8 +46,8 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
     Each waveform will be printed to stdout as a row of a tabular output with
     columns
     "waveform_id" "waveform_start" "waveform_end" "anomaly_score"
-    and optionally "anomaly" (see 'threshold' argument). The output can be
-    redirected to produce e.g, CSV files (see 'sep' argument). In this
+    and optionally "threshold_exceeded" (see 'threshold' argument). The output
+    can be redirected to produce e.g, CSV files (see 'sep' argument). In this
     case, note that the progress bar and all additional messages (if 'verbose'
     is on) are printed to stderr and thus not written to file.
 
@@ -85,14 +82,11 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
 
     :param threshold: decision threshold T. When 0 < T < 1, then scores > T
         will be classified as anomaly (and thus scores<=T as regular data), and
-        an additional column 'anomaly' with values 0 (False) or 1 (True) will
-        be shown. The algorithm default theoretical T=0.5 is generally ok for
-        a fast estimation, although for a more fine grained classification we
-        suggest to tune and set the optimal T empirically (e.g., in two use
-        cases we observed the optimal T to be between 0.5 and 0.6). Default is
-        -1 (do not set the decision threshold). Otherwise, when a threshold is
-        given, if the 'sep' argument is not provided and the terminal
-        is interactive, then scores will be colored according to the derived
+        an additional column 'threshold_exceeded' with values 0 (False) or 1 (True)
+        will be shown. See notes above about the anomaly score for details. This
+        parameter defaults to -1 (do not set the decision threshold). Otherwise,
+        when a threshold is given, if the 'sep' argument is not provided and the
+        terminal is interactive, then scores will be colored according to the derived
         class (0 or 1)
 
     :param aggregate: the aggregate function to use (median, mean, min, max).
@@ -100,7 +94,8 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
         <net.sta.loc.cha> code) and its anomaly score will be the given
         aggregate function computed on all channel's waveforms. The default
         when missing (empty string) means: no aggregation (display one waveform
-        per row)
+        per row). If given, the output column "anomaly_score" will be renamed as
+        "{aggregate}_anomaly_score" (e.g. "min_anomaly_score")
 
     :param sep: the column separator, particularly useful if the output must be
         redirected to file. E.g., for CSV-formatted output set 'sep' to comma
@@ -127,12 +122,12 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
     separator = sep
     sort_by_time = True
 
-    if not verbose:
-        def echo(*args, **kwargs):
-            pass
-    else:
-        def echo(*args, **kwargs):
-            print(*args, **kwargs, file=sys.stderr)
+    # Remove URL file prefix from paths (shouldn't be any, but let's be safe):
+    file_prefix = "file://"
+    if data and data.startswith(file_prefix):
+        data = data[len(file_prefix):]
+    if metadata and metadata.lower().startswith(file_prefix):
+        metadata = metadata[len(file_prefix):]
 
     is_dir = isdir(data)
     is_file = not is_dir and isfile(data)  # splitext(data)[1].lower() == '.mseed'
@@ -144,57 +139,50 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
     if is_dir:
         streamiterator.add_dir(data, metadata or None)
     elif is_file:
-        streamiterator.add_file(data, metadata or None)
-    elif is_fdsn(data):
-        streamiterator.add_url(data, metadata, waveform_length, download_count,
-                               download_timeout)
+        streamiterator.add_files([data], metadata or None)
+    elif is_remote_url(data):
+        streamiterator.add_url(data, metadata, waveform_length, download_count)
     else:
         raise ValueError(f'Invalid file/directory/FDSN url: {data}')
 
-    echo(f'Data    : "{data}"')
-    echo(f'Metadata: "{metadata}"')
+    if verbose:
+        print(f'Data    : "{data}"', file=sys.stderr)
+        print(f'Metadata: "{metadata}"'
+              f'{" will be inferred when possible" if not metadata else ""}',
+              file=sys.stderr)
 
-    sio = StringIO()
-    kount = 0
-    for _ in streamiterator.process(sort_by_time=sort_by_time and not aggregate,
-                                    aggregate=aggregate,
-                                    progress=sys.stderr,
-                                    info=None if not verbose else sys.stderr):
-        for id_, score_ in _:
-            kount += 1
-            print_result(*id_, score_, threshold, separator, file=sio)
-    # echo('Computing anomaly score(s) in [0, 1]:')
-    if not kount:
-        echo('Nothing to process found')
-    else:
+    rows = streamiterator.process(sort_by_time=sort_by_time and not aggregate,
+                                  aggregate=aggregate,
+                                  progressbar_output=sys.stderr,
+                                  info_output=None if not verbose else sys.stderr,
+                                  download_timeout=download_timeout)
+    if rows:
         sep = separator or ' '
-        echo(f'waveform_id{sep}waveform_start{sep}'
-             f'waveform_end{sep}anomaly_score'
-             f"{sep + 'anomaly' if is_threshold_set(threshold) else ''}")
-    out = sio.getvalue().rstrip()  # remove last newline
-    if out:
-        print(out, file=sys.stdout)
-    echo('Done')
+        score_caption = 'anomaly_score'
+        if aggregate:
+            score_caption = f'{aggregate}_{score_caption}'
+        if verbose:
+            th_set = is_threshold_set(threshold)
+            print(f'waveform_id{sep}waveform_start{sep}'
+                  f'waveform_end{sep}{score_caption}'
+                  f"{sep + 'threshold_exceeded' if th_set else ''}",
+                  file=sys.stderr)
+        for row in rows:
+            print_result(row['id'], row['start'], row['end'], row[aggregate or 'score'],
+                         threshold, separator, file=sys.stdout)
+    if verbose:
+        print('Done', file=sys.stderr)
 
 
-def print_result(src: str, trace_id: str, trace_start: datetime,
+def is_remote_url(path_or_url):
+    return "://" in path_or_url  # copied from obspy.core.util.base._generic_reader
+
+
+def print_result(trace_id: str, trace_start: datetime,
                  trace_end: datetime, score: float, threshold: float = None,
                  separator: str = None, file: TextIO = sys.stdout):
     """Print a classification result form a single trace"""
-    is_file = src and isfile(src)
-    if is_file:
-        trace_id = join(basename(src), trace_id)
-    # left align trace_id column
-    if not separator:
-        max_traceid_len = 2 + 5 + 2 + 3 + 3  # default traceid length (N.S.L.C)
-        if is_file:
-            max_traceid_len = 25
-        if len(trace_id) > max_traceid_len:
-            prefix = '...'
-            trace_id = '...' + trace_id[-max_traceid_len+len(prefix):]
-        trace_id = ('{:>%d}' % max_traceid_len).format(trace_id)
-
-    score_str = f'{score:4.2f}'
+    score_str = f'{score:.2f}'
     outlier_str = ''
     th_set = is_threshold_set(threshold)
     if th_set:
@@ -208,20 +196,14 @@ def print_result(src: str, trace_id: str, trace_start: datetime,
             score_str = f'{colorstart}{score_str}{colorend}'
             outlier_str = f'{colorstart}{outlier_str}{colorend}'
 
-    if not separator:
-        # format for readability:
-        trace_start = f'{trace_start.isoformat():<26}'
-        trace_end = f'{trace_end.isoformat():<26}'
-    else:
-        # format for CSV
-        trace_start = f'{trace_start.isoformat()}'
-        trace_end = f'{trace_end.isoformat()}'
-
     sep = separator or ' '
 
     print(
-        f'{trace_id}{sep}{trace_start}{sep}{trace_end}{sep}{score_str}'
-        f'{sep if outlier_str else ""}{outlier_str}',
+        f'{trace_id}{sep}'
+        f'{trace_start.isoformat()}{sep}'
+        f'{trace_end.isoformat()}{sep}'
+        f'{score_str}{sep if outlier_str else ""}'
+        f'{outlier_str}',
         file=file
     )
 
@@ -230,62 +212,97 @@ def is_threshold_set(threshold):
     return 0 < threshold < 1
 
 
-def read_metadata(path_or_url):
-    try:
-        return read_inventory(path_or_url, format="STATIONXML")
-    except Exception as exc:
-        raise Exception(f'Invalid station (xml) file: {str(exc)}\n'
-                        f'(path/url: {path_or_url})')
+def download(url, timeout=None):
+    """obspy creates Temporary files when supplying URLs for miniSEED
+    (same for inventories?). So let's handle this here
+    """
+    with request.urlopen(request.Request(url), timeout=timeout or 30) as resp:
+        bio = BytesIO()
+        while True:
+            chunk = resp.read(1024)
+            if not chunk:
+                break
+            bio.write(chunk)
+        bio.seek(0)
+        return bio
 
 
-def read_data(path_or_url, format='MSEED', headonly=False, **kwargs):  # @ReservedAssignment
-    try:
-        return read(path_or_url, format=format, headonly=headonly, **kwargs)
-    except Exception as exc:
-        raise Exception(f'Invalid waveform (mseed) file: {str(exc)}\n'
-                        f'(path/url: {path_or_url})')
+def read_metadata(path_or_url, download_timeout=None):
+    """wrapper around obspy read_inventory because the latter creates a temporary
+    file if the input is a remote url
+    """
+    if is_remote_url(path_or_url):
+        path_or_url = download(path_or_url, download_timeout)  # -> BytesIO
+    return read_inventory(path_or_url, format="STATIONXML")
 
 
-class StreamIterator(dict):
+def read_data(path_or_url, format='MSEED', headonly=False, download_timeout=None,
+              **kwargs): # noqa
+    """wrapper around obspy read because the latter creates a temporary
+    file if the input is a remote url
+    """
+    if is_remote_url(path_or_url):
+        path_or_url = download(path_or_url, download_timeout)  # -> BytesIO
+    return read(path_or_url, format=format, headonly=headonly, **kwargs)
+
+
+class StreamIterator:
     """Class for iterating over given data and metadata arguments, either
     given as files / directory or URLs
     """
     def __init__(self):
-        self._data = []
+        # metadata url or path mapped to a list of waveform url(s) or path(s):
+        self._data = defaultdict(list)
+        # ObSpy response cache:
+        self._metadata_cache = {}
 
-    def add_url(self, url, metadata_path,
-                waveform_length, download_count, download_timeout):
+    def add_url(self, url, metadata_path, waveform_length, download_count):
         """Add a new FDSN URL, either station or dataselect. In the former
         case, the last three parameters control what segment waveform to
         download, and how
         """
-        if is_fdsn_dataselect_url(url):
-            metadata_path = get_station_url(get_querydict(url),
-                                            level='response')
-            self._add_files(url, [url], metadata_path)
+        station_url, dataselect_url = fdsn.get_station_and_dataselect_urls(url)
+
+        if url == dataselect_url:
+            if not metadata_path:
+                params = {p: v for p, v in fdsn.querydict(url).items()
+                          if p in fdsn.DEFAULT_PARAMS}
+                params['level'] = 'response'
+                metadata_path = fdsn.build_url(station_url, **params)
+            self._data[metadata_path].append(url)
             return
 
         if metadata_path:
             raise ValueError('Conflict: with a station url '
                              'you cannot also provide the "metadata" '
                              'argument')
+        params = fdsn.querydict(url)
+        params['level'] = 'response'
+        params.pop('format', None)
+        metadata_path = fdsn.build_url(station_url, **params)
 
-        # echo(f'{len(station_urls)} station(s) to check')
-        # qdic = get_querydict(url)
-        for station_url in get_station_urls(url):
-            qdic = get_querydict(station_url)
-            # normalize metadata URL (e.g., add level=response, endtime=now etcetera):
-            metadata_path = get_station_url(qdic, level='response')
-            data = get_dataselect_url(qdic)
-            iter_stream = download_streams(data, waveform_length,
-                                           download_count,
-                                           download_timeout)
-            self._add_item(station_url, iter_stream, metadata_path,
-                           download_count)
+        for dataselect_url in fdsn.get_dataselect_urls(url):
+            params = fdsn.querydict(dataselect_url)
+            start = datetime.fromisoformat(params['start'])
+            end = datetime.fromisoformat(params['end'])
+            total_seconds = (end - start).total_seconds()
+            wlen = timedelta(seconds=float(waveform_length))
+            max_download_count = int(total_seconds / wlen.total_seconds())
+            if max_download_count < 1:
+                raise ValueError(f'Total download period (~={int(total_seconds)}s) < '
+                                 f'download window ({wlen.total_seconds()}s)')
+            max_download_count = min(max_download_count, download_count)
+            for _ in range(max_download_count):
+                params['start'] = start.replace(microsecond=0).isoformat()
+                params['end'] = (start+wlen).replace(microsecond=0).isoformat()
+                url = fdsn.build_url(dataselect_url,  **params)
+                self._data[metadata_path].append(url)
+                start += timedelta(seconds=total_seconds/max_download_count)
 
     def add_dir(self, path, metadata_path=None):
         """Add a new directory, populated with miniSEED (*.mseed) files
 
+        :param path: path to a direcotry (str)
         :param metadata_path: the optional metadata file path  (*.xml). If None
             (the default) the function tries to search it on the given path
         """
@@ -300,18 +317,9 @@ class StreamIterator(dict):
                 raise ValueError(f'Expected 1 metadata file (Station XML) in '
                                  f'"{basename(path)}", found {len(metadata)}')
             metadata_path = metadata[0]
-        self._add_files(path, filepaths, metadata_path)
+        self.add_files(filepaths, metadata_path)
 
-    def add_file(self, filepath, metadata_path):
-        """Add a miniSEED file with relative metadata path (StationXML)
-        """
-        if not metadata_path:
-            raise ValueError('"metadata" argument required')
-        if not isfile(metadata_path):
-            raise ValueError('File does not exist: %s' % filepath)
-        self._add_files(filepath, [filepath], metadata_path)
-
-    def add_files(self, key, filepaths, metadata_path):
+    def add_files(self, filepaths, metadata_path):
         """Add miniSEED files with relative metadata path (StationXML)"""
         if not filepaths:
             raise FileNotFoundError('No miniseed file provided')
@@ -320,179 +328,100 @@ class StreamIterator(dict):
         if not isfile(metadata_path):
             raise ValueError('No metadata (Station XML) file: %s' %
                              metadata_path)
-        self._add_files(key, filepaths, metadata_path)
-
-    def _add_files(self, key, filepaths, metadata_path):
-        self._add_item(key, ((_, read_data(_)) for _ in filepaths),
-                       metadata_path, len(filepaths))
-
-    def _add_item(self, key, streamiterator, metadata_path, length):
-        """streamiterator: an iterator of key, Stream tuples"""
-        self._data.append((key, streamiterator, metadata_path, length))
+        for fpath in filepaths:
+            self._data[metadata_path].append(fpath)
 
     def process(self, sort_by_time=False,
                 aggregate: str or None = None,
-                progress: TextIO or None = sys.stderr,
-                info: TextIO or None = None):
-        """Processes all added files/URLs and yields the results"""
+                progressbar_output: TextIO or None = sys.stderr,
+                info_output: TextIO or None = None,
+                download_timeout: int or None = None):
+        """Processes all added files/URLs and return the results"""
         if aggregate:
             aggregates = ('min', 'max', 'median', 'mean')
             if aggregate not in aggregates:
                 raise ValueError(f'"aggregate" not in {str(aggregates)}')
 
-        count, total = 0, sum(_[-1] for _ in self._data)
-        data = {}
-        messages = None if info is None else []
+        rows = []
+        if not self._data:
+            return rows
+
+        # compute pbar step: for any StationXMl/metadata, count 1 (the station download)
+        # + all associated waveforms (also to be downloaded):
+        pbar_step = 1.0/sum(len(waveforms)+1 for waveforms in self._data.values())
+        pbar_val = 0
         # load model now: it takes ~=1 second and is usually lazy loaded,
         # but this means that the progressbar would show misleading results
         # at the beginning
         load_default_trained_model()
-        with ProgressBar(progress) as pbar:
-            # self._data has generally only one element in the current
-            # implementation (see module function `process`), however, it
-            # already supports multiple call of its `add_*` methods above
-            for key, streamiterator, metadata_path, length in self._data:
-                try:
-                    inv = read_inventory(metadata_path)
-                except Exception as exc:
-                    if messages is not None:
-                        messages.append(f'Metadata error, {str(exc)}. {key}')
-                    streamiterator = []  # hack to skip iteration below
+        streams = defaultdict(list)
+        with ProgressBar(progressbar_output) as pbar:
+            for metadata_path, waveform_paths in self._data.items():  # paths or urls
+                pbar_val += pbar_step
+                pbar.set_progress(pbar_val)
+                if metadata_path not in self._metadata_cache:
+                    try:
+                        self._metadata_cache[metadata_path] = \
+                            read_metadata(metadata_path,
+                                          download_timeout=download_timeout)
+                    except Exception as exc:
+                        if info_output:
+                            print(f'Metadata error, {str(exc)}. {metadata_path}',
+                                  file=info_output)
+                        continue
 
-                feats = []
-                ids = []
-                kount = 0
-                try:
-                    for fpath, stream in streamiterator:
-                        kount += 1
-                        for trace in stream:
-                            (id_, st_, et_), feat = trace_idfeatures(trace, inv)
-                            feats.append(feat)
-                            ids.append((fpath, id_, st_, et_))
-
-                except Exception as exc:
-                    if messages is not None:
-                        messages.append(f'{str(exc)}. {key}')
-                        feats = []  # hack to stop after updating the pbar
-
-                count += 1
-                pbar.update(count / total)
-
-                if kount < length:
-                    count += length - kount
-                    pbar.update(count / total)
-
-                if not feats:
+                traces = []
+                for path in waveform_paths:
+                    pbar_val += pbar_step
+                    pbar.set_progress(pbar_val)
+                    try:
+                        for t in read_data(path, download_timeout=download_timeout):
+                            traces.append(t)
+                    except Exception as exc:
+                        if info_output:
+                            print(f'Waveform error, {str(exc)}. {path}',
+                                  file=info_output)
+                if not traces:
                     continue
 
-                scores = aa_scores(np.asarray(feats))
+                scores = traces_scores(traces, self._metadata_cache[metadata_path])
+                for trace, score in zip(traces, scores):
+                    streams[trace.get_id()].append({
+                        'id': trace.get_id(),
+                        'start': trace.stats.starttime.datetime,
+                        'end': trace.stats.endtime.datetime,
+                        'score': score
+                    })
 
-                iter_ = zip(ids, scores)
-                if aggregate:
-                    data = defaultdict(lambda: [None, []])
-                    for (fpath, id_, stime, etime), score in iter_:
-                        timeranges, scores_ = data[id_]
-                        if not timeranges:
-                            data[id_][0] = [stime, etime]
-                        else:
-                            timeranges[0] = min(stime, timeranges[0])
-                            timeranges[1] = max(etime, timeranges[1])
-                        scores_.append(score)
-                    ids = []
-                    scores = []
-                    for id_, (timeranges, scores_) in data.items():
-                        ids.append(('', id_, *timeranges))
-                        scores_ = np.asarray(scores_)
-                        if np.isnan(scores_).all():
-                            scores.append(np.nan)
-                        elif aggregate == 'mean':
-                            scores.append(np.nanmean(scores_))
-                        elif aggregate == 'min':
-                            scores.append(np.nanmin(scores_))
-                        elif aggregate == 'max':
-                            scores.append(np.nanmax(scores_))
-                        else:
-                            scores.append(np.nanmedian(scores_))
+        if not aggregate:
+            for values in streams.values():
+                rows.extend(sorted(values, key=lambda value: value['start']))
+        else:
+            for uid, values in streams.items():
+                scores_ = [value['score'] for value in values]
+                val = np.nan
+                if not np.isnan(scores_).all():
+                    if aggregate == 'mean':
+                        val = np.nanmean(scores_)
+                    elif aggregate == 'min':
+                        val = np.nanmin(scores_)
+                    elif aggregate == 'max':
+                        val = np.nanmax(scores_)
+                    else:
+                        val = np.nanmedian(scores_)
+                rows.append({
+                    'id': uid,
+                    'start': min(value['start'] for value in values),
+                    'end': max(value['end'] for value in values),
+                    aggregate: val
+                })
 
-                    # now sort (if needed) and print them at once:
-                    iter_ = zip(ids, scores)
+            if sort_by_time:
+                rows = sorted(rows, key=lambda _: _['start'])
 
-                if sort_by_time:
-                    yield sorted(iter_, key=lambda _: _[0][1])
-                yield iter_
-
-        for msg in (messages or []):
-            print(msg, file=info)
-
-
-def download_streams(station_url, wlen_sec, wmaxcount, wtimeout_sec):
-    args = get_querydict(station_url)
-    yielded = 0
-    total_time = 0
-    start, end = datetime_fromisoformat(args['start']), \
-        datetime_fromisoformat(args['end'])
-    total_period = end - start
-    wcount = int(total_period.total_seconds() / float(wlen_sec))
-    if wcount < 1:
-        raise ValueError(f'Download period '
-                         f'({int(total_period.total_seconds())}s) '
-                         f'shorter than download window ({wlen_sec}s)')
-    wlen = timedelta(seconds=wlen_sec)
-    chunksize = int(wcount / float(wmaxcount))
-    indices = np.random.choice(chunksize, wmaxcount, replace=False)
-    for i in range(1, len(indices)):
-        indices[i] += chunksize * i
-    timeout_expired = False
-
-    # finds 0, timeout -> raise Timeout
-    # finds any>0, timeout -> ok
-    # finds 0, no timeout -> raise not found
-    # finds any>0, no timeout -> ok
-
-    for i in indices:
-        wstart = start + i * wlen
-        dataselect_url = get_dataselect_url(args, start=wstart,
-                                            end=wstart+wlen)
-        t = time.time()
-        stream = None
-        try:
-            stream = read(dataselect_url)
-        # HERE BELOW TRY TO CATCH HTTPERRORS WITH CLIENT CODE (4xx),
-        # FOR THESE ERRORS RAISE CAUSE IT's MOST LIKELY SOMETHING TO FIX IN
-        # THE URL:
-        except HTTPError as herr1:
-            if herr1.code >= 400 and herr1.code < 500:
-                raise
-        except RequestsHTTPError as herr2:
-            # hacky workaround: herr2 has all members as None, just the string
-            # str(herr2) which is of the form:
-            # 400 HTTP Error:  for url: <URL>
-            # so le't try to infer the code:
-            for _ in str(herr2).split(' '):
-                try:
-                    code = int(_)
-                    if code >= 400 and code < 500:
-                        raise herr2 from None
-                except ValueError:
-                    pass
-        except Exception as exc:  # @UnusedVariable
-            pass
-        total_time += (time.time() - t)
-
-        if stream is not None and len(stream) and \
-                all(len(_.data) for _ in stream):
-            yielded += 1
-            yield dataselect_url, stream
-
-        if total_time > wtimeout_sec:
-            timeout_expired = True
-            break
-
-    if not yielded:
-        raise ValueError(('No waveform data in the specified period, '
-                          'check URL parameters. ') +
-                         (f'Timeout ({wtimeout_sec} s) exceeded'
-                          if timeout_expired else ''))
+        if not rows and info_output:
+            print('No data to analyze found', file=info_output)
+        return rows
 
 
 def getdoc(param=None):
@@ -529,8 +458,6 @@ def cli_entry_point():
         description=getdoc(),
         formatter_class=RawTextHelpFormatter
     )
-    # https://docs.python.org/dev/library/argparse.html#action
-    # https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument
     parser.add_argument('data',  # <- positional argument
                         type=str,
                         # dest='data',  # invalid for positional argument
@@ -568,7 +495,7 @@ def cli_entry_point():
         # add argument to ArgParse:
         parser.add_argument(flag, **kwargs)
 
-    with warnings.catch_warnings(record=False) as wrn:  # @UnusedVariable
+    with warnings.catch_warnings(record=False) as wrn:  # noqa
         # Cause all warnings to always be triggered.
         warnings.simplefilter("ignore")
         # parse arguments and pass them to `process`

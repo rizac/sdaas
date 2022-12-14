@@ -137,14 +137,14 @@ class ProgressBar:
             return
         if exc_type is None:
             # Set to 100% for neatness, if no exception is thrown
-            self.update(1.0)
+            self.set_progress(1.0)
         if not self._text_only:
             # ANSI-output should be rounded off with a newline
             self._target.write('\n')
         self._target.flush()
 
-    def update(self, progress: float):
-        '''0 <= progress <= 1 '''
+    def set_progress(self, progress: float):
+        """0 <= progress <= 1 """
         if not self._target:
             return
         # Update width in case of resize

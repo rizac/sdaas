@@ -11,230 +11,138 @@ from urllib import parse, request
 from datetime import datetime
 
 
-# Backward compatibility with Python 3.6.9:
-try:
-    datetime.fromisoformat
-
-    # Nothing raised, define datetime_fromisoformat as simple wrapper around
-    # datetime.fromisoformat:
-    def datetime_fromisoformat(iso_formatted_dtime):
-        """Same as datetime.fromisoformat"""
-        return datetime.fromisoformat(iso_formatted_dtime)
-
-except AttributeError:  # Python 3.6.9:
-    def datetime_fromisoformat(iso_formatted_dtime):
-        """Return a datetime from the given ISO formatted string.
-        For backward compatibility with Python<3.7
-        """
-        sep = 'T' if 'T' in iso_formatted_dtime else ' '
-        for frmt in ["%Y-%m-%d{0}%H:%M:%S".format(sep),
-                     "%Y-%m-%d{0}%H:%M:%S.%f".format(sep),
-                     "%Y-%m-%d"]:
-            # to make this method fully compatible with Py3.7, we should allow
-            # either 3 or 6 digits after the seconds. Unfortunately, this was
-            # not supported and we have only the "%f" option (1 to 6 digits)
-            try:
-                return datetime.strptime(iso_formatted_dtime, frmt)
-            except Exception:
-                pass
-        raise ValueError("Invalid isoformat string: '%s'" % iso_formatted_dtime)
-
-
-fdsn_re = '[a-zA-Z_]+://.+?/fdsnws/(?:station|dataselect)/\\d/query?.*'
-
-
-def is_fdsn_dataselect_url(url):
-    """Return True if `url` is a valid FDSN dataselect URL"""
-    if not is_fdsn(url):
-        raise ValueError('Invalid FDSN URL: %s' % url)
-    return '/dataselect/' in url
-
-
-def is_fdsn_station_url(url):
-    """Return True if `url` is a valid FDSN station URL"""
-    if not is_fdsn(url):
-        raise ValueError('Invalid FDSN URL: %s' % url)
-    return '/station/' in url
-
-
-def is_fdsn(url):
-    """Return True if `url` is a valid FDSN URL"""
-    return re.match(fdsn_re, url)
-
-
-def get_querydict(url):
-    """Return the query string of `url` in form of a dict with keys
-    'net' (mandatory), 'sta', 'cha' 'loc' 'start' 'end' (all optional)
-    All dict values (query parameter values) are `str` (i.e., not casted).
-    An additional 'URL' key is added to the dict, with the query string
-    removed, so that the full url can be reconstructed with
-    :func:`get_dataselect_url` or :func:`get_station_url`
-
-    Raises if the url does not contain at least the parameters 'net' 'sta'
-        'start' (or alternatively 'network', 'station', 'starttime')
+def get_station_and_dataselect_urls(url):
+    """Return the tuple (station_url, dataselect_url). Raise ValueError
+    if `url` is not valid station ort dataselect FDSN URL
     """
-    url_splitted = parse.urlsplit(url)
-    # object above is of the form:
-    # ParseResult(scheme='http', netloc='www.example.org',
-    #             path='/default.html', query='ct=32&op=92&item=98',
-    #             fragment='')
-    # now parse its query. Note that each element is a LIST!
-    # (arguments might appear more times)
-    queryargs = parse.parse_qs(url_splitted.query)
-    try:
-        # mandatory arguments:
-        ret = {
-            'net': _get_query_entry(queryargs, "net", "network")[1]
-        }
-        # optional arguments
-        for params in [("loc", "location"), ("cha", "channel"),
-                       ("sta", "station"), ('start', 'starttime'),
-                       ('end', 'endtime')]:
-            try:
-                ret[params[0]] = _get_query_entry(queryargs, *params)[1]
-                if params[0] in ('start', 'end'):
-                    # check datetime (just a check, keep str as value)
-                    try:
-                        datetime_fromisoformat(ret[params[0]])
-                    except Exception:
-                        raise ValueError(f'Invalid date-time in "{params[0]}"')
-            except KeyError:
-                pass
+    fdsn_re = '[a-zA-Z_]+://.+?/fdsnws/(?:station|dataselect)/\\d/query?.*'
+    if not re.match(fdsn_re, url):
+        raise ValueError(f'Invalid FDSN URL: {url}')
+    # urlsplit is a namedtuple (scheme, netloc, path, query, fragment). Convert to list
+    # as we need to modify its path (element at index 2):
+    parts = list(parse.urlsplit(url))
+    urls = [url, url]  # station, dataselect
+    if '/dataselect/' in parts[2]:
+        parts[2] = parts[2].replace('/dataselect/', '/station/')
+        urls[0] = parse.urlunsplit(parts)
+    elif '/station/' in parts[2]:
+        parts[2] = parts[2].replace('/station/', '/dataselect/')
+        urls[1] = parse.urlunsplit(parts)
+    else:
+        raise ValueError(f'Invalid FDSN URL: {url}')
+    return tuple(urls)
 
-        # little check:
-        if 'start' in ret:
-            now = datetime.utcnow().isoformat()
-            if datetime_fromisoformat(ret['start']) >= \
-                    datetime_fromisoformat(ret.get('end', now)):
-                raise ValueError(f'Invalid time range, check (start, end) in {url}')
+
+# default FDSN parameters used in this module (to avoid confusion with multiple names):
+DEFAULT_PARAMS = {
+    "net": ("net", "network"),
+    "sta": ("sta", "station"),
+    "loc": ("loc", "location"),
+    "cha": ("cha", "channel"),
+    "start": ('start', 'starttime'),
+    "end": ('end', 'endtime')
+}
+
+
+def querydict(url, check_dates=True):
+    """Return the query string of `url` in form of a dict.
+    Raises ValueError if some parameter is missing or invalid
+
+    :param url: a URL
+    :param check_dates: check the validity of start and end params (if given)
+    """
+    url_parts = parse.urlsplit(url)
+    # object above is a named tuple:
+    # (scheme, netloc, path, query, fragment)
+    try:
+        ret = {}
+        # populate dict and check no multiple argument given:
+        for param, values in parse.parse_qs(url_parts.query).items():
+            if len(values) > 1:
+                raise ValueError(f'Multiple values for "{param}"')
+            ret[param] = values[0]
+
+        # check default arguments:
+        for def_param, params in DEFAULT_PARAMS.items():
+            tmp_ret = {p: ret[p] for p in params if p in ret}
+            if len(tmp_ret) > 1:
+                raise ValueError(f'Multiple values for "{"/".join(params)}"')
+            elif len(tmp_ret) == 1 and next(iter(tmp_ret)) != def_param:
+                ret[def_param] = ret.pop(next(iter(tmp_ret)))
+
+        if check_dates:
+            for param in ('start', 'end'):
+                if param in ret:
+                    try:
+                        # check datetime (just a check, keep str as value)
+                        datetime.fromisoformat(ret[param])
+                    except (ValueError, TypeError):
+                        raise ValueError(f'Invalid date-time for "{param}"')
+            if 'start' in ret:
+                end = ret.get('end', datetime.utcnow().isoformat())
+                if datetime.fromisoformat(ret['start']) >= datetime.fromisoformat(end):
+                    raise ValueError('Invalid date-time range: decrease start '
+                                     'or increase end (if provided)')
+
     except (KeyError, ValueError) as exc:
         raise ValueError(f'{str(exc)}. URL: {url}')
-    # add base URL:
-    ret['URL'] = (f'{url_splitted.scheme}://{url_splitted.netloc}'
-                  f'{url_splitted.path}')
+
     return ret
 
 
-def _get_query_entry(parse_qs_result, *keys):
-    """Returns the tuple (param, value) from the given `parse_qs_result` (dict
-    resulting from :func:`parse.parse_qs`.
-    'param' is the parameter name found (searched in the provided `key`(s))
-    and `value` is the parameter value.
+def get_dataselect_urls(url, timeout=None):
+    """Get all dataselect URLs from the given FDSN station url
 
-    Raises if zero or more than one key is provided, if the given provided key
-    is typed more than once
+    :param url: a FDSN station query URL. If dataselect, then `[url]` is returned
 
-    :param: querydict: a `dict` as returned from :func:`get_querydict`
-    :param keys: the parameter names (or keys) to be searched for in the query
-        dict
-
-    :return: the tuple (param, value)
+    :return: a list of dataselect urls. Each url will have at least the parameters
+        'net', 'sta', 'start' and 'end'
     """
-    params = [k for k in keys if k in parse_qs_result]
-    if len(params) > 1:
-        raise ValueError(f'Conflicting parameters "{"/".join(params)}"')
-    elif len(params) == 0:
-        raise KeyError(f'Missing parameter(s) "{"/".join(keys)}" ')
-    param = params[0]
-    val = parse_qs_result[param]
-    if len(val) > 1:
-        raise ValueError(f'Invalid multiple values for "{param}"')
-    return param, val[0]
-
-
-def get_dataselect_url(querydict, **queryargs):
-    """Convert the given `querydict` to the relative dataselect url
-    for downloading data in the command line interface
-
-    :param: querydict: a `dict` as returned from :func:`get_querydict`
-    :param queryargs: additional query arguments which will override
-        any given argument, if present. Values will be converted with the
-        `str` function when encoded in the url (for datetimes, isoformat
-        will be used instead). None values means: remove the parameter
-
-    :return: a string denoting a valid FDSN dataselect url
-    """
-    return get_url(querydict, **queryargs).\
-        replace('/station/', '/dataselect/')
-
-
-def get_station_url(querydict, **queryargs):
-    """Convert the given `querydict` to the relative station url
-    for downloading metadata in the command line interface. The parameter
-    'level' in the returned url will be set to 'response'
-
-    :param: querydict: a `dict` as returned from :func:`get_querydict`
-    :param queryargs: additional query arguments which will override
-        any given argument, if present (e.g., level='response' to download
-        the station xml). Values will be converted with the
-        `str` function when encoded in the url (for datetimes, isoformat
-        will be used instead). None values means: remove the parameter
-
-    :return: a string denoting a valid FDSN dataselect url
-    """
-    return get_url(querydict, **queryargs).\
-        replace('/dataselect/', '/station/')
-
-
-def get_station_urls(fdsn_query_url, timeout=None):
-    """Get all station urls from the given fdsn_query_url
-
-    :return: a list of station urls. Each url will have the query arguments
-        net, sta, start and end
-    """
-    qdic = get_querydict(fdsn_query_url.replace('/dataselect/',
-                                                '/station/'))
-    url = get_url(qdic, level='station', format='text')
-    req = request.Request(url)
+    fdsn_station_url, fdsn_dataselect_url = get_station_and_dataselect_urls(url)
+    if url == fdsn_dataselect_url:
+        return [url]
+    params = querydict(url)
+    params['level'] = 'station'
+    params['format'] = 'text'
+    req = request.Request(build_url(url, **params))
     with request.urlopen(req, timeout=timeout) as response:
         the_page = response.read().strip().decode('utf-8')
     urls = []
     if not the_page:
         return urls
-    now = datetime.utcnow().replace(microsecond=0).isoformat()
+    now = datetime.utcnow().isoformat()
     for line in the_page.split('\n'):
         if '#' in line:
             continue
-        cells = line.split('|')
+        cells = [_.strip() for _ in line.split('|')]
         args = {
+            **{p: v for p, v in params.items() if p in DEFAULT_PARAMS},
             'net': cells[0],
-            'sta': cells[1],
-            'start': qdic.get('start', cells[-2])
+            'sta': cells[1]
         }
-        args['end'] = qdic.get('end', cells[-1].strip() or now)
-        # remove args:
-        args['level'] = None
-        args['format'] = None
-        urls.append(get_url(qdic, **args))
+        args.setdefault('start', cells[-2])
+        args.setdefault('end', cells[-1] or now)
+        urls.append(build_url(fdsn_dataselect_url, **args))
     return urls
 
 
-def get_url(querydict, **queryargs):
-    """Convert the given `querydict` to the relative url
+def build_url(url, **queryparams):
+    """Build a new URL by replacing or adding the query string assembled from
+    `queryargs`l
 
-    :param: querydict: a `dict` as returned from :func:`get_querydict`
-    :param queryargs: additional query arguments which will override
-        any given argument, if present. Values will be converted with the
-        `str` function when encoded in the url (for datetimes, isoformat
-        will be used instead). None values means: remove the parameter
+    :param: queryparams: a `dict` of param and values representing the new
+        query string in the URL. Values not string will be converted to string
+        (except datetimes, converted to their ISO format string)
 
-    :return a string denoting the url build from the given querydict
+    :return a string denoting the url build from the given queryparams
     """
-    args = dict(querydict)
-    # args['start'] = (start or args['start']).isoformat()
-    # args['end'] = (end or args['end']).isoformat()
-    args = {**args, **queryargs}
-    for key, val in queryargs.items():
-        if val is None:
-            args.pop(key)
-    url = args.pop('URL') + '?'
-    for key, val in args.items():
-        url += f'&{str(key)}={_str(val)}'
-    return url
-
-
-def _str(paramvalue):
-    try:
-        return paramvalue.isoformat()
-    except AttributeError:
-        return str(paramvalue)
+    url_parts = list(parse.urlsplit(url))
+    # object above is a named tuple:
+    # (scheme, netloc, path, query, fragment)
+    url_parts[3] =[]
+    for k, v in queryparams.items():
+        if isinstance(v, datetime):
+            v = v.isoformat()
+        url_parts[3].append(f'{k}={v}')
+    url_parts[3] = '&'.join(url_parts[3])
+    return parse.urlunsplit(url_parts)

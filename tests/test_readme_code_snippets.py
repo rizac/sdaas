@@ -30,8 +30,7 @@ class Test(unittest.TestCase):
         pass
 
     def test_readme(self):
-        """test the README code snippets and updates the README content
-        with the snippet code text"""
+        """test the README code snippets"""
         test_snippet_01()
         test_snippet_02()
         test_snippet_03()
