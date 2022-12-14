@@ -212,8 +212,8 @@ Same as above, but save the scores table to CSV via the parameter `-sep` and
 >>> sdaas "http://geofon.gfz-potsdam.de/fdsnws/station/1/query?net=GE&sta=EIL&cha=BH?&start=2019-01-01" -v -sep "," > /path/to/myfile.csv
 [████████████████████████████████████████████████████████████]100%  0d 00:00:00
 ```
-*in this case, providing `-v` (verbose) will create a CSV file with header row. 
-Note that only the scores table is output to `stdout`, everything else is printed to 
+*in this case, providing `-v` / verbose will also redirect the header row to
+CSV. Note that only the scores table is output to `stdout`, everything else is printed to 
 `stderr` and thus should still be visible on the terminal, as in the example above*
 
 ### As library in your Python code
