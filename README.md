@@ -72,19 +72,25 @@ where you cloned this repository (last argument of `git clone`),
     source .env/bin/activate
     ```
    (then to deactivate, simply type ... `deactivate` on the terminal). 
+   
+   Update `pip` and `setuptools` (not mandatory, but in rare cases it
+   could prevent errors during the installation):
+   ```
+   pip install --upgrade pip setuptools
+   ```
 
 3. Install the program (one line command):
 
     with [requirements file](https://pip.pypa.io/en/stable/user_guide/#requirements-files):
     ```
-    pip install --upgrade pip setuptools && pip install -r ./requirements.txt && pip install -e .
+    pip install -r ./requirements.txt && pip install -e .
     ```
     
-    or standard (use this mainly if you install sdaas on an already existing virtualenv
-    and you are concerned about breaking existing code):
+    or standard (use this mainly if you install sdaas on an already existing 
+    virtualenv and you are concerned about breaking existing code):
     
     ```
-    pip install --upgrade pip setuptools && pip install "numpy>=1.15.4" && pip install -e .
+    pip install "numpy>=1.15.4" && pip install -e .
     ```
     
     Notes:
