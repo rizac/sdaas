@@ -44,9 +44,8 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
     determine the optimal T (see also parameter 'threshold').
 
     Each waveform will be printed to stdout as a row of a tabular output with
-    columns
-    "waveform_id" "waveform_start" "waveform_end" "anomaly_score"
-    and optionally "threshold_exceeded" (see 'threshold' option). The output
+    columns "id" "start" "end" "anomaly_score"
+    and optionally "class_label" (see 'threshold' option). The output
     can be redirected to produce e.g, CSV files (see 'sep' option). In this
     case, note that the progress bar and all additional messages (if 'verbose'
     option is set) are printed to stderr and thus not written to file.
@@ -83,12 +82,11 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
 
     :param threshold: decision threshold T. When 0 < T < 1, then scores > T
         will be classified as anomaly (and thus scores<=T as regular data), and
-        an additional column 'threshold_exceeded' with values 0 (False) or 1 (True)
-        will be shown. See notes above about the anomaly score for details. This
-        parameter defaults to -1 (do not set the decision threshold). Otherwise,
-        when a threshold is given, if the 'sep' option is not provided and the
-        terminal is interactive, then scores will be colored according to the derived
-        class (0 or 1)
+        an additional column 'class_label' with values 0 (inlier) or 1 (outlier)
+        will be shown. This parameter defaults to -1 (do not set the decision
+        threshold). When given, if the 'sep' option is not provided and the
+        terminal is interactive, then scores will be colored according to their
+        class label
 
     :param aggregate: the aggregate function to use (median, mean, min, max).
         Defaults to "" (no aggregation) meaning that each output row represents
@@ -148,12 +146,6 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
     else:
         raise ValueError(f'Invalid file/directory/FDSN url: {data}')
 
-    if verbose:
-        print(f'Data    : "{data}"', file=sys.stderr)
-        print(f'Metadata: "{metadata}"'
-              f'{" (will be inferred when possible)" if not metadata else ""}',
-              file=sys.stderr)
-
     rows = streamiterator.process(sort_by_time=sort_by_time and not aggregate,
                                   aggregate=aggregate,
                                   progressbar_output=sys.stderr,
@@ -165,9 +157,8 @@ def process(data, metadata='', threshold=-1.0, aggregate='',
         if aggregate:
             score_caption = f'{aggregate}_{score_caption}'
         th_set = is_threshold_set(threshold)
-        print(f'waveform_id{sep}waveform_start{sep}'
-              f'waveform_end{sep}{score_caption}'
-              f"{sep + 'threshold_exceeded' if th_set else ''}",
+        print(f'id{sep}start{sep}end{sep}{score_caption}'
+              f"{sep + 'class_label' if th_set else ''}",
               file=sys.stderr if not verbose else sys.stdout)
         for row in rows:
             print_result(row['id'], row['start'], row['end'], row[aggregate or 'score'],
