@@ -37,6 +37,13 @@ for outlier detection (Isolation forest) where
     0.75 has proven to be a good compromise between 
     [precision and recall (F1 score)](https://scikit-learn.org/stable/modules/model_evaluation.html#precision-recall-f-measure-metrics).
 
+    Disclaimer:
+
+    "False positives", i.e. relatively high anomaly scores even for well formed waveform segments have been sometimes observed in two specific cases: 
+    
+      - stations with extremely and abnormaly low noise level (e.g. borhole installations)
+      - recordings containing strong and close earthquakes. This is not a problem if the algorithm is used to check metadata errors, as random recordings from a station will most likely not falll into this category, but has to be considered when filtering out segments in specific scenarios (e.g. strong motion data): in this cases, setting an higher threshold is advisable. A better model suited for accelerometers (usually employed with these kind of recordings) is under study
+   
 <!--
 <img align="right" width="27%" src="outlierspaper-img004.png"><img align="right"  width="29%" src="outlierspaper-img005.png">
 
