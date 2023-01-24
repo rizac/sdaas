@@ -30,7 +30,7 @@ for outlier detection (Isolation forest) where
 
   - scores <= 0.5 can be safely interpreted in all 
     applications as "no significant anomaly", with no distinction
-    on the actual score value
+    on the actual score value, if needed
     
   - extreme score values are virtually impossible [by design](https://scikit-learn.org/stable/modules/calibration.html).
     This has to be considered when setting a user defined threshold T to 
