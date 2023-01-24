@@ -30,17 +30,18 @@ for outlier detection (Isolation forest) where
 
   - scores <= 0.5 can be safely interpreted in all 
     applications as "no significant anomaly", with no distinction
-    on the actual score value.
+    on the actual score value
+    
   - extreme score values are virtually impossible [by design](https://scikit-learn.org/stable/modules/calibration.html).
     This has to be considered when setting a user defined threshold T to 
     discard malformed waveforms. In many application, setting T between 0.7 and 
     0.75 has proven to be a good compromise between 
-    [precision and recall (F1 score)](https://scikit-learn.org/stable/modules/model_evaluation.html#precision-recall-f-measure-metrics).
+    [precision and recall (F1 score)](https://scikit-learn.org/stable/modules/model_evaluation.html#precision-recall-f-measure-metrics)
 
-    Disclaimer: "False positives", i.e. relatively high anomaly scores even for well formed recordings have been sometimes observed in two specific cases: 
+  - (Disclaimer) "False positives", i.e. relatively high anomaly scores even for well formed recordings have been sometimes observed in two specific cases: 
     
-      - stations with extremely and abnormaly low noise level (e.g. borhole installations)
-      - recordings containing strong and close earthquakes. This is not a problem if the algorithm is used to check metadata errors, as random recordings from a station will most likely not falll into this category, but has to be considered when filtering out segments in specific scenarios (e.g. strong motion data): in this cases, setting an higher threshold is advisable. A better model suited for accelerometers (usually employed with these kind of recordings) is under study
+      - recordings from stations with extremely and abnormaly low noise level (e.g. borhole installations)
+      - recordings containing strong and close earthquakes. This is not a problem if the algorithm is used to check metadata errors, as random recordings from a given station will most likely not falll into this category, but has to be considered when filtering out segments in specific scenarios (e.g. strong motion data): in this cases, setting an higher threshold is advisable. A model suited for accelerometers (usually employed with these kind of recordings) is under study
    
 <!--
 <img align="right" width="27%" src="outlierspaper-img004.png"><img align="right"  width="29%" src="outlierspaper-img005.png">
