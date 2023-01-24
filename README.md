@@ -41,7 +41,7 @@ for outlier detection (Isolation forest) where
   - (Disclaimer) "False positives", i.e. relatively high anomaly scores even for well formed recordings have been sometimes observed in two specific cases: 
     
       - recordings from stations with extremely and abnormaly low noise level (e.g. borhole installations)
-      - recordings containing strong and close earthquakes. This is not a problem if the algorithm is used to check metadata errors, as random recordings from a given station will most likely not falll into this category, but has to be considered when filtering out segments in specific scenarios (e.g. strong motion data): in this cases, setting an higher threshold is advisable. A model suited for accelerometers (usually employed with these kind of recordings) is under study
+      - recordings containing strong and close earthquakes. This is not a problem if the algorithm is used to check metadata errors, as the trend of  several recordings from a given sensor / station will not be affected (except maybe for few sparse slightly higer scores), but has to be considered when filtering out segments in specific studies (e.g. with strong motion data): in this cases, setting a higher threshold is advisable. A model suited for accelerometers (usually employed with these kind of recordings) is under study
    
 <!--
 <img align="right" width="27%" src="outlierspaper-img004.png"><img align="right"  width="29%" src="outlierspaper-img005.png">
