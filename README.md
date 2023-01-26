@@ -21,16 +21,15 @@ can be used:
    - pre-filter malformed data via a user-defined threshold
    - assign robustness weights
  - as station installation / metadata checker, leveraging the scores
-   temporal trends (see figure, where each dot represents a waveform segment downloaded from four different sensors whose channel code is reported in the plots)
+   temporal trends (see figure, where each dot represents a waveform segment downloaded from four different sensors whose channel code is reported in the plots: in the first row you can see - between March and May 2018 - a steady sequence of high scores clearly denoting something wrong with the sensor)
 
 Notes:
 
 This program uses a machine learning algorithm specifically designed
 for outlier detection (Isolation forest) where
 
-  - scores <= 0.5 can be safely interpreted in all 
-    applications as "no significant anomaly", with no distinction
-    on the actual score value, if needed
+  - scores <= 0.5 can be safely interpreted in all applications as "no significant anomaly" with no distinction
+    on the actual score value, if needed for simplicity in some applications
     
   - extreme score values are virtually impossible [by design](https://scikit-learn.org/stable/modules/calibration.html).
     This has to be considered when setting a user defined threshold T to 
@@ -41,7 +40,7 @@ for outlier detection (Isolation forest) where
   - (Disclaimer) "False positives", i.e. relatively high anomaly scores even for well formed recordings have been sometimes observed in two specific cases: 
     
       - recordings from stations with extremely and abnormaly low noise level (e.g. borhole installations)
-      - recordings containing strong and close earthquakes. This is not a problem to check metadata errors, as the scores trend of several recordings from a given sensor / station will not be affected (except maybe for few sparse slightly higer scores), but has to be considered when filtering out segments in specific studies (e.g. with strong motion data): in this cases, setting a higher threshold is advisable. A model suited for accelerometers (usually employed with these kind of recordings) is under study
+      - recordings containing strong and close earthquakes. This is not a problem to check metadata errors, as the scores trend of several recordings from a given sensor / station will not be affected (except maybe for few sparse slightly higer scores), but has to be considered when filtering out segments in specific studies (e.g. with strong motion data): in this cases, setting a higher threshold is advisable. A model trained for accelerometers only (usually employed with these kind of recordings) is under study
    
 <!--
 <img align="right" width="27%" src="outlierspaper-img004.png"><img align="right"  width="29%" src="outlierspaper-img005.png">
