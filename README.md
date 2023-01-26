@@ -21,7 +21,7 @@ can be used:
    - pre-filter malformed data via a user-defined threshold
    - assign robustness weights
  - as station installation / metadata checker, leveraging the scores
-   temporal trends (see figure, where each dot represents a waveform segment downloaded from four different sensors whose channel code is reported in the plots: in the first row you can see - between March and May 2018 - a steady sequence of high scores clearly denoting something wrong with the sensor)
+   temporal trends (see figure, where each dot represents a waveform segment downloaded from four different sensors whose channel code is reported in the plots: in the first row you can see - between March and May 2018 - an abrupt steady sequence of high scores clearly denoting some problem with the sensor that was fixed afterwards)
 
 Notes:
 
