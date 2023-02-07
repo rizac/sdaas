@@ -20,16 +20,15 @@ can be used:
  - in any processing pipeline to
    - pre-filter malformed data via a user-defined threshold
    - assign robustness weights
- - as station installation / metadata checker, leveraging the scores
-   temporal trends (see figure, where each dot represents a waveform segment downloaded from four different sensors whose channel code is reported in the plots: in the first row you can see - between March and May 2018 - an abrupt steady sequence of high scores clearly denoting some problem with the sensor that was fixed afterwards)
+ - as station installation / metadata checker, exploiting the scores
+   temporal trends. Look e.g. at the figure, where each dot represents a waveform segment downloaded from four different sensors. The sensor (a) (Channel code BHZ) shows an abrupt onset of persistently high anomaly scores around March 2018 which clearly indicates some problem with the installation. The subsequent abrupt offset of scores around May of the same year further suggests that the problem has been fixed by that time.
 
 Notes:
 
 This program uses a machine learning algorithm specifically designed
 for outlier detection (Isolation forest) where
 
-  - scores <= 0.5 can be safely interpreted in all applications as "no significant anomaly" with no distinction
-    on the actual score value, if needed for simplicity in some applications
+  - scores <= 0.5 can be safely interpreted in all applications as "no significant anomaly" (see Isolation Forest original paper - Liu et al. 2008 - for theoretical details)
     
   - extreme score values are virtually impossible [by design](https://scikit-learn.org/stable/modules/calibration.html).
     This has to be considered when setting a user defined threshold T to 
