@@ -8,14 +8,13 @@
 Simple, general and flexible tool for the identification of anomalies in 
 seismic waveform amplitude, e.g.:
 
-<table>
-<tr>
-<td width="50%">
-
-
  - recording artifacts (e.g., anomalous noise, peaks, gaps, spikes)
  - sensor problems (e.g. digitizer noise)
  - metadata field errors (e.g. wrong stage gain in StationXML)
+
+<table>
+<tr>
+<td width="40%">
 
 **For any waveform analyzed, the program computes an amplitude anomaly 
 score in [0, 1] representing 
@@ -28,7 +27,7 @@ can be used:
    temporal trends. See e.g. Channel (a) in the figure: the abrupt onset/offset of persistently high anomaly scores roughly between March and May 2018 clearly indicates an installation problem that has been fixed
 
 </td>
-<td align="center" width="50%">
+<td align="center" width="60%">
 
 <img width="100%" src="outlierspaper-img008.png">
 <br>
