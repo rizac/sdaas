@@ -5,13 +5,14 @@
 
 <!-- **S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core -->
 
+Simple, general and flexible tool for the identification of anomalies in 
+seismic waveform amplitude, e.g.:
 
 <table>
 <tr>
 <td width="50%">
 
-Simple, general and flexible tool for the identification of anomalies in 
-seismic waveform amplitude, e.g.:
+
  - recording artifacts (e.g., anomalous noise, peaks, gaps, spikes)
  - sensor problems (e.g. digitizer noise)
  - metadata field errors (e.g. wrong stage gain in StationXML)
