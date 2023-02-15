@@ -14,7 +14,7 @@ seismic waveform amplitude, e.g.:
 
 <table>
 <tr>
-<td width="35%">
+<td width="37%">
 
 **For any waveform analyzed, the program computes an amplitude anomaly 
 score in [0, 1] representing 
@@ -27,7 +27,7 @@ can be used:
    temporal trends. See e.g. Channel (a) in the figure: the abrupt onset/offset of persistently high anomaly scores roughly between March and May 2018 clearly indicates an installation problem that has been fixed
 
 </td>
-<td align="center" width="65%">
+<td align="center" width="63%">
 
 <img width="90%" src="outlierspaper-img008.png">
 <br>
