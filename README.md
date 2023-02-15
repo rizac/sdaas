@@ -5,7 +5,10 @@
 
 <!-- **S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core -->
 
-<img align="right" width="50%" src="outlierspaper-img008.png">
+
+<table>
+<tr>
+<td>
 
 Simple, general and flexible tool for the identification of anomalies in 
 seismic waveform amplitude, e.g.:
@@ -21,7 +24,18 @@ can be used:
    - pre-filter malformed data via a user-defined threshold
    - assign robustness weights
  - as station installation / metadata checker, exploiting the scores
-   temporal trends. Look e.g. at the figure, where each dot represents a waveform segment downloaded from four different sensors. The sensor (a) (Channel code BHZ) shows an abrupt onset of persistently high anomaly scores around March 2018 which clearly indicates some problem with the installation. The subsequent abrupt offset of scores around May of the same year further suggests that the problem has been fixed by that time.
+   temporal trends. See e.g. Channel (a) in the figure: the abrupt onset/offset of persistently high anomaly scores roughly between March and May 2018 clearly indicates an installation problem that has been fixed
+
+</td>
+<td align="center">
+
+<img width="100%" src="outlierspaper-img008.png">
+<br>
+Anomaly scores for four different channels (a) to (d). Each dot represents a recorded waveform segment of variable length (mostly around 2min)
+
+</td>
+</tr>
+</table>
 
 Notes:
 
