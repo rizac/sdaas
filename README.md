@@ -8,7 +8,7 @@
 
 <table>
 <tr>
-<td>
+<td width="50%">
 
 Simple, general and flexible tool for the identification of anomalies in 
 seismic waveform amplitude, e.g.:
@@ -27,12 +27,11 @@ can be used:
    temporal trends. See e.g. Channel (a) in the figure: the abrupt onset/offset of persistently high anomaly scores roughly between March and May 2018 clearly indicates an installation problem that has been fixed
 
 </td>
-<td align="center">
+<td align="center" width="50%">
 
 <img width="100%" src="outlierspaper-img008.png">
 <br>
 Anomaly scores for four different channels (a) to (d). Each dot represents a recorded waveform segment of variable length (mostly around 2min)
-
 </td>
 </tr>
 </table>
