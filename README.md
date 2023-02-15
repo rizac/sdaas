@@ -31,7 +31,7 @@ can be used:
 
 <img width="100%" src="outlierspaper-img008.png">
 <br>
-Anomaly scores for four different channels (a) to (d). Each dot represents a recorded waveform segment of variable length (mostly around 2min)
+Anomaly scores for four different channels (a) to (d). Each dot represents a recorded waveform segment of variable length
 </td>
 </tr>
 </table>
