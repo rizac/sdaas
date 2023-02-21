@@ -160,6 +160,8 @@ python -m unittest -fv
 
 ## Usage
 
+`sdaas` can be used as command line application or as library in your Python code
+
 ### As command line application
 
 After activating your virtual environment (see above) you can access the program as
