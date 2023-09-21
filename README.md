@@ -396,7 +396,7 @@ explaining how to manage create new scikit-learn models.
 
 **Research article:**
 
-> Riccardo Zaccarelli, Dino Bindi, Angelo Strollo; Anomaly Detection in Seismic Data–Metadata Using Simple Machine‐Learning Models. Seismological Research Letters 2021;; 92 (4): 2627–2639. doi: https://doi.org/10.1785/0220200339
+> Riccardo Zaccarelli, Dino Bindi, Angelo Strollo; Anomaly Detection in Seismic Data–Metadata Using Simple Machine‐Learning Models. Seismological Research Letters 2021; 92 (4): 2627–2639. doi: https://doi.org/10.1785/0220200339
 
 
 
