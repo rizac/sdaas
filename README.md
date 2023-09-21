@@ -1,7 +1,7 @@
-# sdaas
+# <img align="left" height="30" src="https://www.gfz-potsdam.de/fileadmin/gfz/medien_kommunikation/Infothek/Mediathek/Bilder/GFZ/GFZ_Logo/GFZ-Logo_eng_RGB.svg"> Sdaas <img align="right" height="50" src="https://www.gfz-potsdam.de/fileadmin/gfz/GFZ_Wortmarke_SVG_klein_en_edit.svg">
 
-|Jump to: | [Citation](#citation) | [Installation](#installation) | [Usage](#usage) |
-| - | - | - | - |
+|Jump to: | [Citation](#citation) | [Installation](#installation) | [Usage](#usage) |  [Maintenance](#maintenance) | [Citation](#citation) |
+| - | - | - | - | - | - |
 
 <!-- **S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core -->
 
@@ -67,11 +67,6 @@ assign robustness weights
 or to check the correctness of the metadata fields (e.g. Station inventory xml)
 by checking the anomaly score on a set of station recordings. 
 -->
-
-## Citation
-
-Riccardo Zaccarelli, Dino Bindi, Angelo Strollo; Anomaly Detection in Seismic Data–Metadata Using Simple Machine‐Learning Models. Seismological Research Letters 2021;; 92 (4): 2627–2639. doi: https://doi.org/10.1785/0220200339
-
 
 
 ## Installation
@@ -385,9 +380,23 @@ Then `output` is:
 [0.45729656, 0.45199387, 0.45113142, 0.45729656, 0.45199387, 0.45113142]
 ```
 
-## For maintainers
+## Maintenance
 
 Although scikit learn is not used anymore for
 [maintainability limitations](https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations), 
 you can always consult the [README](./sdaas/core/models) 
 explaining how to manage create new scikit-learn models.
+
+
+## Citation
+
+**Software:**
+
+> Zaccarelli, Riccardo (2022). sdas - a Python tool computing an amplitude anomaly score of seismic data and metadata using simple machine learning algaorithm. GFZ Data Services. https://doi.org/10.5880/GFZ.2.6.2023.009
+
+**Research article:**
+
+> Riccardo Zaccarelli, Dino Bindi, Angelo Strollo; Anomaly Detection in Seismic Data–Metadata Using Simple Machine‐Learning Models. Seismological Research Letters 2021;; 92 (4): 2627–2639. doi: https://doi.org/10.1785/0220200339
+
+
+
