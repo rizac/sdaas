@@ -392,7 +392,7 @@ explaining how to manage create new scikit-learn models.
 
 **Software:**
 
-> Zaccarelli, Riccardo (2022). sdas - a Python tool computing an amplitude anomaly score of seismic data and metadata using simple machine learning algaorithm. GFZ Data Services. https://doi.org/10.5880/GFZ.2.6.2023.009
+> Zaccarelli, Riccardo (2022). sdas - a Python tool computing an amplitude anomaly score of seismic data and metadata using simple machine‐Learning models. GFZ Data Services. https://doi.org/10.5880/GFZ.2.6.2023.009
 
 **Research article:**
 
