@@ -12,10 +12,6 @@ seismic waveform amplitude, e.g.:
  - sensor problems (e.g. digitizer noise)
  - metadata field errors (e.g. wrong stage gain in StationXML)
 
-<table>
-<tr>
-<td width="37%">
-
 **For any waveform analyzed, the program computes an amplitude anomaly 
 score in [0, 1] representing 
 the degree of belief of a waveform to be an outlier**. The score
@@ -26,15 +22,8 @@ can be used:
  - as station installation / metadata checker, exploiting the scores
    temporal trends. See e.g. Channel (a) in the figure: the abrupt onset/offset of persistently high anomaly scores roughly between March and May 2018 clearly indicates an installation problem that has been fixed
 
-</td>
-<td align="center" width="63%">
-
-<img width="90%" src="outlierspaper-img008.png">
-<br>
+![anomaly_scores_image](https://github.com/rizac/sdaas/blob/6b1dca95f4a5f931874c4aaedd278f4692dc0f96/outlierspaper-img008.png?raw=true)
 Anomaly scores for four different channels (a) to (d). Each dot represents a recorded waveform segment of variable length
-</td>
-</tr>
-</table>
 
 Notes:
 
