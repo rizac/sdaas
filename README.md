@@ -1,7 +1,7 @@
 # <img align="left" height="30" src="https://www.gfz-potsdam.de/fileadmin/gfz/medien_kommunikation/Infothek/Mediathek/Bilder/GFZ/GFZ_Logo/GFZ-Logo_eng_RGB.svg"> Sdaas <img align="right" height="50" src="https://www.gfz-potsdam.de/fileadmin/gfz/GFZ_Wortmarke_SVG_klein_en_edit.svg">
 
-|Jump to: | [Citation](#citation) | [Installation](#installation) | [Usage](#usage) |  [Maintenance](#maintenance) | [Citation](#citation) |
-| - | - | - | - | - | - |
+|Jump to: | [Installation](#installation) | [Usage](#usage) |  [Maintenance](#maintenance) | [Citation](#citation) |
+| - | - | - | - | - |
 
 <!-- **S**eismic **D**ata (and metadata) **A**mplitude **A**nomaly **S**core -->
 
