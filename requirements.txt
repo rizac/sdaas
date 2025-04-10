@@ -20,4 +20,4 @@ scipy==1.9.3
 # -e git+https://github.com/rizac/sdaas.git@89aaf28d7f6f77393d1ce32d62fba7f8f4895e8f#egg=sdaas
 six==1.16.0
 SQLAlchemy==1.4.44
-urllib3==1.26.13
+urllib3==1.26.5
